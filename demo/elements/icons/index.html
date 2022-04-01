@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+  <title>Icons</title>
+  <style>
+  h2 {
+    text-transform: capitalize;
+  }
+
+  .icon {
+    transition: all 0.2s;
+    -webkit-transition: all 0.2s;
+    width: 24px;
+    height: 24px;
+  }
+
+  .icon:hover {
+    fill: #f09300;
+  }
+
+  .set {
+    margin: auto;
+    padding: 1em 0;
+    border-bottom: 1px solid silver;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .set:last-of-type {
+    border-bottom: none;
+  }
+
+  .set:nth-of-type(4n-3) {
+    color: #616161;
+  }
+
+  .set:nth-of-type(4n-2) {
+    color: #e91e63;
+  }
+
+  .set:nth-of-type(4n-1) {
+    color: #0f9d58;
+  }
+
+  .set:nth-of-type(4n) {
+    color: #4285f4;
+  }
+
+  .container {
+    min-width: 10em;
+    padding: 1em 0.5em;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+
+  .container> div {
+    margin-top: 0.5em;
+    color: black;
+    font-size: 10px;
+  }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script type="module" src="./index.ts"></script>
+</body>
+</html>
