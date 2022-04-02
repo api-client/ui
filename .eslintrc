@@ -1,0 +1,39 @@
+{
+  "env": {
+    "es2021": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "extends": [
+    "@open-wc",
+    "prettier"
+  ],
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "rules": {
+    "no-unused-vars": "off",
+    "@typescript-eslint/explicit-function-return-type": "error",
+    "@typescript-eslint/no-unused-vars": [
+      "error"
+    ],
+    "import/no-unresolved": "off",
+    "import/extensions": [
+      "error",
+      "always",
+      {
+        "ignorePackages": true
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/pages/**/*.ts",
+        "src/bindings/**/*.ts"
+      ],
+      "rules": {
+        "class-methods-use-this": "off"
+      }
+    }
+  ]
+}

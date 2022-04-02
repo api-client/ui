@@ -19,7 +19,7 @@ import { reactive } from '../lib/decorators.js';
  * whether the a value actually changed. It works well for primitives but it won't work as expected
  * for complex types.
  */
-export class ApplicationScreen extends RenderableMixin(EventTarget) {
+export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
   eventTarget: EventTarget = window;
 
   /** 
@@ -46,6 +46,11 @@ export class ApplicationScreen extends RenderableMixin(EventTarget) {
     
     this.initMediaQueries();
   }
+
+  /**
+   * Called once when the page is being initialized.
+   */
+  abstract initialize(): Promise<void>;
 
   /**
    * Initializes media queries and observers.

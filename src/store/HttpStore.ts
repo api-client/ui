@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { StoreSdk, RouteBuilder } from '@api-client/core/build/browser.js';
-import { IConfigEnvironment } from './Config.js';
+import { IConfigEnvironment } from '../lib/config/Config.js';
 
 export interface ISessionInitInfo {
   /**
@@ -23,8 +23,17 @@ export interface ISessionInitInfo {
 export class HttpStore {
   sdk: StoreSdk;
 
-  constructor(public url: string) {
-    this.sdk = new StoreSdk(this.url);
+  url: string;
+
+  constructor(url: string) {
+    if (!url) {
+      throw new Error(`Expected argument.`);
+    }
+    if (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    this.url = url;
+    this.sdk = new StoreSdk(url);
   }
 
   /**
@@ -56,12 +65,17 @@ export class HttpStore {
     this.sdk.token = info.token;
     env.token = info.token;
     env.authenticated = false;
+    if (info.expires) {
+      env.tokenExpires = info.expires * 1000;
+    }
 
     const user = await this.sdk.http.get(meUri, { token: result.token });
+    
     if (user.status === 200) {
       env.authenticated = true;
     } else {
       await this.authenticateStore();
+      env.authenticated = true;
     }
     return result;
   }
