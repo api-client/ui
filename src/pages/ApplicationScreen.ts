@@ -3,6 +3,8 @@
 import { html, TemplateResult } from 'lit';
 import { RenderableMixin } from '../mixins/RenderableMixin.js';
 import { reactive } from '../lib/decorators.js';
+import { Events } from '../events/Events.js';
+import { HttpStore } from '../store/HttpStore.js';
 
 /**
  * A base class for pages build outside the LitElement. It uses `lit-html` 
@@ -14,12 +16,11 @@ import { reactive } from '../lib/decorators.js';
  * To reflect the changed state call the `render()` function. The function schedules
  * a micro task (through `requestAnimationFrame`) to call the render function on the template.
  * 
- * More useful option is to use the `initObservableProperties()` function that accepts a list 
- * of properties set on the base class that once set triggers the render function. The setter checks
- * whether the a value actually changed. It works well for primitives but it won't work as expected
- * for complex types.
+ * Use the `@reactive()` decorator from `src/lib/decorators.js` to mark a property as reactive,
+ * meaning, when the property change it calls the `render()` function.
  */
 export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
+  @reactive()
   eventTarget: EventTarget = window;
 
   /** 
@@ -40,10 +41,24 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
   @reactive()
   anypoint = false;
 
+  /**
+   * A flag telling the application screen that the logic is initialized.
+   * 
+   * The page can request different initialization logics. When the logic is
+   * loaded the flag is set to true.
+   */
+  @reactive()
+  initialized = false;
+
+  /**
+   * The page on the screen currently being rendered.
+   */
+  @reactive()
+  page?: string;
+
   constructor() {
     super();
     window.onunhandledrejection = this.unhandledRejectionHandler.bind(this);
-    
     this.initMediaQueries();
   }
 
@@ -93,5 +108,37 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
       <p class="sub-message">${this.loadingStatus}</p>
     </div>
     `;
+  }
+
+  /**
+   * Initializes the flow where an environment is required.
+   * This checks for the default environment.
+   * When it doesn't exists it asks the user to pick existing environment 
+   * or to create one.
+   * When a default environment exists, it performs authentication
+   * when necessary. 
+   * 
+   * Eventually it returns the HTTP store with an authenticated environment.
+   */
+  protected async initializeStore(): Promise<HttpStore> {
+    const env = await Events.Config.Environment.read();
+    if (!env) {
+      // TODO: ask for an environment
+      throw new Error(`No environment.`);
+    }
+    const store = HttpStore.fromEnvironment(env);
+    const info = await store.getStoreSessionToken();
+    if (info.new) {
+      await Events.Config.Environment.update(env);
+    }
+    return store;
+  }
+
+  pageTemplate(): TemplateResult {
+    const { initialized } = this;
+    if (!initialized) {
+      return this.loaderTemplate();
+    }
+    return html``;
   }
 }

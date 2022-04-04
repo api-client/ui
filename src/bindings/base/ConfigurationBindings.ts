@@ -12,6 +12,10 @@ export const TelemetryKey = `${KeyPrefix}telemetry`;
 export abstract class ConfigurationBindings extends PlatformBindings {
   async initialize(): Promise<void> {
     window.addEventListener(EventTypes.Config.Environment.add, this.addEnvironmentHandler.bind(this));
+    window.addEventListener(EventTypes.Config.Environment.update, this.updateEnvironmentHandler.bind(this));
+    window.addEventListener(EventTypes.Config.Environment.read, this.readEnvironmentHandler.bind(this));
+    window.addEventListener(EventTypes.Config.Environment.delete, this.removeEnvironmentHandler.bind(this));
+    window.addEventListener(EventTypes.Config.Environment.setDefault, this.setDefault.bind(this));
     window.addEventListener(EventTypes.Config.Session.get, this.getSessionHandler.bind(this));
     window.addEventListener(EventTypes.Config.Session.set, this.setSessionHandler.bind(this));
     window.addEventListener(EventTypes.Config.Session.delete, this.deleteSessionHandler.bind(this));
@@ -23,6 +27,30 @@ export abstract class ConfigurationBindings extends PlatformBindings {
     const e = input as CustomEvent;
     e.preventDefault();
     e.detail.result = this.addEnvironment(e.detail.env, e.detail.asDefault);
+  }
+
+  protected updateEnvironmentHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.updateEnvironment(e.detail.env);
+  }
+
+  protected readEnvironmentHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.readEnvironment(e.detail.id);
+  }
+
+  protected removeEnvironmentHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.removeEnvironment(e.detail.id);
+  }
+
+  protected setDefault(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.setDefaultEnvironment(e.detail.id);
   }
 
   protected getSessionHandler(input: Event): void {
@@ -65,6 +93,13 @@ export abstract class ConfigurationBindings extends PlatformBindings {
   abstract addEnvironment(env: IConfigEnvironment, asDefault?: boolean): Promise<void>;
 
   /**
+   * Updates an existing environment.
+   * 
+   * @param env The environment to update
+   */
+  abstract updateEnvironment(env: IConfigEnvironment): Promise<void>;
+
+  /**
    * Reads the definition of an environment.
    * 
    * @param id The key of the environment to read. When not set it reads the default environment.
@@ -76,6 +111,13 @@ export abstract class ConfigurationBindings extends PlatformBindings {
    * @param id The key of the environment to remove.
    */
   abstract removeEnvironment(id: string): Promise<void>;
+
+  /**
+   * Sets the environment as default.
+   * 
+   * @param id The key of the environment to set as default.
+   */
+  abstract setDefaultEnvironment(id: string): Promise<void>;
 
   /**
    * Sets a config property that is held in the storage only for the time of the current session.

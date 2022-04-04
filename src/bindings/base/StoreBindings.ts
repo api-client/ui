@@ -16,8 +16,6 @@ export abstract class StoreBindings extends PlatformBindings {
   }
 
   protected initEnvHandler(input: Event): void {
-    console.log('aaaaaaaaaaaaaaaaaa');
-    
     const e = input as CustomEvent;
     e.preventDefault();
     this.initStoreEnvironment(e.detail);

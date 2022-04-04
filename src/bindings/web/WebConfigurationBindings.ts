@@ -41,7 +41,23 @@ export class WebConfigurationBindings extends ConfigurationBindings {
       data.current = env.key;
     }
     await this.writeEnvironments(data);
-    await Events.Config.Environment.State.created({ ...env });
+    Events.Config.Environment.State.created({ ...env }, asDefault);
+  }
+
+  /**
+   * Updates an existing environment.
+   * 
+   * @param env The environment to update
+   */
+  async updateEnvironment(env: IConfigEnvironment): Promise<void> {
+    const data = await this.readEnvironments();
+    const index = data.environments.findIndex(i => i.key === env.key);
+    if (index < 0) {
+      throw new Error(`The environment does not exist. Maybe use "add" instead?`);
+    }
+    data.environments[index] = env;
+    await this.writeEnvironments(data);
+    Events.Config.Environment.State.updated({ ...env });
   }
 
   /**
@@ -76,6 +92,23 @@ export class WebConfigurationBindings extends ConfigurationBindings {
       delete data.current;
     }
     await this.writeEnvironments(data);
+    Events.Config.Environment.State.deleted(id);
+  }
+
+  /**
+   * Sets the environment as default.
+   * 
+   * @param id The key of the environment to set as default.
+   */
+  async setDefaultEnvironment(id: string): Promise<void> {
+    const data = await this.readEnvironments();
+    const hasEnv = data.environments.some(i => i.key === id);
+    if (!hasEnv) {
+      throw new Error(`The environment is not defined: ${id}`);
+    }
+    data.current = id;
+    await this.writeEnvironments(data);
+    Events.Config.Environment.State.defaultChange(id);
   }
 
   /**

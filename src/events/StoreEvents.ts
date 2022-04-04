@@ -13,11 +13,11 @@ export interface IConfigInit {
 
 export const StoreEvents = Object.freeze({
   /**
-     * Initializes the store configuration for the application.
-     * 
-     * @param init The configuration initialization.
-     * @param target Optional events target.
-     */
+   * Initializes the store configuration for the application.
+   * 
+   * @param init The configuration initialization.
+   * @param target Optional events target.
+   */
    initEnvironment: (init: IConfigInit, target: EventTarget=document.body): void => {
     const e = new CustomEvent(EventTypes.Store.initEnvironment, {
       bubbles: true,

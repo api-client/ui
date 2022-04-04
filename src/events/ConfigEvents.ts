@@ -6,7 +6,7 @@ export const ConfigEvents = Object.freeze({
     /**
      * Adds the environment to the store.
      * 
-     * @param env The environment to authenticate.
+     * @param env The environment to add.
      * @param asDefault Whether to set the environment as default.
      * @param target Optional events target.
      */
@@ -24,16 +24,130 @@ export const ConfigEvents = Object.freeze({
       target.dispatchEvent(e);
       await ((e.detail.result as unknown) as Promise<void>);
     },
+    /**
+     * Updates an environment
+     * 
+     * @param env The environment to update.
+     * @param target Optional events target.
+     */
+    update: async (env: IConfigEnvironment, target: EventTarget=document.body): Promise<void> => {
+      const e = new CustomEvent(EventTypes.Config.Environment.update, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          env,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      await ((e.detail.result as unknown) as Promise<void>);
+    },
+    /**
+     * Reads the definition of an environment.
+     * 
+     * @param id The key of the environment to read. When not set it reads the default environment.
+     * @param target Optional events target.
+     */
+    read: async (id?: string, target: EventTarget=document.body): Promise<IConfigEnvironment> => {
+      const e = new CustomEvent(EventTypes.Config.Environment.read, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          id,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<IConfigEnvironment>);
+    },
+    /**
+     * Removes an environment from the permanent store.
+     * 
+     * @param id The key of the environment to remove.
+     * @param target Optional events target.
+     */
+    delete: async (id: string, target: EventTarget=document.body): Promise<void> => {
+      const e = new CustomEvent(EventTypes.Config.Environment.delete, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          id,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<void>);
+    },
+    /**
+     * Sets the environment as default.
+     * 
+     * @param id The key of the environment to set as default.
+     * @param target Optional events target.
+     */
+    setDefault: async (id: string, target: EventTarget=document.body): Promise<void> => {
+      const e = new CustomEvent(EventTypes.Config.Environment.setDefault, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          id,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<void>);
+    },
 
     State: Object.freeze({
       /**
        * Informs the application that an environment has been created.
        * 
        * @param env Creates environment.
+       * @param isDefault Whether the created environment is a default environment
        * @param target Optional events target.
        */
-      created: async (env: IConfigEnvironment, target: EventTarget=document.body): Promise<void> => {
+      created: (env: IConfigEnvironment, isDefault: boolean, target: EventTarget=document.body): void => {
         const e = new CustomEvent(EventTypes.Config.Environment.State.created, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            env,
+            isDefault,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+      },
+      /**
+       * Informs the application that an environment has been deleted.
+       * 
+       * @param id The key of the environment
+       * @param target Optional events target.
+       */
+      deleted: (id: string, target: EventTarget=document.body): void => {
+        const e = new CustomEvent(EventTypes.Config.Environment.State.deleted, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            id,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+      },
+      /**
+       * Informs the application that an environment has been deleted.
+       * 
+       * @param env The updated environment.
+       * @param target Optional events target.
+       */
+      updated: (env: IConfigEnvironment, target: EventTarget=document.body): void => {
+        const e = new CustomEvent(EventTypes.Config.Environment.State.updated, {
           bubbles: true,
           cancelable: true,
           composed: true,
@@ -43,7 +157,24 @@ export const ConfigEvents = Object.freeze({
           },
         });
         target.dispatchEvent(e);
-        await ((e.detail.result as unknown) as Promise<void>);
+      },
+      /**
+       * Informs the application that a default environment has changed.
+       * 
+       * @param id The key of the environment.
+       * @param target Optional events target.
+       */
+      defaultChange: (id: string, target: EventTarget=document.body): void => {
+        const e = new CustomEvent(EventTypes.Config.Environment.State.defaultChange, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            id,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
       },
     }),
   }),

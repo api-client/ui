@@ -9,39 +9,46 @@ export const EventTypes = Object.freeze({
     info: 'storebackendinfo',
     initEnvironment: 'configstoreinitenv',
   }),
-  Space: Object.freeze({
-    list: 'storespacelist',
-    create: 'storespacecreate',
-    read: 'storespaceread',
-    patch: 'storespacepatch',
-    delete: 'storespacedelete',
-    patchUsers: 'storespacepatchusers',
-    listUsers: 'storespacelistusers',
-  }),
-  Project: Object.freeze({
-    create: 'storeprojectcreate',
-    read: 'storeprojectread',
-    list: 'storeprojectlist',
-    delete: 'storeprojectdelete',
-    patch: 'storeprojectpatch',
-  }),
-  User: Object.freeze({
-    me: 'storeuserme',
-    list: 'storeuserlist',
-    read: 'storeuserread',
-  }),
-  History: Object.freeze({
-    create: 'storehistorycreate',
-    createBulk: 'storehistorycreatebulk',
-    list: 'storehistorylist',
-    delete: 'storehistorydelete',
-    read: 'storehistoryread',
-  }),
+  // Space: Object.freeze({
+  //   list: 'storespacelist',
+  //   create: 'storespacecreate',
+  //   read: 'storespaceread',
+  //   patch: 'storespacepatch',
+  //   delete: 'storespacedelete',
+  //   patchUsers: 'storespacepatchusers',
+  //   listUsers: 'storespacelistusers',
+  // }),
+  // Project: Object.freeze({
+  //   create: 'storeprojectcreate',
+  //   read: 'storeprojectread',
+  //   list: 'storeprojectlist',
+  //   delete: 'storeprojectdelete',
+  //   patch: 'storeprojectpatch',
+  // }),
+  // User: Object.freeze({
+  //   me: 'storeuserme',
+  //   list: 'storeuserlist',
+  //   read: 'storeuserread',
+  // }),
+  // History: Object.freeze({
+  //   create: 'storehistorycreate',
+  //   createBulk: 'storehistorycreatebulk',
+  //   list: 'storehistorylist',
+  //   delete: 'storehistorydelete',
+  //   read: 'storehistoryread',
+  // }),
   Config: Object.freeze({
     Environment: Object.freeze({
       add: 'configenvironmentadd',
+      read: 'configenvironmentread',
+      delete: 'configenvironmentdelete',
+      setDefault: 'configenvironmentsetdefault',
+      update: 'configenvironmentupdate',
       State: Object.freeze({
         created: 'configenvironmentcreated',
+        deleted:'configenvironmentdeleted',
+        updated:'configenvironmentupdated',
+        defaultChange: 'configenvironmentdefaultchange'
       }),
     }),
     /**  
@@ -66,6 +73,11 @@ export const EventTypes = Object.freeze({
       State: {
         set: 'configtelemetrystateset',
       },
+    }),
+  }),
+  Navigation: Object.freeze({
+    HttpProject: Object.freeze({
+      open: 'navigationprojectopen',
     }),
   }),
 });

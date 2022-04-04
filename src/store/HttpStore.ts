@@ -25,6 +25,15 @@ export class HttpStore {
 
   url: string;
 
+  env?: IConfigEnvironment;
+
+  static fromEnvironment(env: IConfigEnvironment): HttpStore {
+    const { location } = env;
+    const store = new HttpStore(location);
+    store.env = env;
+    return store;
+  }
+
   constructor(url: string) {
     if (!url) {
       throw new Error(`Expected argument.`);
@@ -39,7 +48,10 @@ export class HttpStore {
   /**
    * Creates a session in the store and authenticates the user when needed.
    */
-  async getStoreSessionToken(env: IConfigEnvironment): Promise<ISessionInitInfo> {
+  async getStoreSessionToken(env = this.env): Promise<ISessionInitInfo> {
+    if (!env) {
+      throw new Error(`The environment either has to be set on the HttpStore class or passed as an argument.`);
+    }
     const meUri = this.sdk.getUrl(RouteBuilder.usersMe()).toString();
     const result: ISessionInitInfo = {
       token: env.token || '',

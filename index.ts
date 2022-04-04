@@ -8,6 +8,7 @@ export { default as ApiIconElement } from "./src/elements/icons/ApiIconElement.j
 export { default as ConfigInitScreen } from "./src/pages/init/ConfigInitScreen.js";
 export { default as ConfigAuthenticateScreen } from "./src/pages/init/ConfigAuthenticateScreen.js";
 export { default as AnalyticsConsentScreen } from "./src/pages/init/AnalyticsConsentScreen.js";
+export { default as HttpProjectHomeScreen } from "./src/pages/http-project/HttpProjectHomeScreen.js";
 
 // Bindings
 

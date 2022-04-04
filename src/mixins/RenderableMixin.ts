@@ -75,7 +75,7 @@ export declare class RenderableMixinInterface {
  * @mixin
  */
 export const RenderableMixin = dedupeMixin(<T extends Constructor<any>>(superClass: T): Constructor<RenderableMixinInterface> & T => {
-  class MyMixinClass extends superClass {
+  class RenderableMixinClass extends superClass {
     
     static get styles(): CSSResult | CSSResult[] {
       return css``;
@@ -209,5 +209,5 @@ export const RenderableMixin = dedupeMixin(<T extends Constructor<any>>(superCla
       this[updateResolver]();
     }
   };
-  return MyMixinClass as Constructor<RenderableMixinInterface> & T;
+  return RenderableMixinClass as Constructor<RenderableMixinInterface> & T;
 });
