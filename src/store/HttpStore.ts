@@ -27,6 +27,10 @@ export class HttpStore {
 
   env?: IConfigEnvironment;
 
+  /**
+   * @deprecated Use the `constructor(env: IConfigEnvironment)` constructor.
+   * @param env The store environment to use.
+   */
   static fromEnvironment(env: IConfigEnvironment): HttpStore {
     const { location } = env;
     const store = new HttpStore(location);
@@ -34,15 +38,54 @@ export class HttpStore {
     return store;
   }
 
-  constructor(url: string) {
-    if (!url) {
-      throw new Error(`Expected argument.`);
+  /**
+   * @deprecated Use the `constructor(env: IConfigEnvironment)` constructor.
+   * @param url The store URL.
+   */
+  constructor(url: string);
+
+  constructor(env: IConfigEnvironment);
+
+  constructor(envOrUrl: string | IConfigEnvironment) {
+    if (!envOrUrl) {
+      throw new Error(`Expected an argument.`);
     }
-    if (url.endsWith('/')) {
-      url = url.substring(0, url.length - 1);
+    if (typeof envOrUrl === 'string') {
+      if (envOrUrl.endsWith('/')) {
+        envOrUrl = envOrUrl.substring(0, envOrUrl.length - 1);
+      }
+      this.url = envOrUrl;
+      this.sdk = new StoreSdk(envOrUrl);
+    } else {
+      this.env = envOrUrl;
+      const { location } = envOrUrl;
+      this.url = location;
+      this.sdk = new StoreSdk(location);
     }
-    this.url = url;
-    this.sdk = new StoreSdk(url);
+  }
+
+  /**
+   * Checks whether the environment has the token and whether this token 
+   * can make requests to the store.
+   * 
+   * @param env Optional environment. By default is uses the one defined on the class.
+   */
+  async isAuthenticated(env = this.env): Promise<boolean> {
+    if (!env) {
+      throw new Error(`The environment either has to be set on the HttpStore class or passed as an argument.`);
+    }
+    const { token } = env;
+    if (!token) {
+      return false;
+    }
+    const meUri = this.sdk.getUrl(RouteBuilder.usersMe()).toString();
+    const user = await this.sdk.http.get(meUri, { token });
+    const ok = user.status === 200;
+    if (ok) {
+      env.authenticated = true;
+      this.sdk.token = token;
+    }
+    return user.status === 200;
   }
 
   /**

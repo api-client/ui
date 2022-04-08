@@ -1,7 +1,7 @@
 import { uuidV4, IBackendInfo } from '@api-client/core/build/browser.js';
 import { IConfigInit } from '../../events/StoreEvents.js';
 import { Events } from '../../events/Events.js';
-import { HttpStore, ISessionInitInfo } from '../../store/HttpStore.js';
+import { HttpStore } from '../../store/HttpStore.js';
 import { StoreBindings } from '../base/StoreBindings.js';
 import { IConfigEnvironment } from '../../lib/config/Config.js';
 import { navigatePage } from '../../lib/route.js';
@@ -72,18 +72,5 @@ export class WebStoreBindings extends StoreBindings {
   async readStoreInfo(baseUri: string): Promise<IBackendInfo> {
     const store = new HttpStore(baseUri);
     return store.sdk.store.getInfo();
-  }
-
-  /**
-   * Authenticates the environment with the store.
-   * @param env The environment to authenticate.
-   */
-  async authenticateStore(env: IConfigEnvironment): Promise<ISessionInitInfo> {
-    const { location } = env;
-    if (!location) {
-      throw new Error(`Store location not found.`);
-    }
-    const store = new HttpStore(location);
-    return store.getStoreSessionToken(env);
   }
 }

@@ -4,7 +4,7 @@
 import { html, TemplateResult, LitElement } from 'lit';
 import { property } from 'lit/decorators.js';
 import { dedupeMixin } from '@open-wc/dedupe-mixin';
-import '../../define/api-icon.js';
+import '../define/api-icon.js';
 
 export const dragEnterHandler = Symbol('dragEnterHandler');
 export const dragLeaveHandler = Symbol('dragLeaveHandler');

@@ -1,4 +1,4 @@
-import Element from "../src/elements/icons/ApiIconElement.js";
+import Element from "../elements/icons/ApiIconElement.js";
 
 window.customElements.define('api-icon', Element);
 

@@ -26,9 +26,13 @@ body {
   --dark-divider-opacity: 0.12;
   --link-color: #0047b2;
 
+  --anypoint-color-primary: rgba(0, 0, 0, 0.74);
+
   --anypoint-dropdown-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
   --anypoint-autocomplete-dropdown-shadow: var(--anypoint-dropdown-shadow);
   --anypoint-button-emphasis-high-background-color: var(--accent-color);
 
   --code-font-family: 'Roboto Mono', 'Consolas', 'Menlo', monospace;
+
+  --anypoint-menu-button-border-radius: 8px;
 }

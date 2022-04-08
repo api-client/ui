@@ -1,42 +1,41 @@
 export const EventTypes = Object.freeze({
-  Auth: Object.freeze({
-    createSession: 'storeauthcreatesession',
-    createAuthSession: 'storeauthcreateauthsession',
-    renewToken: 'storeauthrenewtoken',
-    authenticate: 'storeauthenticate',
-  }),
   Store: Object.freeze({
     info: 'storebackendinfo',
     initEnvironment: 'configstoreinitenv',
+    Global: Object.freeze({
+      setEnv: 'storesetgloablenvironment',
+    }),
+    Auth: Object.freeze({
+      isAuthenticated: 'storeaisauthenticated',
+      authenticate: 'storeauthenticate',
+    }),
+    File: Object.freeze({
+      list: 'storefileslist',
+      create: 'storefilescreate',
+      createDefault: 'storefilescreatedefault',
+      read: 'storefilesread',
+      patch: 'storefilespatch',
+      delete: 'storefilesdelete',
+      patchUsers: 'storefilespatchusers',
+      observeFiles: 'storefilesobservefiles',
+      unobserveFiles: 'storefilesunobservefiles',
+      State: Object.freeze({
+        change: 'storefileschange',
+      }),
+    }),
+    User: Object.freeze({
+      me: 'storeuserme',
+      list: 'storeuserlist',
+      read: 'storeuserread',
+    }),
+    History: Object.freeze({
+      create: 'storehistorycreate',
+      createBulk: 'storehistorycreatebulk',
+      list: 'storehistorylist',
+      delete: 'storehistorydelete',
+      read: 'storehistoryread',
+    }),
   }),
-  // Space: Object.freeze({
-  //   list: 'storespacelist',
-  //   create: 'storespacecreate',
-  //   read: 'storespaceread',
-  //   patch: 'storespacepatch',
-  //   delete: 'storespacedelete',
-  //   patchUsers: 'storespacepatchusers',
-  //   listUsers: 'storespacelistusers',
-  // }),
-  // Project: Object.freeze({
-  //   create: 'storeprojectcreate',
-  //   read: 'storeprojectread',
-  //   list: 'storeprojectlist',
-  //   delete: 'storeprojectdelete',
-  //   patch: 'storeprojectpatch',
-  // }),
-  // User: Object.freeze({
-  //   me: 'storeuserme',
-  //   list: 'storeuserlist',
-  //   read: 'storeuserread',
-  // }),
-  // History: Object.freeze({
-  //   create: 'storehistorycreate',
-  //   createBulk: 'storehistorycreatebulk',
-  //   list: 'storehistorylist',
-  //   delete: 'storehistorydelete',
-  //   read: 'storehistoryread',
-  // }),
   Config: Object.freeze({
     Environment: Object.freeze({
       add: 'configenvironmentadd',

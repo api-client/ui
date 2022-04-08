@@ -1,4 +1,4 @@
-import Element from "../src/elements/user/UserAvatarElement.js";
+import Element from "../elements/user/UserAvatarElement.js";
 
 window.customElements.define('user-avatar', Element);
 

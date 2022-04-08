@@ -1,6 +1,6 @@
 import { html, TemplateResult } from 'lit';
 import { DemoPage } from '../../../src/pages/demo/DemoPage.js';
-import '../../../define/api-icon.js';
+import '../../../src/define/api-icon.js';
 import * as icons from '../../../src/elements/icons/Icons.js';
 import { IconType } from '../../../src/elements/icons/Icons.js';
 

@@ -5,7 +5,7 @@ import { reactive } from '../../lib/decorators.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-menu-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-switch.js';
-import '../../../define/api-icon.js';
+import '../../define/api-icon.js';
 import styles from './DemoStyles.js';
 
 /**

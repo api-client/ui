@@ -1,10 +1,11 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable class-methods-use-this */
 import { html, TemplateResult } from 'lit';
+import {  IUser, Events as CoreEvents } from '@api-client/core/build/browser.js';
 import { RenderableMixin } from '../mixins/RenderableMixin.js';
 import { reactive } from '../lib/decorators.js';
 import { Events } from '../events/Events.js';
-import { HttpStore } from '../store/HttpStore.js';
+import '../define/alert-dialog.js';
 
 /**
  * A base class for pages build outside the LitElement. It uses `lit-html` 
@@ -56,6 +57,17 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
   @reactive()
   page?: string;
 
+  /**
+   * The current user.
+   * Call the `loadUser()` to populate this.
+   */
+  @reactive() protected user?: IUser;
+
+  /**
+   * True when the user meta is being loaded.
+   */
+  @reactive() protected loadingUser = false;
+
   constructor() {
     super();
     window.onunhandledrejection = this.unhandledRejectionHandler.bind(this);
@@ -85,11 +97,11 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
   reportCriticalError(message: string): void {
     /* eslint-disable-next-line no-console */
     console.error(message);
-    // const dialog = document.createElement('alert-dialog');
-    // dialog.message = message;
-    // dialog.modal = true;
-    // dialog.open();
-    // document.body.appendChild(dialog);
+    const dialog = document.createElement('alert-dialog');
+    dialog.message = message;
+    dialog.modal = true;
+    dialog.open();
+    document.body.appendChild(dialog);
   }
 
   unhandledRejectionHandler(e: PromiseRejectionEvent): void {
@@ -120,18 +132,29 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
    * 
    * Eventually it returns the HTTP store with an authenticated environment.
    */
-  protected async initializeStore(): Promise<HttpStore> {
+  protected async initializeStore(): Promise<void> {
     const env = await Events.Config.Environment.read();
     if (!env) {
       // TODO: ask for an environment
       throw new Error(`No environment.`);
     }
-    const store = HttpStore.fromEnvironment(env);
-    const info = await store.getStoreSessionToken();
-    if (info.new) {
-      await Events.Config.Environment.update(env);
+    await Events.Store.Global.setEnv(env);
+    const authStatus = await Events.Store.Auth.isAuthenticated();
+    if (!authStatus) {
+      // TODO: Should render a page with auth request.
+      await Events.Store.Auth.authenticate(true);
     }
-    return store;
+  }
+
+  async loadUser(): Promise<void> {
+    this.loadingUser = true;
+    try {
+      this.user = await Events.Store.User.me();
+    } catch (e) {
+      CoreEvents.Telemetry.exception(this.eventTarget, `Loading user: ${(e as Error).message}`);
+    } finally {
+      this.loadingUser = false;
+    }
   }
 
   pageTemplate(): TemplateResult {

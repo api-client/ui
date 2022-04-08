@@ -61,7 +61,8 @@ export default class ConfigAuthenticateScreen extends ApplicationScreen {
     this.authenticating = true;
     let info: ISessionInitInfo | undefined;
     try {
-      info = await Events.Auth.authenticate(env);
+      await Events.Store.Global.setEnv(env);
+      info = await Events.Store.Auth.authenticate(false);
     } finally {
       this.authenticating = false;
     }
