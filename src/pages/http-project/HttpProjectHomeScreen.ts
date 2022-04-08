@@ -3,11 +3,12 @@ import { html, TemplateResult, CSSResult } from 'lit';
 import { Events as CoreEvents, ProjectKind, WorkspaceKind, IFile } from '@api-client/core/build/browser.js';
 import { Events } from '../../events/Events.js';
 import { ApplicationScreen } from '../ApplicationScreen.js';
-import { reactive, route, routeInitializer } from '../../lib/decorators.js';
+import { reactive, route, routeInitializer, query } from '../../lib/decorators.js';
 import { IRouteResult } from '../../lib/decorators/route.js';
 import { buildRoute, navigate } from '../../lib/route.js';
 import styles from './HomeStyles.js';
 import layout from '../styles/layout.js';
+import ApiFilesElement from '../../elements/files/ApiFilesElement.js'
 import '../../define/user-avatar.js';
 import '../../define/api-icon.js';
 import '../../define/api-files.js';
@@ -24,18 +25,43 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
    */
   @reactive() protected parent?: string;
 
+  /**
+   * The list type to render.
+   * This is read from the config store and propagated down to the <api-files>.
+   */
+  @reactive() protected viewType?: 'grid' | 'list';
+
+  /**
+   * A reference to the `<main>` element which is a scroll target
+   */
+  @query('main', true)
+  main?: HTMLElement;
+
   @routeInitializer()
   async initialize(): Promise<void> {
     await this.initializeStore();
+    await this.readViewConfig();
     await this.observeFiles();
     this.initialized = true;
     // async to the initialization
     this.loadUser();
   }
 
-  async observeFiles(): Promise<void> {
+  protected async observeFiles(): Promise<void> {
     try {
       await Events.Store.File.observeFiles();
+    } catch (e) {
+      const err = e as Error;
+      CoreEvents.Telemetry.exception(this, err.message, false);
+    }
+  }
+
+  protected async readViewConfig(): Promise<void> {
+    try {
+      const type = await Events.Config.Local.get('view.list.type');
+      if (type) {
+        this.viewType = type as any;
+      }
     } catch (e) {
       const err = e as Error;
       CoreEvents.Telemetry.exception(this, err.message, false);
@@ -47,25 +73,25 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
   }
 
   @route({ pattern: '/recent', fallback: true, name: 'Recent', title: 'Recent projects' })
-  recentRoute(): void {
+  protected recentRoute(): void {
     this.resetRoute();
     this.page = 'recent';
   }
 
   @route({ pattern: '/files', name: 'Projects', title: 'Your projects' })
-  projectsRoute(): void {
+  protected projectsRoute(): void {
     this.resetRoute();
     this.page = 'files';
   }
 
   @route({ pattern: '/shared', name: 'Shared', title: 'Shared projects' })
-  sharedRoute(): void {
+  protected sharedRoute(): void {
     this.resetRoute();
     this.page = 'shared' as NavigationPage;
   }
 
   @route({ pattern: '/files/(?<key>.*)', name: 'Space', title: 'A space' })
-  spaceRoute(info: IRouteResult): void {
+  protected spaceRoute(info: IRouteResult): void {
     if (!info.params || !info.params.key) {
       throw new Error(`Invalid route configuration. Missing parameters.`);
     }
@@ -76,7 +102,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
   }
 
   @route({ pattern: '*' })
-  telemetryRoute(info: IRouteResult): void {
+  protected telemetryRoute(info: IRouteResult): void {
     CoreEvents.Telemetry.view(this.eventTarget, info.route.name || info.route.pattern || '/');
   }
 
@@ -89,6 +115,12 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     }
   }
 
+  protected _viewStateHandler(e: Event): void {
+    const list = e.target as ApiFilesElement;
+    const { viewType } = list;
+    Events.Config.Local.set('view.list.type', viewType);
+  }
+
   pageTemplate(): TemplateResult {
     const { initialized } = this;
     if (!initialized) {
@@ -96,14 +128,13 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     }
     return html`
       ${this.headerTemplate()}
-      <div class="page-content navigation">
-        ${this.navigationTemplate()}
-        ${this.mainTemplate()}
-      </div>
+      ${this.navigationTemplate()}
+      ${this.mainTemplate()}
+      ${this.footerTemplate()}
     `;
   }
 
-  headerTemplate(): TemplateResult {
+  protected headerTemplate(): TemplateResult {
     return html`
     <header class="start-page-header">
       <h1 class="start-page-header-title">HTTP Project</h1>
@@ -112,7 +143,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     `;
   }
 
-  navigationTemplate(): TemplateResult {
+  protected navigationTemplate(): TemplateResult {
     const { page } = this;
     return html`
     <nav aria-label="Application sections">
@@ -125,7 +156,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     `;
   }
 
-  mainTemplate(): TemplateResult {
+  protected mainTemplate(): TemplateResult {
     let template: TemplateResult;
     const p = this.page as NavigationPage;
     switch (p) {
@@ -139,27 +170,30 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     `;
   }
 
-  recentTemplate(): TemplateResult {
+  protected recentTemplate(): TemplateResult {
     return html`
     <h2 class="section-title text-selectable">Recent projects</h2>
     `;
   }
 
-  filesTemplate(): TemplateResult {
-    const { parent } = this;
+  protected filesTemplate(): TemplateResult {
+    const { parent, viewType } = this;
     const kinds = [ProjectKind];
     return html`
     <api-files 
       .parent="${parent}" 
       allowAdd 
       .kinds="${kinds}"
+      .viewType="${viewType || 'list'}"
+      .scrollTarget="${this.main}"
       listTitle="Your projects"
       @open="${this._fileOpenHandler}"
+      @viewstatechange="${this._viewStateHandler}"
     ></api-files>
     `;
   }
 
-  sharedTemplate(): TemplateResult {
+  protected sharedTemplate(): TemplateResult {
     return html`
     <h2 class="section-title text-selectable">Shared spaces</h2>
     `;

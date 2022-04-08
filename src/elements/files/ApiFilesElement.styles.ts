@@ -55,12 +55,18 @@ export default css`
   white-space: nowrap;
 }
 
-.selected-title {
+.selected-item {
   border: 1px var(--primary-color) solid;
   background-color: #e3f2fd;
 }
 
+table .selected-item {
+  border: none;
+}
 
+.selected-item td {
+  background-color: #e3f2fd;
+}
 
 .files-grid {
   display: grid;
@@ -91,6 +97,7 @@ export default css`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin-right: 12px;
 }
 
 .file-thumb {
@@ -109,6 +116,9 @@ export default css`
 .title-area {
   border-bottom: 1px rgba(0, 0, 0, 0.12) solid;
   margin-bottom: 40px;
+  position: sticky;
+  top: 0px;
+  background-color: var(--primary-background-color);
 }
 
 .dropdown-list-container {
@@ -121,4 +131,58 @@ export default css`
   min-width: 180px;
 }
 
+.files-list {
+  /* display: grid; */
+  border-collapse: collapse;
+  min-width: 100%;
+  /* grid-template-columns:
+    minmax(120px, 1fr)
+    minmax(100px, auto)
+    minmax(auto, 240px); */
+}
+
+th {
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.54);
+  /* position: sticky; */
+  /* top: 57px; */
+  /* background-color: #eeeeee; */
+}
+
+th, td {
+  font-size: 0.814rem;
+  text-align: start;
+}
+
+/* thead,
+tbody,
+tr {
+  display: contents;
+} */
+
+td,
+th {
+  border-bottom: 1px rgba(0, 0, 0, 0.12) solid;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+th,
+td {
+  padding: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name-column {
+  display: flex;
+  align-items: center;
+}
+
+.name-column .icon {
+  margin-right: 12px;
+}
 `;

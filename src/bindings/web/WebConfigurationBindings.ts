@@ -1,4 +1,4 @@
-import { get, set } from 'idb-keyval';
+import { get, set, del } from 'idb-keyval';
 import { Events } from '../../events/Events.js';
 import { ConfigurationBindings, EnvironmentsKey, TelemetryKey } from '../base/ConfigurationBindings.js';
 import { IConfigEnvironment, ITelemetryConfig } from '../../lib/config/Config.js';
@@ -175,5 +175,49 @@ export class WebConfigurationBindings extends ConfigurationBindings {
   async telemetrySet(config: ITelemetryConfig): Promise<void> {
     await set(TelemetryKey, config);
     Events.Config.Telemetry.State.set({ ...config });
+  }
+
+  /**
+   * Sets a config property that is permanently stored.
+   * This is not the same as application configuration. This can be used to store specific configuration 
+   * property for a single view.
+   * 
+   * @param key The key under to store the value.
+   * @param value The value to store. If this is not a primitive it will be serialized with `JSON.stringify()`.
+   */
+  async setLocalProperty(key: string, value: unknown): Promise<void> {
+    const storedValue = {
+      type: typeof value,
+      value,
+    };
+    await set(key, storedValue);
+  }
+
+  /**
+   * Reads a previously stored local value.
+   * 
+   * @param key The key under which the property was stored.
+   * @param globalKey If known, the key of the configuration property in the application 
+   * global configuration. When set and the value in the local storage is not set, then
+   * the config store reads the value from the application configuration. 
+   */
+  async getLocalProperty(key: string, globalKey?: string): Promise<unknown | undefined> {
+    const value = await get(key);
+    if (value) {
+      return value.value;
+    }
+    if (globalKey) {
+      // ...
+    }
+    return undefined;
+  }
+
+  /**
+   * Deletes previously stored local value.
+   * 
+   * @param key The key under which the property was stored.
+   */
+  async deleteLocalProperty(key: string): Promise<void> {
+    await del(key);
   }
 }

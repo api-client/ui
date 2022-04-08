@@ -7,7 +7,7 @@ Licensed under the CC-BY 2.0
 import { html, TemplateResult, LitElement, CSSResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
-import { 
+import {
   IListOptions, IBackendEvent, ProjectKind, IFile, WorkspaceKind, ISpaceCreateOptions,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
@@ -31,6 +31,8 @@ interface SelectionInfo {
   kind: string;
 }
 
+const pageLimit = 100;
+
 /**
  * An element that renders a list of files from the API store.
  * It can be configured to render different types of files via the `kinds` property.
@@ -52,6 +54,7 @@ interface SelectionInfo {
  * This allows to have a synchronized with the store list of files.
  * 
  * @fires open
+ * @fires viewstatechange
  */
 export default class ApiFilesElement extends LitElement {
   static get styles(): CSSResult[] {
@@ -92,7 +95,7 @@ export default class ApiFilesElement extends LitElement {
    * @default "grid"
    * @attribute
    */
-  @state() protected viewType: 'grid' | 'list' = 'grid';
+  @property({ type: String }) viewType: 'grid' | 'list' = 'grid';
 
   /**
    * The list of currently rendered files.
@@ -106,14 +109,47 @@ export default class ApiFilesElement extends LitElement {
 
   private _parent?: string;
 
+  private _scrollTarget?: EventTarget;
+
+  /**
+   * Set on the element to add support for user scrolling through the list.
+   * It is the reference to the parent element that is scrolling.
+   * 
+   * @default window
+   */
+  @property({ type: Object })
+  get scrollTarget(): EventTarget | undefined {
+    return this._scrollTarget;
+  }
+
+  set scrollTarget(value: EventTarget | undefined) {
+    const old = this._scrollTarget;
+    if (old === value) {
+      return;
+    }
+    this._scrollTarget = value;
+    if (old) {
+      old.removeEventListener('scroll', this._scrollHandler);
+    }
+    if (value) {
+      value.addEventListener('scroll', this._scrollHandler, { passive: true })
+    }
+  }
+
   /**
    * The currently rendered space key.
    * Setting the value will trigger reading files from the server.
    */
-  @property({ type: String }) 
+  @property({ type: String })
   get parent(): string | undefined {
     return this._parent;
   }
+
+  /**
+   * A flag that prevents from requesting more files when the previous
+   * file response returned no files.
+   */
+  private hasMoreFiles = true;
 
   set parent(value: string | undefined) {
     const old = this._parent;
@@ -141,6 +177,8 @@ export default class ApiFilesElement extends LitElement {
   constructor() {
     super();
     this._fileMetaHandler = this._fileMetaHandler.bind(this);
+    this._scrollHandler = this._scrollHandler.bind(this);
+    this.scrollTarget = window;
   }
 
   connectedCallback(): void {
@@ -157,29 +195,41 @@ export default class ApiFilesElement extends LitElement {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener(EventTypes.Store.File.State.change, this._fileMetaHandler);
+    this.scrollTarget = undefined;
   }
 
   private cleanup(): void {
     this.files = [];
     this.filesCursor = undefined;
     this.file = undefined;
+    this.hasMoreFiles = true;
   }
 
   async loadFiles(): Promise<void> {
-    if (!this.kinds) {
+    if (!this.kinds || !this.hasMoreFiles) {
       return;
     }
     this.loadingFiles = true;
     const opts: IListOptions = {};
     if (this.filesCursor) {
       opts.cursor = this.filesCursor;
-    } else if (this.parent) {
-      opts.parent = this.parent;
+    } else {
+      opts.limit = pageLimit;
+      if (this.parent) {
+        opts.parent = this.parent;
+      }
     }
     try {
       // @ts-ignore
       const result = await Events.Store.File.list(this.kinds!, opts);
-      this.files = result.data;
+      if (result.data.length) {
+        this.files = this.files.concat(result.data);
+        if (result.data.length < pageLimit) {
+          this.hasMoreFiles = false;
+        }
+      } else {
+        this.hasMoreFiles = false;
+      }
       this.filesCursor = result.cursor;
     } finally {
       this.loadingFiles = false;
@@ -193,6 +243,15 @@ export default class ApiFilesElement extends LitElement {
       this.file = result;
     } finally {
       this.loadingFile = false;
+    }
+  }
+
+  _scrollHandler(e: Event): void {
+    const target = e.target as HTMLElement;
+    const { scrollTop, offsetHeight, scrollHeight } = target;
+    const bottom = scrollTop + offsetHeight >= scrollHeight;
+    if (bottom) {
+      this.loadFiles();
     }
   }
 
@@ -329,9 +388,10 @@ export default class ApiFilesElement extends LitElement {
 
   protected _toggleViewTypeHandler(): void {
     this.viewType = this.viewType === 'grid' ? 'list' : 'grid';
+    this.dispatchEvent(new Event('viewstatechange'));
   }
 
-  protected _spaceKeydown(e: KeyboardEvent): void {
+  protected _filesKeydown(e: KeyboardEvent): void {
     if (e.key !== 'Enter') {
       return;
     }
@@ -348,6 +408,12 @@ export default class ApiFilesElement extends LitElement {
    * This handles helps to manage the selection state of the files.
    */
   protected _gridClickHandler(e: MouseEvent): void {
+    const node = e.target as HTMLElement;
+    const item = this._getListTarget(node);
+    if (!item) {
+      return;
+    }
+
     const { ctrlKey, shiftKey, metaKey } = e;
     const bulkSelection = shiftKey;
     const fineSelection = !bulkSelection && (ctrlKey || metaKey);
@@ -355,10 +421,43 @@ export default class ApiFilesElement extends LitElement {
     if (!isSelection && this.selected.length) {
       this.selected = [];
     }
+
+    const id = item.dataset.key as string;
+    const kind = item.dataset.kind as string;
+    const info: SelectionInfo = {
+      key: id,
+      kind,
+    };
+
+    if (!isSelection || fineSelection) {
+      this._toggleSelectedFile(info);
+      return;
+    }
+    // the user is selecting files in bulk
+    const last = this.selected[this.selected.length - 1];
+    if (!last) {
+      this._toggleSelectedFile(info);
+      return;
+    }
+    if (last.key === info.key) {
+      this._toggleSelectedFile(info);
+      return;
+    }
+    this._selectGridSelectionRange(last, info)
+  }
+
+  protected _tableClickHandler(e: MouseEvent): void {
     const node = e.target as HTMLElement;
     const item = this._getListTarget(node);
     if (!item) {
       return;
+    }
+    const { ctrlKey, shiftKey, metaKey } = e;
+    const bulkSelection = shiftKey;
+    const fineSelection = !bulkSelection && (ctrlKey || metaKey);
+    const isSelection = bulkSelection || fineSelection;
+    if (!isSelection && this.selected.length) {
+      this.selected = [];
     }
     const id = item.dataset.key as string;
     const kind = item.dataset.kind as string;
@@ -381,7 +480,7 @@ export default class ApiFilesElement extends LitElement {
       this._toggleSelectedFile(info);
       return;
     }
-    this._selectSelectionRange(last, info)
+    this._selectTableSelectionRange(last, info);
   }
 
   protected _getListTarget(node: HTMLElement): HTMLElement | undefined {
@@ -416,7 +515,7 @@ export default class ApiFilesElement extends LitElement {
    * @param from The from selection
    * @param to The to selection.
    */
-  protected _selectSelectionRange(from: SelectionInfo, to: SelectionInfo): void {
+  protected _selectGridSelectionRange(from: SelectionInfo, to: SelectionInfo): void {
     const fromElement = this.shadowRoot!.querySelector(`[data-key="${from.key}"]`) as HTMLElement;
     const toElement = this.shadowRoot!.querySelector(`[data-key="${to.key}"]`) as HTMLElement;
     const fromGrid = fromElement.parentElement as HTMLElement;
@@ -444,11 +543,30 @@ export default class ApiFilesElement extends LitElement {
       const toRight = fromIndex < toIndex;
       // Node, Array.splice's end is not included
       const startIndex = toRight ? fromIndex + 1 : toIndex;
-      const endIndex = toRight ? toIndex + 1 : fromIndex; 
+      const endIndex = toRight ? toIndex + 1 : fromIndex;
       children = fromChildren.slice(startIndex, endIndex);
     }
+    this._selectChildren(children);
+  }
+
+  protected _selectTableSelectionRange(from: SelectionInfo, to: SelectionInfo): void {
+    const fromElement = this.shadowRoot!.querySelector(`[data-key="${from.key}"]`) as HTMLElement;
+    const toElement = this.shadowRoot!.querySelector(`[data-key="${to.key}"]`) as HTMLElement;
+    const table = this.shadowRoot!.querySelector('table')!;
+    const children = Array.from(table.querySelectorAll('tbody tr'));
+    const fromIndex = children.indexOf(fromElement);
+    const toIndex = children.indexOf(toElement);
+    const toBottom = fromIndex < toIndex;
+    // Node, Array.splice's end is not included
+    const startIndex = toBottom ? fromIndex + 1 : toIndex;
+    const endIndex = toBottom ? toIndex + 1 : fromIndex;
+    const items = children.slice(startIndex, endIndex);
+    this._selectChildren(items);
+  }
+
+  protected _selectChildren(items: Element[]): void {
     const { selected } = this;
-    children.forEach((child) => {
+    items.forEach((child) => {
       const elm = child as HTMLElement;
       const id = elm.dataset.key as string;
       const kind = elm.dataset.kind as string;
@@ -486,36 +604,35 @@ export default class ApiFilesElement extends LitElement {
   }
 
   render(): TemplateResult {
-    const { viewType, listTitle } = this;
+    const { listTitle, loadingFiles } = this;
     return html`
+    ${loadingFiles ? html`<anypoint-progress indeterminate></anypoint-progress>` : ''}
     <div class="title-area">
       <h2 class="section-title text-selectable">${listTitle}</h2>
       <div class="right">
         ${this.spaceBaseControls()}
       </div>
     </div>
-    ${viewType === 'grid' ? this.filesGridTemplate() : this.fileListTemplate()}
+    ${this.filesTemplate()}
     `;
   }
 
-  spaceBaseControls(): TemplateResult {
-    const { viewType, anypoint, kinds=[] } = this;
+  protected spaceBaseControls(): TemplateResult {
+    const { viewType, anypoint, kinds = [] } = this;
     const list = [WorkspaceKind, ...kinds];
     return html`
     <anypoint-menu-button dynamicAlign ?anypoint="${anypoint}" closeOnActivate>
-      <anypoint-icon-button
-        slot="dropdown-trigger"
-        aria-label="Press to select a type of file to add"
-        title="Add a new file or space. Press to select the type."
-        ?anypoint="${anypoint}"
-      >
+      <anypoint-icon-button slot="dropdown-trigger" aria-label="Press to select a type of file to add"
+        title="Add a new file or space. Press to select the type." ?anypoint="${anypoint}">
         <api-icon icon="add"></api-icon>
       </anypoint-icon-button>
-      <anypoint-listbox class="dropdown-list-container" slot="dropdown-content" ?anypoint="${anypoint}" @select="${this._addMenuHandler}" attrForSelected="data-value">
+      <anypoint-listbox class="dropdown-list-container" slot="dropdown-content" ?anypoint="${anypoint}"
+        @select="${this._addMenuHandler}" attrForSelected="data-value">
         ${list.map(kind => this._addFileOptionTemplate(kind))}
       </anypoint-listbox>
     </anypoint-menu-button>
-    <anypoint-icon-button title="Toggles between list and grid view" aria-label="Selected view is ${viewType}" @click="${this._toggleViewTypeHandler}">
+    <anypoint-icon-button title="Toggles between list and grid view" aria-label="Selected view is ${viewType}"
+      @click="${this._toggleViewTypeHandler}">
       <api-icon icon="${viewType === 'grid' ? 'viewGrid' : 'viewList'}"></api-icon>
     </anypoint-icon-button>
     `;
@@ -531,13 +648,8 @@ export default class ApiFilesElement extends LitElement {
     `;
   }
 
-  filesGridTemplate(): TemplateResult {
-    const { files, loadingFiles } = this;
-    if (loadingFiles) {
-      return html`
-      <anypoint-progress indeterminate></anypoint-progress>
-      `;
-    }
+  protected filesTemplate(): TemplateResult {
+    const { files, viewType } = this;
     if (!files || !files.length) {
       return html`
       <p class="empty-info">
@@ -546,32 +658,77 @@ export default class ApiFilesElement extends LitElement {
       ${this.spacesIntroduction()}
       `;
     }
-
     const spaces = files.filter(i => i.kind === WorkspaceKind);
     const projects = files.filter(i => i.kind === ProjectKind);
+    if (viewType === 'grid') {
+      return this.filesGridTemplate(spaces, projects);
+    }
+    return this.fileListTemplate(spaces, projects);
+  }
+
+  protected filesGridTemplate(spaces: IFile[], projects: IFile[]): TemplateResult {
     return html`
-    <section class="spaces-grid" @click="${this._gridClickHandler}" @dblclick="${this._gridDblHandler}" @keydown="${this._spaceKeydown}">
+    <section class="spaces-grid" @click="${this._gridClickHandler}" @dblclick="${this._gridDblHandler}"
+      @keydown="${this._filesKeydown}">
       ${spaces.map((item) => this.spaceTileTemplate(item))}
     </section>
     <div class="files-section-title">Files</div>
-    <section class="files-grid" @click="${this._gridClickHandler}" @dblclick="${this._gridDblHandler}" @keydown="${this._spaceKeydown}">
+    <section class="files-grid" @click="${this._gridClickHandler}" @dblclick="${this._gridDblHandler}"
+      @keydown="${this._filesKeydown}">
       ${projects.map((item) => this.fileTileTemplate(item))}
     </section>
     `;
   }
 
-  fileListTemplate(): TemplateResult {
+  protected fileListTemplate(spaces: IFile[], projects: IFile[]): TemplateResult {
     return html`
-    TODO: render list
+    <table class="files-list" @click="${this._tableClickHandler}" @dblclick="${this._gridDblHandler}"
+      @keydown="${this._filesKeydown}">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Owner</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${spaces.map((item) => this.fileListItemTemplate(item))}
+        ${projects.map((item) => this.fileListItemTemplate(item))}
+      </tbody>
+    </table>
     `;
   }
 
-  spaceTileTemplate(item: IFile): TemplateResult {
+  protected fileListItemTemplate(file: IFile): TemplateResult {
+    const { selected } = this;
+    const { info, key, kind } = file;
+    const title = info.name || DefaultNamesMap[kind];
+    const icon = IconsMap[kind];
+    const classes = {
+      'selected-item': selected.some(i => i.key === key),
+      'file-list-item': true,
+    };
+    const time = new Date(file.lastModified.time);
+    return html`
+    <tr class="${classMap(classes)}" data-key="${key}" data-kind="${kind}" tabindex="0">
+      <td class="name-column" aria-label="${AddLabelsMap[kind] || 'File'}: ${title},">
+        <api-icon icon="${icon}" class="icon"></api-icon>
+        <div class="file-name">${title}</div>
+      </td>
+      <td aria-label="Updated by: me,">me</td>
+      <td>
+        <time-ago datetime="${time.toISOString()}"></time-ago>
+      </td>
+    </tr>
+    `;
+  }
+
+  protected spaceTileTemplate(item: IFile): TemplateResult {
     const { selected } = this;
     const { info, key, kind } = item;
     const title = info.name || DefaultNamesMap[kind];
     const classes = {
-      'selected-title': selected.some(i => i.key === key),
+      'selected-item': selected.some(i => i.key === key),
       'space-tile': true,
     };
     return html`
@@ -579,18 +736,18 @@ export default class ApiFilesElement extends LitElement {
       <div class="space-icon">
         <api-icon icon="folder" class="icon"></api-icon>
       </div>
-      <div class="space-label">${title}</div>
+      <div class="space-label" aria-label="${AddLabelsMap[kind] || 'Folder'}: ${title}">${title}</div>
     </div>
     `;
   }
 
-  fileTileTemplate(item: IFile): TemplateResult {
+  protected fileTileTemplate(item: IFile): TemplateResult {
     const { selected } = this;
     const { info, key, kind } = item;
     const title = info.name || DefaultNamesMap[kind];
     const icon = IconsMap[kind];
     const classes = {
-      'selected-title': selected.some(i => i.key === key),
+      'selected-item': selected.some(i => i.key === key),
       'file-tile': true,
     };
     return html`
@@ -600,19 +757,16 @@ export default class ApiFilesElement extends LitElement {
       </div>
       <div class="tile-label">
         <api-icon icon="${icon}" class="icon"></api-icon>
-        <span class="file-label">${title}</span>
+        <span class="file-label" aria-label="${AddLabelsMap[kind] || 'File'}: ${title}" title="${title}">${title}</span>
       </div>
     </div>
     `;
   }
 
-  // const time = new Date(item.lastModified.time);
-  // <div>Updated: <time-ago datetime="${time.toISOString()}"></time-ago></div>
-
-  spacesIntroduction(): TemplateResult {
+  protected spacesIntroduction(): TemplateResult {
     return html`
     <div class="introduction">
-      <b>Spaces</b> allow you to organize your work. When using a network store a space can be shared with 
+      <b>Spaces</b> allow you to organize your work. When using a network store a space can be shared with
       other users.
     </div>
     `;

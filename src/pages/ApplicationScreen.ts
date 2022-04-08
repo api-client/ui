@@ -164,4 +164,8 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
     }
     return html``;
   }
+
+  protected footerTemplate(): TemplateResult {
+    return html`<footer>Credits: Pawel Uchida-Psztyc</footer>`;
+  }
 }

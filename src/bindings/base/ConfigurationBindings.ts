@@ -16,9 +16,15 @@ export abstract class ConfigurationBindings extends PlatformBindings {
     window.addEventListener(EventTypes.Config.Environment.read, this.readEnvironmentHandler.bind(this));
     window.addEventListener(EventTypes.Config.Environment.delete, this.removeEnvironmentHandler.bind(this));
     window.addEventListener(EventTypes.Config.Environment.setDefault, this.setDefault.bind(this));
+
     window.addEventListener(EventTypes.Config.Session.get, this.getSessionHandler.bind(this));
     window.addEventListener(EventTypes.Config.Session.set, this.setSessionHandler.bind(this));
     window.addEventListener(EventTypes.Config.Session.delete, this.deleteSessionHandler.bind(this));
+
+    window.addEventListener(EventTypes.Config.Local.get, this.getLocalHandler.bind(this));
+    window.addEventListener(EventTypes.Config.Local.set, this.setLocalHandler.bind(this));
+    window.addEventListener(EventTypes.Config.Local.delete, this.deleteLocalHandler.bind(this));
+
     window.addEventListener(EventTypes.Config.Telemetry.read, this.telemetryReadHandler.bind(this));
     window.addEventListener(EventTypes.Config.Telemetry.set, this.telemetrySetHandler.bind(this));
   }
@@ -69,6 +75,24 @@ export abstract class ConfigurationBindings extends PlatformBindings {
     const e = input as CustomEvent;
     e.preventDefault();
     e.detail.result = this.deleteSessionProperty(e.detail.key);
+  }
+
+  protected getLocalHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.getLocalProperty(e.detail.key, e.detail.globalKey);
+  }
+
+  protected setLocalHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.setLocalProperty(e.detail.key, e.detail.value);
+  }
+
+  protected deleteLocalHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.deleteLocalProperty(e.detail.key);
   }
 
   protected telemetryReadHandler(input: Event): void {
@@ -152,4 +176,31 @@ export abstract class ConfigurationBindings extends PlatformBindings {
    * @param config The configuration to set.
    */
   abstract telemetrySet(config: ITelemetryConfig): Promise<void>;
+
+  /**
+   * Sets a config property that is permanently stored.
+   * This is not the same as application configuration. This can be used to store specific configuration 
+   * property for a single view.
+   * 
+   * @param key The key under to store the value.
+   * @param value The value to store. If this is not a primitive it will be serialized with `JSON.stringify()`.
+   */
+  abstract setLocalProperty(key: string, value: unknown): Promise<void>;
+
+  /**
+   * Reads a previously stored local value.
+   * 
+   * @param key The key under which the property was stored.
+   * @param globalKey If known, the key of the configuration property in the application 
+   * global configuration. When set and the value in the local storage is not set, then
+   * the config store reads the value from the application configuration. 
+   */
+  abstract getLocalProperty(key: string, globalKey?: string): Promise<unknown | undefined>;
+
+  /**
+   * Deletes previously stored local value.
+   * 
+   * @param key The key under which the property was stored.
+   */
+  abstract deleteLocalProperty(key: string): Promise<void>;
 }
