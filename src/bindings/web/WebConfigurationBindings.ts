@@ -1,19 +1,14 @@
 import { get, set, del } from 'idb-keyval';
 import { Events } from '../../events/Events.js';
 import { ConfigurationBindings, EnvironmentsKey, TelemetryKey } from '../base/ConfigurationBindings.js';
-import { IConfigEnvironment, ITelemetryConfig } from '../../lib/config/Config.js';
-
-interface IEnvConfig {
-  current?: string;
-  environments: IConfigEnvironment[];
-}
+import { IConfigEnvironment, ITelemetryConfig, IEnvConfig } from '../../lib/config/Config.js';
 
 /**
  * Application configuration bindings that handles storing application configuration
  * on the web platform.
  */
 export class WebConfigurationBindings extends ConfigurationBindings {
-  protected async readEnvironments(): Promise<IEnvConfig> {
+  async readEnvironments(): Promise<IEnvConfig> {
     let data = await get(EnvironmentsKey) as IEnvConfig;
     if (!data) {
       data = {

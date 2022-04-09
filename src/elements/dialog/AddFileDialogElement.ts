@@ -1,11 +1,10 @@
-/* eslint-disable lit-a11y/no-autofocus */
 import { TemplateResult, html, CSSResult, css, } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { AnypointDialogElement } from '@anypoint-web-components/awc';
 import dialogStyles from '@anypoint-web-components/awc/dist/styles/AnypointDialogInternalStyles.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
-import { IconsMap, DefaultNamesMap, AddLabelsMap } from './FileMaps.js';
+import { IconsMap, DefaultNamesMap, AddLabelsMap } from '../files/FileMaps.js';
 import '../../define/api-icon.js';
 
 /**
@@ -141,8 +140,7 @@ export default class AddFileDialogElement extends AnypointDialogElement {
           infoMessage="The name for the ${label}"
           invalidMessage="The name is required. Please, enter ${label} name." 
           required 
-          autoValidate 
-          autofocus
+          autoValidate
           placeholder="${placeholder}"
           @input="${this._inputHandler}"
           @keydown="${this._inputKeydownHandler}"

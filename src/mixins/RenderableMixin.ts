@@ -187,6 +187,8 @@ export const RenderableMixin = dedupeMixin(<T extends Constructor<any>>(superCla
       }
       if (!this.firstRendered) {
         this.firstRendered = true;
+        // cleanup any pre-existing content.
+        Array.from(root.childNodes).forEach(node => node.parentNode?.removeChild(node));
         setTimeout(() => this.firstRender());
       }
       render(this.pageTemplate(), root, {  host: this, });

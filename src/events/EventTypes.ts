@@ -43,6 +43,7 @@ export const EventTypes = Object.freeze({
       delete: 'configenvironmentdelete',
       setDefault: 'configenvironmentsetdefault',
       update: 'configenvironmentupdate',
+      list: 'configenvironmentlist',
       State: Object.freeze({
         created: 'configenvironmentcreated',
         deleted:'configenvironmentdeleted',
@@ -77,6 +78,9 @@ export const EventTypes = Object.freeze({
   Navigation: Object.freeze({
     HttpProject: Object.freeze({
       open: 'navigationprojectopen',
+    }),
+    Store: Object.freeze({
+      config: 'navigationstoreconfig',
     }),
   }),
 });

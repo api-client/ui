@@ -1,4 +1,4 @@
-import Element from "../elements/files/AddFileDialogElement.js";
+import Element from "../elements/dialog/AddFileDialogElement.js";
 
 window.customElements.define('add-file-dialog', Element);
 

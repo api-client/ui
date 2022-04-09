@@ -7,7 +7,7 @@ import '@anypoint-web-components/awc/dist/define/anypoint-radio-group.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import { ApplicationScreen } from '../ApplicationScreen.js';
 import styles from './AnalyticsStyles.js';
-import layout from '../styles/layout.js';
+import layout from '../styles/global-styles.js';
 import { reactive } from '../../lib/decorators.js';
 import { ITelemetryConfig, TelemetryLevel } from '../../lib/config/Config.js';
 

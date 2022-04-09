@@ -30,7 +30,7 @@ export default class AlertDialogElement extends AnypointDialogElement {
     ];
   }
 
-  @property() message?: string;
+  @property({ type: String }) message?: string;
   
 
   constructor() {

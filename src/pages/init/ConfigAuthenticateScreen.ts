@@ -1,11 +1,10 @@
-/* eslint-disable lit-a11y/no-autofocus */
 import { html, TemplateResult, CSSResult } from 'lit';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-progress.js';
 import { ApplicationScreen } from '../ApplicationScreen.js';
 import { reactive } from '../../lib/decorators.js';
 import styles from './ConfigAuthStyles.js';
-import layout from '../styles/layout.js';
+import layout from '../styles/global-styles.js';
 import { Events } from '../../events/Events.js';
 import { IConfigEnvironment } from '../../lib/config/Config.js';
 import { ISessionInitInfo } from '../../store/HttpStore.js';

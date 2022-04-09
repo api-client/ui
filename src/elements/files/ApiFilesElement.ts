@@ -8,7 +8,7 @@ import { html, TemplateResult, LitElement, CSSResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import {
-  IListOptions, IBackendEvent, ProjectKind, IFile, WorkspaceKind, ISpaceCreateOptions,
+  IListOptions, IBackendEvent, ProjectKind, IFile, WorkspaceKind, IFileCreateOptions,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { AnypointListboxElement } from '@anypoint-web-components/awc';
@@ -23,7 +23,7 @@ import '../../define/api-icon.js';
 import { Events } from '../../events/Events.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import styles from './ApiFilesElement.styles.js';
-import layout from '../../pages/styles/layout.js';
+import layout from '../../pages/styles/global-styles.js';
 import { IconsMap, DefaultNamesMap, AddLabelsMap } from './FileMaps.js';
 
 interface SelectionInfo {
@@ -173,6 +173,13 @@ export default class ApiFilesElement extends LitElement {
    * The list of ids of currently selected files.
    */
   @state() protected selected: SelectionInfo[] = [];
+
+  /**
+   * Whether theres's a selection made in the file browser.
+   */
+  get hasSelection(): boolean {
+    return this.selected.length > 0;
+  }
 
   constructor() {
     super();
@@ -365,7 +372,7 @@ export default class ApiFilesElement extends LitElement {
 
   protected async createFile(name: string, kind: string): Promise<void> {
     const { parent } = this;
-    const opts: ISpaceCreateOptions = {};
+    const opts: IFileCreateOptions = {};
     if (parent) {
       opts.parent = parent;
     }

@@ -1,21 +1,12 @@
 body,
 html {
-  /* background-color: #F5F5F5; */
-  height: 100%;
-  margin: 0;
-  padding: 0;
   font-family: 'Roboto', 'Noto', sans-serif;
   font-size: 16px;
-  user-select: none;
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
   background-color: #fff;
+  color: #000;
 }
 
 body {
-  color: #000;
   --error-color: #f44336;
   --accent-color: #2196f3;
   --primary-text-color: #000;
@@ -25,6 +16,7 @@ body {
   --secondary-background-color: #ffffff;
   --dark-divider-opacity: 0.12;
   --link-color: #0047b2;
+  --disabled-text-color: rgba(0, 0, 0, 0.38);
 
   --anypoint-color-primary: rgba(0, 0, 0, 0.74);
 
@@ -35,4 +27,8 @@ body {
   --code-font-family: 'Roboto Mono', 'Consolas', 'Menlo', monospace;
 
   --anypoint-menu-button-border-radius: 8px;
+}
+
+a {
+  color: var(--link-color);
 }

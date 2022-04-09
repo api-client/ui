@@ -90,8 +90,10 @@ export class HttpStore {
 
   /**
    * Creates a session in the store and authenticates the user when needed.
+   * @param env Optional environment to authenticate if should be different than the current
+   * @param force Forces logging in even when the token is valid.
    */
-  async getStoreSessionToken(env = this.env): Promise<ISessionInitInfo> {
+  async getStoreSessionToken(env = this.env, force = false): Promise<ISessionInitInfo> {
     if (!env) {
       throw new Error(`The environment either has to be set on the HttpStore class or passed as an argument.`);
     }
@@ -102,7 +104,7 @@ export class HttpStore {
       new: false,
     };
     
-    if (result.token) {
+    if (!force && result.token) {
       const user = await this.sdk.http.get(meUri, { token: result.token });
       if (user.status === 200) {
         env.authenticated = true;

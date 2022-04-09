@@ -1,9 +1,8 @@
 import { uuidV4, IBackendInfo } from '@api-client/core/build/browser.js';
-import { IConfigInit } from '../../events/StoreEvents.js';
 import { Events } from '../../events/Events.js';
 import { HttpStore } from '../../store/HttpStore.js';
 import { StoreBindings } from '../base/StoreBindings.js';
-import { IConfigEnvironment } from '../../lib/config/Config.js';
+import { IConfigEnvironment, IConfigInit } from '../../lib/config/Config.js';
 import { navigatePage } from '../../lib/route.js';
 import { EnvironmentsKey } from '../base/ConfigurationBindings.js';
 
@@ -33,19 +32,14 @@ export class WebStoreBindings extends StoreBindings {
    * it redirects the current window to the authentication dialog.
    */
   async initStoreEnvironment(init: IConfigInit): Promise<void> {
-    let store: HttpStore;
-    if (init.source === 'local-store') {
-      store = new HttpStore(this.storeBaseUri);
-    } else {
-      store = new HttpStore(init.location as string);
-    }
     const env: IConfigEnvironment = {
       key: uuidV4(),
-      location: store.url,
+      location: init.source === 'local-store' ? this.storeBaseUri : init.location as string,
       name: init.name || 'Default',
       source: init.source,
       authenticated: false,
     };
+    const store = new HttpStore(env);
     const info = await store.sdk.store.getInfo();
     if (info.mode === 'single-user') {
       // this store does not require authentication but does require setting up 
@@ -53,12 +47,16 @@ export class WebStoreBindings extends StoreBindings {
       await store.getStoreSessionToken(env);
       // this event is handled by the application controller 
       // and redirects the user to the next step.
-      await Events.Config.Environment.add(env, true);
-    } else {
+      await Events.Config.Environment.add(env, init.reason === 'first-run');
+    } else if (init.reason === 'first-run') {
       // the store needs authentication. We redirect the user to the 
       // authentication screen.
       await Events.Config.Session.set(`${EnvironmentsKey}.creating`, env);
       navigatePage('ConfigAuthenticate.html');
+    } else if (init.reason === 'add') {
+      // this is adding an environment from the configuration screen.
+      // We save the configuration in the store.
+      await Events.Config.Environment.add(env, false);
     }
     // http://localhost:8487/v1/
     // http://localhost:8489/v1/

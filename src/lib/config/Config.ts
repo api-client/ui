@@ -48,3 +48,17 @@ export interface ITelemetryConfig {
    */
   level: TelemetryLevel;
 }
+
+export interface IEnvConfig {
+  current?: string;
+  environments: IConfigEnvironment[];
+}
+
+export type ConfigInitReason = 'first-run' | 'add';
+
+export interface IConfigInit {
+  source: DataSourceType;
+  reason: ConfigInitReason;
+  location?: string;
+  name?: string;
+}

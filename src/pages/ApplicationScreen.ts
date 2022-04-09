@@ -1,10 +1,12 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable class-methods-use-this */
 import { html, TemplateResult } from 'lit';
-import {  IUser, Events as CoreEvents } from '@api-client/core/build/browser.js';
+import { IUser, Events as CoreEvents } from '@api-client/core/build/browser.js';
 import { RenderableMixin } from '../mixins/RenderableMixin.js';
 import { reactive } from '../lib/decorators.js';
 import { Events } from '../events/Events.js';
+import { EventTypes } from '../events/EventTypes.js';
+import { IConfigEnvironment } from '../lib/config/Config.js';
 import '../define/alert-dialog.js';
 
 /**
@@ -21,26 +23,22 @@ import '../define/alert-dialog.js';
  * meaning, when the property change it calls the `render()` function.
  */
 export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
-  @reactive()
-  eventTarget: EventTarget = window;
+  @reactive() eventTarget: EventTarget = window;
 
   /** 
    * True when the app should render mobile friendly view.
    */
-  @reactive()
-  isMobile = false;
+  @reactive() isMobile = false;
 
   /** 
    * The loading state information.
    */
-  @reactive()
-  loadingStatus = 'Initializing the application...';
+  @reactive() loadingStatus = 'Initializing the application...';
 
   /**
    * Whether to render Anypoint theme.
    */
-  @reactive()
-  anypoint = false;
+  @reactive() anypoint = false;
 
   /**
    * A flag telling the application screen that the logic is initialized.
@@ -48,14 +46,12 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
    * The page can request different initialization logics. When the logic is
    * loaded the flag is set to true.
    */
-  @reactive()
-  initialized = false;
+  @reactive() initialized = false;
 
   /**
    * The page on the screen currently being rendered.
    */
-  @reactive()
-  page?: string;
+  @reactive() page?: string;
 
   /**
    * The current user.
@@ -67,6 +63,10 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
    * True when the user meta is being loaded.
    */
   @reactive() protected loadingUser = false;
+  
+  @reactive() protected authenticated = false;
+
+  protected pendingResolver?: (value: void | PromiseLike<void>) => void;
 
   constructor() {
     super();
@@ -95,19 +95,61 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
    * @param message The message to render
    */
   reportCriticalError(message: string): void {
-    /* eslint-disable-next-line no-console */
-    console.error(message);
-    const dialog = document.createElement('alert-dialog');
-    dialog.message = message;
-    dialog.modal = true;
-    dialog.open();
-    document.body.appendChild(dialog);
+    try {
+      const dialog = document.createElement('alert-dialog');
+      dialog.message = message;
+      dialog.modal = true;
+      dialog.open();
+      document.body.appendChild(dialog);
+    } catch (e) {
+      /* eslint-disable-next-line no-console */  
+      console.error(e);
+    }
   }
 
   unhandledRejectionHandler(e: PromiseRejectionEvent): void {
     /* eslint-disable-next-line no-console */
     console.error(e);
     this.reportCriticalError(e.reason);
+  }
+
+  /**
+   * Called from the initialize store init flow when the user is not authenticated
+   * and the auth screen is rendered.
+   */
+  protected async _authHandler(): Promise<void> {
+    await Events.Store.Auth.authenticate(true);
+    this.authenticated = true;
+    const { pendingResolver } = this;
+    if (pendingResolver) {
+      this.pendingResolver = undefined;
+      pendingResolver();
+    }
+  }
+
+  protected _storeConfigHandler(): void {
+    const handler = (e: Event): void => {
+      let ok = false;
+      if (e.type === EventTypes.Config.Environment.State.defaultChange) {
+        ok = true;
+      } else {
+        const custom = e as CustomEvent;
+        ok = !!custom.detail.asDefault;
+      }
+      if (!ok) {
+        return;
+      }
+      window.removeEventListener(EventTypes.Config.Environment.State.created, handler);
+      window.removeEventListener(EventTypes.Config.Environment.State.defaultChange, handler);
+      const { pendingResolver } = this;
+      if (pendingResolver) {
+        this.pendingResolver = undefined;
+        pendingResolver();
+      }
+    };
+    window.addEventListener(EventTypes.Config.Environment.State.created, handler);
+    window.addEventListener(EventTypes.Config.Environment.State.defaultChange, handler);
+    Events.Navigation.Store.config();
   }
 
   /**
@@ -131,19 +173,38 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
    * when necessary. 
    * 
    * Eventually it returns the HTTP store with an authenticated environment.
+   * 
+   * @param defaultFlows When set to `true` is renders default pages for env selector 
+   * or when to authenticate. When false it throws errors instead. Default to `true`.
    */
-  protected async initializeStore(): Promise<void> {
-    const env = await Events.Config.Environment.read();
+  protected async initializeStore(defaultFlows = true): Promise<void> {
+    let env: IConfigEnvironment | undefined;
+    try {
+      env = await Events.Config.Environment.read();
+    } catch (e) { 
+      if (!defaultFlows) {
+        throw e;
+      }
+    }
     if (!env) {
-      // TODO: ask for an environment
-      throw new Error(`No environment.`);
+      return new Promise((resolve) => {
+        this.pendingResolver = resolve;
+        this.page = 'env-required';
+      });
     }
     await Events.Store.Global.setEnv(env);
     const authStatus = await Events.Store.Auth.isAuthenticated();
     if (!authStatus) {
-      // TODO: Should render a page with auth request.
-      await Events.Store.Auth.authenticate(true);
+      if (!defaultFlows) {
+        throw new Error(`Not authenticated.`);
+      }
+      return new Promise((resolve) => {
+        this.pendingResolver = resolve;
+        this.page = 'auth-required';
+      });
     }
+    this.authenticated = true;
+    return undefined;
   }
 
   async loadUser(): Promise<void> {
@@ -160,12 +221,65 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
   pageTemplate(): TemplateResult {
     const { initialized } = this;
     if (!initialized) {
+      if (this.page) {
+        return html`
+        ${this.renderInitFlowPage()}
+        `;
+      }
       return this.loaderTemplate();
     }
     return html``;
   }
 
+  protected headerTemplate(): TemplateResult {
+    return html`
+    <header>Welcome</header>
+    `;
+  }
+
+  protected mainTemplate(): TemplateResult {
+    return html`<main></main>`;
+  }
+
   protected footerTemplate(): TemplateResult {
     return html`<footer>Credits: Pawel Uchida-Psztyc</footer>`;
+  }
+
+  protected navigationTemplate(): TemplateResult {
+    return html`<nav></nav>`;
+  }
+
+  protected renderInitFlowPage(): TemplateResult {
+    switch (this.page) {
+      case 'auth-required': return this.renderAuthRequired();
+      case 'env-required': return this.renderEnvRequired();
+      default: return html`<p class="general-error">Unknown state</p>`;
+    }
+  }
+
+  /**
+   * Renders a full page overlay with the authentication required message.
+   */
+  protected renderAuthRequired(): TemplateResult {
+    return html`
+    <div class="auth-required-screen">
+      <h1>Authentication required</h1>
+      <p class="message">You are not authenticated. To continue, please, authenticate your account.</p>
+      <anypoint-button emphasis="high" @click="${this._authHandler}">Authenticate</anypoint-button>
+    </div>
+    `;
+  }
+
+  protected renderEnvRequired(): TemplateResult {
+    return html`
+    <div class="auth-required-screen">
+      <h1>Environment configuration missing</h1>
+      <p class="message">
+        The application is unable to determine which environment to use.
+        Open the <b>store configuration</b> screen to configure the connection.
+      </p>
+      <anypoint-button emphasis="high" @click="${this._storeConfigHandler}">Configure store</anypoint-button>
+    </div>
+    `;
   }
 }

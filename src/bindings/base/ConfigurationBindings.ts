@@ -1,6 +1,6 @@
 import { PlatformBindings } from './PlatformBindings.js';
 import { EventTypes } from '../../events/EventTypes.js';
-import { IConfigEnvironment, ITelemetryConfig } from '../../lib/config/Config.js';
+import { IConfigEnvironment, ITelemetryConfig, IEnvConfig } from '../../lib/config/Config.js';
 
 export const KeyPrefix = 'api-client.config.';
 export const EnvironmentsKey = `${KeyPrefix}environments`;
@@ -15,7 +15,8 @@ export abstract class ConfigurationBindings extends PlatformBindings {
     window.addEventListener(EventTypes.Config.Environment.update, this.updateEnvironmentHandler.bind(this));
     window.addEventListener(EventTypes.Config.Environment.read, this.readEnvironmentHandler.bind(this));
     window.addEventListener(EventTypes.Config.Environment.delete, this.removeEnvironmentHandler.bind(this));
-    window.addEventListener(EventTypes.Config.Environment.setDefault, this.setDefault.bind(this));
+    window.addEventListener(EventTypes.Config.Environment.setDefault, this.setDefaultHandler.bind(this));
+    window.addEventListener(EventTypes.Config.Environment.list, this.listEnvironmentsHandler.bind(this));
 
     window.addEventListener(EventTypes.Config.Session.get, this.getSessionHandler.bind(this));
     window.addEventListener(EventTypes.Config.Session.set, this.setSessionHandler.bind(this));
@@ -53,10 +54,16 @@ export abstract class ConfigurationBindings extends PlatformBindings {
     e.detail.result = this.removeEnvironment(e.detail.id);
   }
 
-  protected setDefault(input: Event): void {
+  protected setDefaultHandler(input: Event): void {
     const e = input as CustomEvent;
     e.preventDefault();
     e.detail.result = this.setDefaultEnvironment(e.detail.id);
+  }
+
+  protected listEnvironmentsHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.readEnvironments();
   }
 
   protected getSessionHandler(input: Event): void {
@@ -142,6 +149,11 @@ export abstract class ConfigurationBindings extends PlatformBindings {
    * @param id The key of the environment to set as default.
    */
   abstract setDefaultEnvironment(id: string): Promise<void>;
+
+  /**
+   * Lists all environments in the store.
+   */
+  abstract readEnvironments(): Promise<IEnvConfig>;
 
   /**
    * Sets a config property that is held in the storage only for the time of the current session.

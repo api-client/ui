@@ -1,4 +1,3 @@
-/* eslint-disable lit-a11y/no-autofocus */
 import { html, TemplateResult, CSSResult } from 'lit';
 import { AnypointRadioButtonElement, AnypointRadioGroupElement, AnypointInputElement } from '@anypoint-web-components/awc';
 import '@anypoint-web-components/awc/dist/define/anypoint-radio-button.js';
@@ -9,11 +8,10 @@ import '@anypoint-web-components/awc/dist/define/anypoint-dialog.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-progress.js';
 import { ApplicationScreen } from '../ApplicationScreen.js';
 import { reactive } from '../../lib/decorators.js';
-import { DataSourceType } from '../../lib/config/Config.js';
+import { DataSourceType, IConfigInit, ConfigInitReason } from '../../lib/config/Config.js';
 import styles from './ConfigInitStyles.js';
-import layout from '../styles/layout.js';
+import globalStyles from '../styles/global-styles.js';
 import { Events } from '../../events/Events.js';
-import { IConfigInit } from '../../events/StoreEvents.js';
 
 /**
  * The very first screen to render to the user when initializing the application 
@@ -24,40 +22,53 @@ import { IConfigInit } from '../../events/StoreEvents.js';
  */
 export default class ConfigInitScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
-    return [styles, layout];
+    return [styles, globalStyles];
   }
 
   /**
    * The selected store type.
    */
-  @reactive()
-  storeType?: DataSourceType;
+  @reactive() storeType?: DataSourceType;
 
   /**
    * Whether the dialog with the help message is opened.
    */
-  @reactive()
-  infoDialogOpened = false;
+  @reactive() infoDialogOpened = false;
 
   /**
    * A network store validation error, if any.
    */
-  @reactive()
-  validationError?: string;
+  @reactive() validationError?: string;
 
   /**
    * Whether the application is performing the store validation.
    */
-  @reactive()
-  validating = false;
+  @reactive() validating = false;
 
   /**
    * The application name to render in the title.
    */
   appName = 'API Projects';
 
+  /**
+   * Init reason to pass with the create event.
+   */
+  initReason: ConfigInitReason = 'first-run';
+
   async initialize(): Promise<void> {
-    // ...
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('appName')) {
+      this.appName = url.searchParams.get('appName') as string;
+    } else if (url.searchParams.has('app-name')) {
+      this.appName = url.searchParams.get('app-name') as string;
+    }
+
+    if (url.searchParams.has('initReason')) {
+      this.initReason = url.searchParams.get('initReason') as ConfigInitReason;
+    } else if (url.searchParams.has('init-reason')) {
+      this.initReason = url.searchParams.get('init-reason') as ConfigInitReason;
+    }
+    this.initialized = true;
   }
 
   protected _sourceHandler(e: Event): void {
@@ -70,7 +81,8 @@ export default class ConfigInitScreen extends ApplicationScreen {
     this.storeType = radio.value as DataSourceType;
   }
 
-  protected _helpHandler(): void {
+  protected _helpHandler(e: Event): void {
+    e.preventDefault();
     this.infoDialogOpened = true;
   }
 
@@ -101,11 +113,14 @@ export default class ConfigInitScreen extends ApplicationScreen {
       if (!location) {
         return undefined;
       }
+      if (location.endsWith('/')) {
+        location = location.substring(0, location.length - 1);
+      }
     }
     const info: IConfigInit = {
       source: this.storeType,
       location,
-      reason: 'first-run',
+      reason: this.initReason as ConfigInitReason,
     };
     return info;
   }
@@ -142,6 +157,10 @@ export default class ConfigInitScreen extends ApplicationScreen {
    * @returns Application page template
    */
   pageTemplate(): TemplateResult {
+    const { initialized } = this;
+    if (!initialized) {
+      return super.pageTemplate();
+    }
     return html`
     <main class="config-init">
       <form class="form">
@@ -177,8 +196,8 @@ export default class ConfigInitScreen extends ApplicationScreen {
     return html`
     <div class="data-source">
       <anypoint-radio-group @select="${this._sourceHandler}" attrForSelected="value" aria-labelledby="dataSourceMessage">
-        <anypoint-radio-button class="data-option" name="source" value="local-store">Local store</anypoint-radio-button>
-        <anypoint-radio-button class="data-option" name="source" value="network-store">Network store</anypoint-radio-button>
+        <anypoint-radio-button ?checked="${this.storeType === 'local-store'}" class="data-option" name="source" value="local-store">Local store</anypoint-radio-button>
+        <anypoint-radio-button ?checked="${this.storeType === 'network-store'}" class="data-option" name="source" value="network-store">Network store</anypoint-radio-button>
       </anypoint-radio-group>
     </div>
     `;
@@ -230,7 +249,7 @@ export default class ConfigInitScreen extends ApplicationScreen {
       </section>
       <div class="buttons">
         <anypoint-button>Learn more</anypoint-button>
-        <anypoint-button data-dialog-confirm autofocus>Close</anypoint-button>
+        <anypoint-button data-dialog-confirm>Close</anypoint-button>
       </div>
     </anypoint-dialog>
     `;

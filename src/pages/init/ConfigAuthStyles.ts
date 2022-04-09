@@ -1,6 +1,10 @@
 import { css } from 'lit';
 
 export default css`
+#app {
+  display: flex;
+}
+
 .config-init {
   flex: 1;
   display: flex;

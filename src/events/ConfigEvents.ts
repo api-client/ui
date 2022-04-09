@@ -1,5 +1,5 @@
 import { EventTypes } from './EventTypes.js';
-import { ITelemetryConfig, IConfigEnvironment } from '../lib/config/Config.js';
+import { ITelemetryConfig, IConfigEnvironment, IEnvConfig } from '../lib/config/Config.js';
 
 export const ConfigEvents = Object.freeze({
   Environment: Object.freeze({
@@ -100,6 +100,23 @@ export const ConfigEvents = Object.freeze({
       target.dispatchEvent(e);
       return ((e.detail.result as unknown) as Promise<void>);
     },
+    /**
+     * Lists all configured environments.
+     * 
+     * @param target Optional events target.
+     */
+    list: async (target: EventTarget = document.body): Promise<IEnvConfig> => {
+      const e = new CustomEvent(EventTypes.Config.Environment.list, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<IEnvConfig>);
+    },
 
     State: Object.freeze({
       /**
@@ -117,7 +134,6 @@ export const ConfigEvents = Object.freeze({
           detail: {
             env,
             isDefault,
-            result: undefined,
           },
         });
         target.dispatchEvent(e);
@@ -135,7 +151,6 @@ export const ConfigEvents = Object.freeze({
           composed: true,
           detail: {
             id,
-            result: undefined,
           },
         });
         target.dispatchEvent(e);
@@ -153,7 +168,6 @@ export const ConfigEvents = Object.freeze({
           composed: true,
           detail: {
             env,
-            result: undefined,
           },
         });
         target.dispatchEvent(e);
@@ -171,7 +185,6 @@ export const ConfigEvents = Object.freeze({
           composed: true,
           detail: {
             id,
-            result: undefined,
           },
         });
         target.dispatchEvent(e);

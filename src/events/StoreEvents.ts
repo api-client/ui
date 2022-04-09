@@ -1,21 +1,12 @@
 /* eslint-disable no-redeclare */
 import { 
-  IBackendInfo, IListOptions, WorkspaceKind, ProjectKind, IListResponse, IFile, ISpaceCreateOptions,
+  IBackendInfo, IListOptions, WorkspaceKind, ProjectKind, IListResponse, IFile, IFileCreateOptions,
   IHttpProject, AccessOperation, IBackendEvent, IUser,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
-import { DataSourceType, IConfigEnvironment } from '../lib/config/Config.js';
+import { IConfigEnvironment, IConfigInit } from '../lib/config/Config.js';
 import { EventTypes } from './EventTypes.js';
 import { ISessionInitInfo } from '../store/HttpStore.js';
-
-export type ConfigInitReason = 'first-run';
-
-export interface IConfigInit {
-  source: DataSourceType;
-  reason: ConfigInitReason;
-  location?: string;
-  name?: string;
-}
 
 /**
  * Reads file metadata from the store.
@@ -170,16 +161,20 @@ export const StoreEvents = Object.freeze({
      * Authenticates the current environment, if needed.
      * 
      * @param update Whether to update the stored environment configuration when the token was renewed.
+     * @param env Optional environment to authenticated if different than default
+     * @param force Whether to force authentication.
      * @param target Optional events target.
      * @returns The session information.
      */
-    authenticate: async (update?: boolean, target: EventTarget=document.body): Promise<ISessionInitInfo> => {
+    authenticate: async (update?: boolean, env?: IConfigEnvironment, force?: boolean, target: EventTarget=document.body): Promise<ISessionInitInfo> => {
       const e = new CustomEvent(EventTypes.Store.Auth.authenticate, {
         bubbles: true,
         cancelable: true,
         composed: true,
         detail: {
           update,
+          env,
+          force,
           result: undefined,
         },
       });
@@ -215,7 +210,7 @@ export const StoreEvents = Object.freeze({
      * @param opts Optional options when creating a file
      * @returns The key of the creates file.
      */
-    create: async (file: IFile | IHttpProject, opts?: ISpaceCreateOptions, target: EventTarget=document.body): Promise<string> => {
+    create: async (file: IFile | IHttpProject, opts?: IFileCreateOptions, target: EventTarget=document.body): Promise<string> => {
       const e = new CustomEvent(EventTypes.Store.File.create, {
         bubbles: true,
         cancelable: true,
@@ -241,7 +236,7 @@ export const StoreEvents = Object.freeze({
      * @param opts Optional options when creating a file
      * @returns The key of the creates file.
      */
-    createDefault: async (name: string, kind: string, opts?: ISpaceCreateOptions, target: EventTarget=document.body): Promise<string> => {
+    createDefault: async (name: string, kind: string, opts?: IFileCreateOptions, target: EventTarget=document.body): Promise<string> => {
       const e = new CustomEvent(EventTypes.Store.File.createDefault, {
         bubbles: true,
         cancelable: true,

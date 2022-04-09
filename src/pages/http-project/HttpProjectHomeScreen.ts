@@ -1,4 +1,3 @@
-/* eslint-disable lit-a11y/no-autofocus */
 import { html, TemplateResult, CSSResult } from 'lit';
 import { Events as CoreEvents, ProjectKind, WorkspaceKind, IFile } from '@api-client/core/build/browser.js';
 import { Events } from '../../events/Events.js';
@@ -7,7 +6,8 @@ import { reactive, route, routeInitializer, query } from '../../lib/decorators.j
 import { IRouteResult } from '../../lib/decorators/route.js';
 import { buildRoute, navigate } from '../../lib/route.js';
 import styles from './HomeStyles.js';
-import layout from '../styles/layout.js';
+import globalStyles from '../styles/global-styles.js';
+import layout from '../styles/grid-hnmf.js';
 import ApiFilesElement from '../../elements/files/ApiFilesElement.js'
 import '../../define/user-avatar.js';
 import '../../define/api-icon.js';
@@ -17,7 +17,7 @@ type NavigationPage = 'files' | 'recent' | 'shared';
 
 export default class HttpProjectHomeScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
-    return [styles, layout];
+    return [styles, globalStyles, layout];
   }
 
   /**
@@ -103,7 +103,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
 
   @route({ pattern: '*' })
   protected telemetryRoute(info: IRouteResult): void {
-    CoreEvents.Telemetry.view(this.eventTarget, info.route.name || info.route.pattern || '/');
+    CoreEvents.Telemetry.view(this.eventTarget || window, info.route.name || info.route.pattern || '/');
   }
 
   protected _fileOpenHandler(e: CustomEvent): void {

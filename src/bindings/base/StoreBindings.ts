@@ -1,15 +1,14 @@
 /* eslint-disable no-dupe-class-members */
 import { 
   IBackendInfo, ProjectKind, WorkspaceKind, IListOptions, IListResponse, IFile,
-  IHttpProject, ISpaceCreateOptions, AccessOperation, IUser, IBackendEvent,
+  IHttpProject, IFileCreateOptions, AccessOperation, IUser, IBackendEvent,
   Workspace, HttpProject
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { PlatformBindings } from './PlatformBindings.js';
 import { Events } from '../../events/Events.js';
 import { EventTypes } from '../../events/EventTypes.js';
-import { IConfigInit } from '../../events/StoreEvents.js';
-import { IConfigEnvironment } from '../../lib/config/Config.js';
+import { IConfigEnvironment, IConfigInit } from '../../lib/config/Config.js';
 import { ISessionInitInfo, HttpStore } from '../../store/HttpStore.js';
 
 /**
@@ -72,7 +71,7 @@ export abstract class StoreBindings extends PlatformBindings {
   protected storeAuthHandler(input: Event): void {
     const e = input as CustomEvent;
     e.preventDefault();
-    e.detail.result = this.authenticateStore(e.detail.update);
+    e.detail.result = this.authenticateStore(e.detail.update, e.detail.env, e.detail.force);
   }
 
   protected setGlobalEnvHandler(input: Event): void {
@@ -171,7 +170,7 @@ export abstract class StoreBindings extends PlatformBindings {
    */
   async isAuthenticated(env?: IConfigEnvironment): Promise<boolean> {
     let { store } = this;
-    if (!store && env) {
+    if (env) {
       store = new HttpStore(env);
     }
     if (!store) {
@@ -185,14 +184,17 @@ export abstract class StoreBindings extends PlatformBindings {
    * 
    * @param updateEnvironment When true it stores the environment data when the session was renewed.
    */
-  async authenticateStore(updateEnvironment = true): Promise<ISessionInitInfo> {
-    const { store } = this;
+  async authenticateStore(updateEnvironment = true, env?: IConfigEnvironment, force?: boolean): Promise<ISessionInitInfo> {
+    let { store } = this;
+    if (env) {
+      store = new HttpStore(env);
+    }
     if (!store) {
       throw new Error(`Environment is not set.`);
     }
-    const result = await store.getStoreSessionToken();
+    const result = await store.getStoreSessionToken(undefined, force);
     if (updateEnvironment && result.new) {
-      await Events.Config.Environment.update(this.globalEnvironment!);
+      await Events.Config.Environment.update(env || this.globalEnvironment!);
     }
     return result;
   }
@@ -232,7 +234,7 @@ export abstract class StoreBindings extends PlatformBindings {
    * @param opts Optional options when creating a file
    * @returns The key of the creates file.
    */
-  async createFile(file: IFile | IHttpProject, opts?: ISpaceCreateOptions): Promise<string> {
+  async createFile(file: IFile | IHttpProject, opts?: IFileCreateOptions): Promise<string> {
     const { store } = this;
     if (!store) {
       throw new Error(`Environment is not set.`);
@@ -248,7 +250,7 @@ export abstract class StoreBindings extends PlatformBindings {
    * @param opts Optional create options
    * @returns The key of the created file.
    */
-  async createDefaultFile(name: string, kind: string, opts?: ISpaceCreateOptions): Promise<string> {
+  async createDefaultFile(name: string, kind: string, opts?: IFileCreateOptions): Promise<string> {
     switch (kind) {
       case ProjectKind: return this.createDefaultProject(name, opts);
       case WorkspaceKind: return this.createDefaultWorkspace(name, opts);
@@ -264,7 +266,7 @@ export abstract class StoreBindings extends PlatformBindings {
    * @param opts Create options.
    * @returns The key of the created file.
    */
-  async createDefaultProject(name: string, opts?: ISpaceCreateOptions): Promise<string> {
+  async createDefaultProject(name: string, opts?: IFileCreateOptions): Promise<string> {
     const { store } = this;
     if (!store) {
       throw new Error(`Environment is not set.`);
@@ -280,7 +282,7 @@ export abstract class StoreBindings extends PlatformBindings {
    * @param opts Create options.
    * @returns The key of the created file.
    */
-  async createDefaultWorkspace(name: string, opts?: ISpaceCreateOptions): Promise<string> {
+  async createDefaultWorkspace(name: string, opts?: IFileCreateOptions): Promise<string> {
     const { store } = this;
     if (!store) {
       throw new Error(`Environment is not set.`);

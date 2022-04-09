@@ -18,4 +18,17 @@ export const NavigationEvents = Object.freeze({
       target.dispatchEvent(e);
     },
   }),
+  Store: Object.freeze({
+    /**
+     * Requests the application to open the screen with the store configuration.
+     */
+    config: (target: EventTarget=document.body): void => {
+      const e = new Event(EventTypes.Navigation.Store.config, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      });
+      target.dispatchEvent(e);
+    },
+  }),
 });
