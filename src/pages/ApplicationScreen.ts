@@ -72,6 +72,7 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
     super();
     window.onunhandledrejection = this.unhandledRejectionHandler.bind(this);
     this.initMediaQueries();
+    this.initStoreChange();
   }
 
   /**
@@ -88,6 +89,25 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
     mql.addEventListener('change', (e) => {
       this.isMobile = e.matches;
     });
+  }
+
+  initStoreChange(): void {
+    window.addEventListener(EventTypes.Config.Environment.State.defaultChange, (e: Event) => {
+      const event = e as CustomEvent;
+      const id = event.detail.id as string;
+      this.storeChanged(id);
+    });
+  }
+
+  /**
+   * Override in a child class to implement a logic that runs when the default 
+   * store change in the configuration.
+   * 
+   * @param id The id of the activated environment. When missing it means there's no default environment.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async storeChanged(id?: string): Promise<void> {
+    // .
   }
 
   /**
@@ -212,7 +232,7 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
     try {
       this.user = await Events.Store.User.me();
     } catch (e) {
-      CoreEvents.Telemetry.exception(this.eventTarget, `Loading user: ${(e as Error).message}`);
+      CoreEvents.Telemetry.exception(this.eventTarget || window, `Loading user: ${(e as Error).message}`);
     } finally {
       this.loadingUser = false;
     }
@@ -253,7 +273,7 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
     switch (this.page) {
       case 'auth-required': return this.renderAuthRequired();
       case 'env-required': return this.renderEnvRequired();
-      default: return html`<p class="general-error">Unknown state</p>`;
+      default: return html`<p class="general-error">Unknown state. Did you set the <i>initialized</i> flag?</p>`;
     }
   }
 

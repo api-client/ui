@@ -16,6 +16,8 @@ export class WebStoreBindings extends StoreBindings {
    */
   storeBaseUri: string;
 
+  channel: BroadcastChannel;
+
   /**
    * @param storeBaseUri The base URI of the "local" store to be used when the user chooses 
    * the local store over the 
@@ -23,6 +25,7 @@ export class WebStoreBindings extends StoreBindings {
   constructor(storeBaseUri: string) {
     super();
     this.storeBaseUri = storeBaseUri;
+    this.channel = new BroadcastChannel('api-store');
   }
 
   /**

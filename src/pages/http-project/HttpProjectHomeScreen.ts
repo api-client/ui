@@ -47,12 +47,31 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     this.loadUser();
   }
 
+  async storeChanged(): Promise<void> {
+    this.initialized = false;
+    await this.unobserveFiles();
+    await this.initializeStore();
+    await this.observeFiles();
+    await this.loadUser();
+    this.initialized = true;
+    navigate('files');
+  }
+
   protected async observeFiles(): Promise<void> {
     try {
       await Events.Store.File.observeFiles();
     } catch (e) {
       const err = e as Error;
-      CoreEvents.Telemetry.exception(this, err.message, false);
+      CoreEvents.Telemetry.exception(this.eventTarget, err.message, false);
+    }
+  }
+
+  protected async unobserveFiles(): Promise<void> {
+    try {
+      await Events.Store.File.unobserveFiles();
+    } catch (e) {
+      const err = e as Error;
+      CoreEvents.Telemetry.exception(this.eventTarget, err.message, false);
     }
   }
 
@@ -64,7 +83,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
       }
     } catch (e) {
       const err = e as Error;
-      CoreEvents.Telemetry.exception(this, err.message, false);
+      CoreEvents.Telemetry.exception(this.eventTarget, err.message, false);
     }
   }
 

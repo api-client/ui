@@ -1,6 +1,5 @@
-import { get, set, del } from 'idb-keyval';
-import { Events } from '../../events/Events.js';
-import { ConfigurationBindings, EnvironmentsKey, TelemetryKey } from '../base/ConfigurationBindings.js';
+import { ConfigurationBindings } from '../base/ConfigurationBindings.js';
+import { IoCommand, IoEvent, IoNotification } from '../base/PlatformBindings.js';
 import { IConfigEnvironment, ITelemetryConfig, IEnvConfig } from '../../lib/config/Config.js';
 
 /**
@@ -8,18 +7,45 @@ import { IConfigEnvironment, ITelemetryConfig, IEnvConfig } from '../../lib/conf
  * on the web platform.
  */
 export class WebConfigurationBindings extends ConfigurationBindings {
-  async readEnvironments(): Promise<IEnvConfig> {
-    let data = await get(EnvironmentsKey) as IEnvConfig;
-    if (!data) {
-      data = {
-        environments: [],
-      };
-    }
-    return data;
+  worker?: SharedWorker;
+
+  async initialize(): Promise<void> {
+    await super.initialize();
+    await this.createWorker();
   }
 
-  protected async writeEnvironments(data: IEnvConfig): Promise<void> {
-    await set(EnvironmentsKey, data);
+  async createWorker(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const worker = new SharedWorker('/demo/lib/io/AppConfig.ts', {
+        type: 'module',
+      });
+      worker.port.start();
+      worker.onerror = (): void => reject(new Error('Unable to initialize the IO process.'));
+      this.worker = worker;
+      const binder = this._ioHandler.bind(this);
+      worker.port.addEventListener('message', function init () {
+        worker.port.removeEventListener('message', init);
+        worker.port.addEventListener('message', binder);
+        resolve();
+      });
+    });
+  }
+
+  protected _ioHandler(e: MessageEvent): void {
+    const event = e.data as IoCommand | IoEvent | IoNotification;
+    this.handleIoMessage(event);
+  }
+
+  protected sendIoCommand(cmd: IoCommand): void {
+    const { worker } = this;
+    if (!worker) {
+      throw new Error(`IO not ready.`);
+    }
+    worker.port.postMessage(cmd);
+  }
+
+  async readEnvironments(): Promise<IEnvConfig> {
+    return this.invoke('readEnvironments');
   }
 
   /**
@@ -30,13 +56,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
    * @param asDefault Whether to set this environment asd default. Default to `false`.
    */
   async addEnvironment(env: IConfigEnvironment, asDefault = false): Promise<void> {
-    const data = await this.readEnvironments();
-    data.environments.push(env);
-    if (asDefault) {
-      data.current = env.key;
-    }
-    await this.writeEnvironments(data);
-    Events.Config.Environment.State.created({ ...env }, asDefault);
+    return this.invoke('addEnvironment', env, asDefault);
   }
 
   /**
@@ -45,14 +65,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
    * @param env The environment to update
    */
   async updateEnvironment(env: IConfigEnvironment): Promise<void> {
-    const data = await this.readEnvironments();
-    const index = data.environments.findIndex(i => i.key === env.key);
-    if (index < 0) {
-      throw new Error(`The environment does not exist. Maybe use "add" instead?`);
-    }
-    data.environments[index] = env;
-    await this.writeEnvironments(data);
-    Events.Config.Environment.State.updated({ ...env });
+    return this.invoke('updateEnvironment', env);
   }
 
   /**
@@ -61,16 +74,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
    * @param id The key of the environment to read. When not set it reads the default environment.
    */
   async readEnvironment(id?: string): Promise<IConfigEnvironment> {
-    const data = await this.readEnvironments();
-    const key = id || data.current;
-    if (!key) {
-      throw new Error(`No default environment.`);
-    }
-    const env = data.environments.find(i => i.key === key);
-    if (!env) {
-      throw new Error(`The environment is not found. Reinitialize application configuration.`);
-    }
-    return env;
+    return this.invoke('readEnvironment', id);
   }
 
   /**
@@ -78,16 +82,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
    * @param id The key of the environment to remove.
    */
   async removeEnvironment(id: string): Promise<void> {
-    const data = await this.readEnvironments();
-    const index = data.environments.findIndex(i => i.key === id);
-    if (index >= 0) {
-      data.environments.splice(index, 1);
-    }
-    if (data.current === id) {
-      delete data.current;
-    }
-    await this.writeEnvironments(data);
-    Events.Config.Environment.State.deleted(id);
+    await this.invoke('removeEnvironment', id);
   }
 
   /**
@@ -96,14 +91,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
    * @param id The key of the environment to set as default.
    */
   async setDefaultEnvironment(id: string): Promise<void> {
-    const data = await this.readEnvironments();
-    const hasEnv = data.environments.some(i => i.key === id);
-    if (!hasEnv) {
-      throw new Error(`The environment is not defined: ${id}`);
-    }
-    data.current = id;
-    await this.writeEnvironments(data);
-    Events.Config.Environment.State.defaultChange(id);
+    await this.invoke('setDefaultEnvironment', id);
   }
 
   /**
@@ -153,13 +141,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
    * Reads the set telemetry configuration. If the configuration is missing a default value is returned.
    */
   async telemetryRead(): Promise<ITelemetryConfig> {
-    let data = await get(TelemetryKey) as ITelemetryConfig;
-    if (!data) {
-      data = {
-        level: 'noting',
-      };
-    }
-    return data;
+    return this.invoke('telemetryRead');
   }
 
   /**
@@ -168,8 +150,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
    * @param config The configuration to set.
    */
   async telemetrySet(config: ITelemetryConfig): Promise<void> {
-    await set(TelemetryKey, config);
-    Events.Config.Telemetry.State.set({ ...config });
+    return this.invoke('telemetrySet', config);
   }
 
   /**
@@ -181,11 +162,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
    * @param value The value to store. If this is not a primitive it will be serialized with `JSON.stringify()`.
    */
   async setLocalProperty(key: string, value: unknown): Promise<void> {
-    const storedValue = {
-      type: typeof value,
-      value,
-    };
-    await set(key, storedValue);
+    return this.invoke('setLocalProperty', key, value);
   }
 
   /**
@@ -197,14 +174,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
    * the config store reads the value from the application configuration. 
    */
   async getLocalProperty(key: string, globalKey?: string): Promise<unknown | undefined> {
-    const value = await get(key);
-    if (value) {
-      return value.value;
-    }
-    if (globalKey) {
-      // ...
-    }
-    return undefined;
+    return this.invoke('getLocalProperty', key, globalKey);
   }
 
   /**
@@ -213,6 +183,6 @@ export class WebConfigurationBindings extends ConfigurationBindings {
    * @param key The key under which the property was stored.
    */
   async deleteLocalProperty(key: string): Promise<void> {
-    await del(key);
+    return this.invoke('deleteLocalProperty', key);
   }
 }

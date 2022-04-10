@@ -78,14 +78,18 @@ export class HttpStore {
     if (!token) {
       return false;
     }
-    const meUri = this.sdk.getUrl(RouteBuilder.usersMe()).toString();
-    const user = await this.sdk.http.get(meUri, { token });
-    const ok = user.status === 200;
-    if (ok) {
-      env.authenticated = true;
-      this.sdk.token = token;
+    try {
+      const meUri = this.sdk.getUrl(RouteBuilder.usersMe()).toString();
+      const user = await this.sdk.http.get(meUri, { token });
+      const ok = user.status === 200;
+      if (ok) {
+        env.authenticated = true;
+        this.sdk.token = token;
+      }
+      return user.status === 200;
+    } catch (e) {
+      return false;
     }
-    return user.status === 200;
   }
 
   /**

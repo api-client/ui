@@ -68,7 +68,7 @@ export default class StoreConfigScreen extends ConfigInitScreen {
       this.config = await Events.Config.Environment.list();
     } catch (e) {
       const err = e as Error;
-      CoreEvents.Telemetry.exception(this, err.message, true);
+      CoreEvents.Telemetry.exception(window, err.message, true);
       this.reportCriticalError('Unable to load the list of environments.');
     } finally {
       this.loadingEnvironments = false;
