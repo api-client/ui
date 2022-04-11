@@ -8,7 +8,7 @@ import { html, TemplateResult, LitElement, CSSResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import {
-  IListOptions, IBackendEvent, ProjectKind, IFile, WorkspaceKind, IFileCreateOptions,
+  IListOptions, IBackendEvent, ProjectKind, IFile, WorkspaceKind, IFileCreateOptions, IUser,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { AnypointListboxElement } from '@anypoint-web-components/awc';
@@ -19,6 +19,7 @@ import '@anypoint-web-components/awc/dist/define/anypoint-listbox.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-item.js';
 import '@github/time-elements/dist/time-ago-element.js';
 import '../../define/add-file-dialog.js';
+import '../../define/share-file.js';
 import '../../define/api-icon.js';
 import { Events } from '../../events/Events.js';
 import { EventTypes } from '../../events/EventTypes.js';
@@ -98,6 +99,30 @@ export default class ApiFilesElement extends LitElement {
   @property({ type: String }) viewType: 'grid' | 'list' = 'grid';
 
   /**
+   * Allows to perform multi selection on the files list.
+   */
+  @property({ type: Boolean }) multiSelect = false;
+
+  /**
+   * Whether to allow to share selected file(s)
+   * User may not be authorized to share a file.
+   */
+  @property({ type: Boolean }) canShare = false;
+
+  /**
+   * Whether to allow to trash selected file(s)
+   * User may not be authorized to trash a file.
+   */
+  @property({ type: Boolean }) canTrash = false;
+
+  /**
+   * The type of view to render.
+   * By default it renders the "owned" type which are the user files.
+   * When set to shared it requests for files that has been shared with the user.
+   */
+  @property({ type: String }) type: 'owned' | 'shared' = 'owned';
+
+  /**
    * The list of currently rendered files.
    */
   @state() protected files: IFile[] = [];
@@ -145,12 +170,6 @@ export default class ApiFilesElement extends LitElement {
     return this._parent;
   }
 
-  /**
-   * A flag that prevents from requesting more files when the previous
-   * file response returned no files.
-   */
-  private hasMoreFiles = true;
-
   set parent(value: string | undefined) {
     const old = this._parent;
     if (old === value) {
@@ -163,6 +182,12 @@ export default class ApiFilesElement extends LitElement {
       this.loadFile(value);
     }
   }
+
+  /**
+   * A flag that prevents from requesting more files when the previous
+   * file response returned no files.
+   */
+  private hasMoreFiles = true;
 
   /**
    * The file metadata for the `parent`
@@ -180,6 +205,11 @@ export default class ApiFilesElement extends LitElement {
   get hasSelection(): boolean {
     return this.selected.length > 0;
   }
+
+  /**
+   * The current user to pass to the share file component.
+   */
+  @property({ type: Object }) user?: IUser;
 
   constructor() {
     super();
@@ -210,25 +240,31 @@ export default class ApiFilesElement extends LitElement {
     this.filesCursor = undefined;
     this.file = undefined;
     this.hasMoreFiles = true;
+    this.selected = [];
   }
 
   async loadFiles(): Promise<void> {
     if (!this.kinds || !this.hasMoreFiles) {
       return;
     }
+    const { type, parent, filesCursor } = this;
+    const kinds = this.kinds as any[];
+
     this.loadingFiles = true;
     const opts: IListOptions = {};
-    if (this.filesCursor) {
-      opts.cursor = this.filesCursor;
+    if (filesCursor) {
+      opts.cursor = filesCursor;
     } else {
       opts.limit = pageLimit;
-      if (this.parent) {
-        opts.parent = this.parent;
+      if (parent) {
+        opts.parent = parent;
       }
     }
+    const useShared = type === 'shared' && !parent;
     try {
-      // @ts-ignore
-      const result = await Events.Store.File.list(this.kinds!, opts);
+      const result = useShared ?
+        await Events.Store.File.listShared(kinds, opts) :
+        await Events.Store.File.list(kinds, opts);
       if (result.data.length) {
         this.files = this.files.concat(result.data);
         if (result.data.length < pageLimit) {
@@ -295,7 +331,7 @@ export default class ApiFilesElement extends LitElement {
     }
     const index = this.files.findIndex(i => i.key === id);
     if (index >= 0) {
-      this.files.splice(index);
+      this.files.splice(index, 1);
     }
     if (id === this.parent) {
       this.parent = undefined;
@@ -328,11 +364,20 @@ export default class ApiFilesElement extends LitElement {
     }
     const has = this.files.find(i => i.key === id);
     if (has) {
-      // owner receives this too, however, the update event (should be next) updates the
-      // source object.
       return;
     }
-    const file = await Events.Store.File.read(id as string, false)
+    const file = await Events.Store.File.read(id as string, false);
+    // prohibits adding a shared file to the root of user files.
+    const hasParents = !!file.parents && !!file.parents.length;
+    if (hasParents) {
+      return;
+    }
+    if (!hasParents && this.type === 'owned') {
+      if (!this.user || file.owner !== this.user?.key) {
+        // either the user is not an owner or we can't determine that.
+        return;
+      }
+    }
     this.files.push(file);
     this.requestUpdate();
   }
@@ -347,7 +392,7 @@ export default class ApiFilesElement extends LitElement {
     }
     const index = this.files.findIndex(i => i.key === id);
     if (index >= 0) {
-      this.files.splice(index);
+      this.files.splice(index, 1);
       this.requestUpdate();
     }
   }
@@ -384,7 +429,7 @@ export default class ApiFilesElement extends LitElement {
     if (filesIndex < 0) {
       return;
     }
-    this.files.splice(filesIndex);
+    this.files.splice(filesIndex, 1);
     const selectedIndex = this.selected.findIndex(i => i.key === id);
     if (selectedIndex >= 0) {
       this.selected.splice(selectedIndex, 1);
@@ -422,9 +467,11 @@ export default class ApiFilesElement extends LitElement {
     }
 
     const { ctrlKey, shiftKey, metaKey } = e;
-    const bulkSelection = shiftKey;
-    const fineSelection = !bulkSelection && (ctrlKey || metaKey);
-    const isSelection = bulkSelection || fineSelection;
+    const { multiSelect = false } = this;
+    const bulkSelection = multiSelect && shiftKey;
+    const fineSelection = multiSelect && !bulkSelection && (ctrlKey || metaKey);
+    const isSelection = multiSelect && bulkSelection || fineSelection;
+    
     if (!isSelection && this.selected.length) {
       this.selected = [];
     }
@@ -460,9 +507,10 @@ export default class ApiFilesElement extends LitElement {
       return;
     }
     const { ctrlKey, shiftKey, metaKey } = e;
-    const bulkSelection = shiftKey;
-    const fineSelection = !bulkSelection && (ctrlKey || metaKey);
-    const isSelection = bulkSelection || fineSelection;
+    const { multiSelect = false } = this;
+    const bulkSelection = multiSelect && shiftKey;
+    const fineSelection = multiSelect && !bulkSelection && (ctrlKey || metaKey);
+    const isSelection = multiSelect && bulkSelection || fineSelection;
     if (!isSelection && this.selected.length) {
       this.selected = [];
     }
@@ -610,13 +658,31 @@ export default class ApiFilesElement extends LitElement {
     }));
   }
 
+  protected _shareHandler(): void {
+    const [item] = this.selected;
+    const file = this.files.find(i => i.key === item.key);
+    if (!file) {
+      return;
+    }
+    const dialog = document.createElement('share-file');
+    dialog.file = file;
+    dialog.user = this.user;
+    dialog.opened = true;
+    dialog.withBackdrop = true;
+    document.body.appendChild(dialog);
+    dialog.addEventListener('closed', () => {
+      document.body.removeChild(dialog);
+    });
+  }
+
   render(): TemplateResult {
     const { listTitle, loadingFiles } = this;
     return html`
     ${loadingFiles ? html`<anypoint-progress indeterminate></anypoint-progress>` : ''}
     <div class="title-area">
       <h2 class="section-title text-selectable">${listTitle}</h2>
-      <div class="right">
+      <div class="right file-options">
+        ${this.selectedToolbarTemplate()}
         ${this.spaceBaseControls()}
       </div>
     </div>
@@ -625,7 +691,21 @@ export default class ApiFilesElement extends LitElement {
   }
 
   protected spaceBaseControls(): TemplateResult {
-    const { viewType, anypoint, kinds = [] } = this;
+    const { viewType } = this;
+    return html`
+    ${this.addFileButtonTemplate()}
+    <anypoint-icon-button title="Toggles between list and grid view" aria-label="Selected view is ${viewType}"
+      @click="${this._toggleViewTypeHandler}">
+      <api-icon icon="${viewType === 'grid' ? 'viewGrid' : 'viewList'}"></api-icon>
+    </anypoint-icon-button>
+    `;
+  }
+
+  protected addFileButtonTemplate(): TemplateResult | string {
+    if (!this.allowAdd) {
+      return '';
+    }
+    const { anypoint, kinds = [] } = this;
     const list = [WorkspaceKind, ...kinds];
     return html`
     <anypoint-menu-button dynamicAlign ?anypoint="${anypoint}" closeOnActivate>
@@ -638,10 +718,6 @@ export default class ApiFilesElement extends LitElement {
         ${list.map(kind => this._addFileOptionTemplate(kind))}
       </anypoint-listbox>
     </anypoint-menu-button>
-    <anypoint-icon-button title="Toggles between list and grid view" aria-label="Selected view is ${viewType}"
-      @click="${this._toggleViewTypeHandler}">
-      <api-icon icon="${viewType === 'grid' ? 'viewGrid' : 'viewList'}"></api-icon>
-    </anypoint-icon-button>
     `;
   }
 
@@ -693,9 +769,9 @@ export default class ApiFilesElement extends LitElement {
       @keydown="${this._filesKeydown}">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Owner</th>
-          <th>Updated</th>
+          <th class="name-column">Name</th>
+          <th class="owner-column">Owner</th>
+          <th class="updated-column">Updated</th>
         </tr>
       </thead>
       <tbody>
@@ -722,8 +798,8 @@ export default class ApiFilesElement extends LitElement {
         <api-icon icon="${icon}" class="icon"></api-icon>
         <div class="file-name">${title}</div>
       </td>
-      <td aria-label="Updated by: me,">me</td>
-      <td>
+      <td class="owner-column" aria-label="Updated by: me,">me</td>
+      <td class="updated-column">
         <time-ago datetime="${time.toISOString()}"></time-ago>
       </td>
     </tr>
@@ -776,6 +852,56 @@ export default class ApiFilesElement extends LitElement {
       <b>Spaces</b> allow you to organize your work. When using a network store a space can be shared with
       other users.
     </div>
+    `;
+  }
+
+  protected selectedToolbarTemplate(): TemplateResult | string {
+    if (!this.hasSelection) {
+      return '';
+    }
+    
+    return html`
+    ${this.shareButtonTemplate()}
+    ${this.trashButtonTemplate()}
+    <anypoint-icon-button title="File options">
+      <api-icon icon="moreVert"></api-icon>
+    </anypoint-icon-button>
+    <span class="separator"></span>
+    `;
+  }
+
+  protected shareButtonTemplate(): TemplateResult | string {
+    if (!this.canShare) {
+      return '';
+    }
+    // For simplicity, for now, we allow only one file share at the time.
+    let canShare = this.selected.length === 1;
+    if (canShare) {
+      const [id] = this.selected;
+      const file = this.files.find(i => i.key === id.key) as IFile;
+      if (!file) {
+        canShare = false;
+      } else if (file.capabilities) {
+        canShare = file.capabilities.canShare;
+      } else {
+        canShare = false;
+      }
+    }
+    return html`
+    <anypoint-icon-button title="Share file" ?disabled="${!canShare}" @click="${this._shareHandler}">
+      <api-icon icon="personAdd"></api-icon>
+    </anypoint-icon-button>
+    `;
+  }
+
+  protected trashButtonTemplate(): TemplateResult | string {
+    if (!this.canTrash) {
+      return '';
+    }
+    return html`
+    <anypoint-icon-button title="Trash file">
+      <api-icon icon="deleteFile"></api-icon>
+    </anypoint-icon-button>
     `;
   }
 }

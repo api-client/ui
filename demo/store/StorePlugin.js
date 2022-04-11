@@ -48,7 +48,7 @@ const multiUser = /** @type IServerConfiguration */ ({
   },
   logger,
   session: {
-    expiresIn: '1h',
+    expiresIn: '1d',
     secret: Secrets.secret,
   }
 });

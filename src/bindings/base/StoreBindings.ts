@@ -43,17 +43,20 @@ export abstract class StoreBindings extends PlatformBindings {
 
     // Files
     window.addEventListener(EventTypes.Store.File.list, this.fileListHandler.bind(this));
+    window.addEventListener(EventTypes.Store.File.listShared, this.fileListSharedHandler.bind(this));
     window.addEventListener(EventTypes.Store.File.create, this.fileCreateHandler.bind(this));
     window.addEventListener(EventTypes.Store.File.createDefault, this.fileCreateDefaultHandler.bind(this));
     window.addEventListener(EventTypes.Store.File.read, this.fileReadHandler.bind(this));
     window.addEventListener(EventTypes.Store.File.patch, this.filePatchHandler.bind(this));
     window.addEventListener(EventTypes.Store.File.delete, this.fileDeleteHandler.bind(this));
     window.addEventListener(EventTypes.Store.File.patchUsers, this.filePatchUserHandler.bind(this));
+    window.addEventListener(EventTypes.Store.File.listUsers, this.fileListUserHandler.bind(this));
     window.addEventListener(EventTypes.Store.File.observeFiles, this.filesObserveHandler.bind(this));
     window.addEventListener(EventTypes.Store.File.unobserveFiles, this.filesUnobserveHandler.bind(this));
 
     // User
     window.addEventListener(EventTypes.Store.User.me, this.userMeHandler.bind(this));
+    window.addEventListener(EventTypes.Store.User.list, this.listUsersHandler.bind(this));
   }
 
   protected initEnvHandler(input: Event): void {
@@ -92,6 +95,12 @@ export abstract class StoreBindings extends PlatformBindings {
     e.detail.result = this.listFiles(e.detail.kinds, e.detail.options);
   }
 
+  protected fileListSharedHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.listSharedFiles(e.detail.kinds, e.detail.options);
+  }
+
   protected fileCreateHandler(input: Event): void {
     const e = input as CustomEvent;
     e.preventDefault();
@@ -128,6 +137,12 @@ export abstract class StoreBindings extends PlatformBindings {
     e.detail.result = this.patchFileUsers(e.detail.key, e.detail.value);
   }
 
+  protected fileListUserHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.listFileUsers(e.detail.key);
+  }
+
   protected filesObserveHandler(input: Event): void {
     const e = input as CustomEvent;
     e.preventDefault();
@@ -144,6 +159,12 @@ export abstract class StoreBindings extends PlatformBindings {
     const e = input as CustomEvent;
     e.preventDefault();
     e.detail.result = this.userMe();
+  }
+
+  protected listUsersHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.listUsers(e.detail.options);
   }
 
   /**
@@ -225,6 +246,20 @@ export abstract class StoreBindings extends PlatformBindings {
       throw new Error(`Environment is not set.`);
     }
     return store.sdk.file.list(kinds, options);
+  }
+
+  /**
+   * Lists shared with the user files.
+   * 
+   * @param kinds the list of kinds to list. Spaces are always included.
+   * @param options Optional query options.
+   */
+  async listSharedFiles(kinds: (typeof ProjectKind | typeof WorkspaceKind)[], options?: IListOptions): Promise<IListResponse<IFile>> {
+    const { store } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    return store.sdk.shared.list(kinds, options);
   }
 
   /**
@@ -445,5 +480,18 @@ export abstract class StoreBindings extends PlatformBindings {
       throw new Error(`Environment is not set.`);
     }
     return store.sdk.user.me();
+  }
+
+  /**
+   * Lists users in the store.
+   * 
+   * @param options Query options.
+   */
+  async listUsers(options?: IListOptions): Promise<IListResponse<IUser>> {
+    const { store } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    return store.sdk.user.list(options);
   }
 }

@@ -204,6 +204,26 @@ export const StoreEvents = Object.freeze({
       return ((e.detail.result as unknown) as Promise<IListResponse<IFile>>);
     },
     /**
+     * Lists files that are shared with the user.
+     * 
+     * @param kinds the list of kinds to list. Spaces are always included.
+     * @param options Optional query options.
+     */
+    listShared: async (kinds: (typeof ProjectKind | typeof WorkspaceKind)[], options?: IListOptions, target: EventTarget=document.body): Promise<IListResponse<IFile>> =>  {
+      const e = new CustomEvent(EventTypes.Store.File.listShared, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          kinds,
+          options,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<IListResponse<IFile>>);
+    },
+    /**
      * Creates a file in the store.
      * 
      * @param file The definition of a file that extends the IFile interface or one of the supported by the server schemas.
@@ -292,6 +312,24 @@ export const StoreEvents = Object.freeze({
       await ((e.detail.result as unknown) as Promise<void>);
     },
     /**
+     * Lists the users that have direct permission to the file.
+     * 
+     * @param key The file key
+     */
+    listUsers: async (key: string, target: EventTarget=document.body): Promise<IListResponse<IUser>> => {
+      const e = new CustomEvent(EventTypes.Store.File.listUsers, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          key,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<IListResponse<IUser>>);
+    },
+    /**
      * Creates a WS client that listens to the files events.
      * After the observer is set up then the store binding start
      * dispatching state events.
@@ -356,6 +394,19 @@ export const StoreEvents = Object.freeze({
       });
       target.dispatchEvent(e);
       return ((e.detail.result as unknown) as Promise<IUser>);
-    }
+    },
+    list: async (options?: IListOptions, target: EventTarget=document.body): Promise<IListResponse<IUser>> => {
+      const e = new CustomEvent(EventTypes.Store.User.list, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          options,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<IListResponse<IUser>>);
+    },
   }),
 });

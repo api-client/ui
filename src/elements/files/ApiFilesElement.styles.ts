@@ -185,4 +185,35 @@ td {
 .name-column .icon {
   margin-right: 12px;
 }
+
+.file-options {
+  display: flex;
+  align-items: center;
+}
+
+.file-options .separator {
+  width: 1px;
+  background-color: rgba(0, 0, 0, 0.54);
+  height: 24px;
+  display: inline-block;
+  margin: 2px 8px;
+}
+
+.file-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.updated-column {
+  width: 220px;
+}
+
+.owner-column {
+  width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 `;

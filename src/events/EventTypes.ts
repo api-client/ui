@@ -11,12 +11,14 @@ export const EventTypes = Object.freeze({
     }),
     File: Object.freeze({
       list: 'storefileslist',
+      listShared: 'storefileslistshared',
       create: 'storefilescreate',
       createDefault: 'storefilescreatedefault',
       read: 'storefilesread',
       patch: 'storefilespatch',
       delete: 'storefilesdelete',
       patchUsers: 'storefilespatchusers',
+      listUsers: 'storefileslistusers',
       observeFiles: 'storefilesobservefiles',
       unobserveFiles: 'storefilesunobservefiles',
       State: Object.freeze({

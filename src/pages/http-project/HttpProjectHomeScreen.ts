@@ -9,7 +9,7 @@ import styles from './HomeStyles.js';
 import globalStyles from '../styles/global-styles.js';
 import layout from '../styles/grid-hnmf.js';
 import ApiFilesElement from '../../elements/files/ApiFilesElement.js'
-import '../../define/user-avatar.js';
+import '../../define/app-settings-menu.js';
 import '../../define/api-icon.js';
 import '../../define/api-files.js';
 
@@ -120,6 +120,17 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     this.parent = key;
   }
 
+  @route({ pattern: '/shared/(?<key>.*)', name: 'Shared file', title: 'Shared space' })
+  protected sharedFileRoute(info: IRouteResult): void {
+    if (!info.params || !info.params.key) {
+      throw new Error(`Invalid route configuration. Missing parameters.`);
+    }
+    this.resetRoute();
+    const key = info.params.key as string;
+    this.page = 'shared';
+    this.parent = key;
+  }
+
   @route({ pattern: '*' })
   protected telemetryRoute(info: IRouteResult): void {
     CoreEvents.Telemetry.view(this.eventTarget || window, info.route.name || info.route.pattern || '/');
@@ -128,7 +139,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
   protected _fileOpenHandler(e: CustomEvent): void {
     const file = e.detail as IFile;
     if (file.kind === WorkspaceKind) {
-      navigate('files', file.key);
+      navigate(this.page || 'files', file.key);
     } else {
       Events.Navigation.HttpProject.open(file.key);
     }
@@ -157,7 +168,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     return html`
     <header class="start-page-header">
       <h1 class="start-page-header-title">HTTP Project</h1>
-      <user-avatar .user="${this.user}"></user-avatar>
+      <app-settings-menu .user="${this.user}"></app-settings-menu>
     </header>
     `;
   }
@@ -205,7 +216,11 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
       .kinds="${kinds}"
       .viewType="${viewType || 'list'}"
       .scrollTarget="${this.main}"
+      .user="${this.user}"
       listTitle="Your projects"
+      multiSelect
+      canShare
+      canTrash
       @open="${this._fileOpenHandler}"
       @viewstatechange="${this._viewStateHandler}"
     ></api-files>
@@ -213,8 +228,20 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
   }
 
   protected sharedTemplate(): TemplateResult {
+    const { parent, viewType } = this;
+    const kinds = [ProjectKind];
     return html`
-    <h2 class="section-title text-selectable">Shared spaces</h2>
+    <api-files 
+      .parent="${parent}" 
+      .kinds="${kinds}"
+      .viewType="${viewType || 'list'}"
+      .scrollTarget="${this.main}"
+      .user="${this.user}"
+      listTitle="Shared spaces"
+      type="shared"
+      @open="${this._fileOpenHandler}"
+      @viewstatechange="${this._viewStateHandler}"
+    ></api-files>
     `;
   }
 }
