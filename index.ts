@@ -9,6 +9,7 @@ export { default as ConfigInitScreen } from "./src/pages/init/ConfigInitScreen.j
 export { default as ConfigAuthenticateScreen } from "./src/pages/init/ConfigAuthenticateScreen.js";
 export { default as AnalyticsConsentScreen } from "./src/pages/init/AnalyticsConsentScreen.js";
 export { default as HttpProjectHomeScreen } from "./src/pages/http-project/HttpProjectHomeScreen.js";
+export { default as HttpProjectScreen } from "./src/pages/http-project/HttpProjectScreen.js";
 export { default as StoreConfigScreen } from "./src/pages/store/StoreConfigScreen.js";
 
 // Bindings

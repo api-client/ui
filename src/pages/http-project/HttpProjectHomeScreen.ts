@@ -57,24 +57,6 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     navigate('files');
   }
 
-  protected async observeFiles(): Promise<void> {
-    try {
-      await Events.Store.File.observeFiles();
-    } catch (e) {
-      const err = e as Error;
-      CoreEvents.Telemetry.exception(this.eventTarget, err.message, false);
-    }
-  }
-
-  protected async unobserveFiles(): Promise<void> {
-    try {
-      await Events.Store.File.unobserveFiles();
-    } catch (e) {
-      const err = e as Error;
-      CoreEvents.Telemetry.exception(this.eventTarget, err.message, false);
-    }
-  }
-
   protected async readViewConfig(): Promise<void> {
     try {
       const type = await Events.Config.Local.get('view.list.type');

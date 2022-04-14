@@ -21,8 +21,11 @@ export const EventTypes = Object.freeze({
       listUsers: 'storefileslistusers',
       observeFiles: 'storefilesobservefiles',
       unobserveFiles: 'storefilesunobservefiles',
+      observeFile: 'storefilesobservefile',
+      unobserveFile: 'storefilesunobservefile',
       State: Object.freeze({
         change: 'storefileschange',
+        fileChange: 'storefilechange',
       }),
     }),
     User: Object.freeze({
@@ -83,6 +86,12 @@ export const EventTypes = Object.freeze({
     }),
     Store: Object.freeze({
       config: 'navigationstoreconfig',
+    }),
+  }),
+  HttpProject: Object.freeze({
+    changed: 'httpprojectchange',
+    State: Object.freeze({
+      nameChanged: 'httpprojectnamechange',
     }),
   }),
 });

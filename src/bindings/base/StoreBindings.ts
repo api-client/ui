@@ -2,7 +2,7 @@
 import { 
   IBackendInfo, ProjectKind, WorkspaceKind, IListOptions, IListResponse, IFile,
   IHttpProject, IFileCreateOptions, AccessOperation, IUser, IBackendEvent,
-  Workspace, HttpProject
+  Workspace, HttpProject,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { PlatformBindings } from './PlatformBindings.js';
@@ -32,6 +32,8 @@ export abstract class StoreBindings extends PlatformBindings {
    */
   filesSocket?: WebSocket;
 
+  fileSockets = new Map<string, WebSocket>();
+
   async initialize(): Promise<void> {
     window.addEventListener(EventTypes.Store.initEnvironment, this.initEnvHandler.bind(this));
     window.addEventListener(EventTypes.Store.info, this.storeInfoHandler.bind(this));
@@ -53,6 +55,8 @@ export abstract class StoreBindings extends PlatformBindings {
     window.addEventListener(EventTypes.Store.File.listUsers, this.fileListUserHandler.bind(this));
     window.addEventListener(EventTypes.Store.File.observeFiles, this.filesObserveHandler.bind(this));
     window.addEventListener(EventTypes.Store.File.unobserveFiles, this.filesUnobserveHandler.bind(this));
+    window.addEventListener(EventTypes.Store.File.observeFile, this.fileObserveHandler.bind(this));
+    window.addEventListener(EventTypes.Store.File.unobserveFile, this.fileUnobserveHandler.bind(this));
 
     // User
     window.addEventListener(EventTypes.Store.User.me, this.userMeHandler.bind(this));
@@ -153,6 +157,18 @@ export abstract class StoreBindings extends PlatformBindings {
     const e = input as CustomEvent;
     e.preventDefault();
     e.detail.result = this.unobserveFiles();
+  }
+
+  protected fileObserveHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.observeFile(e.detail.key, e.detail.alt);
+  }
+
+  protected fileUnobserveHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.unobserveFile(e.detail.key, e.detail.alt);
   }
 
   protected userMeHandler(input: Event): void {
@@ -463,12 +479,59 @@ export abstract class StoreBindings extends PlatformBindings {
     }
   }
 
+  /**
+   * Creates a WS client that listens to a file events.
+   * After the observer is set up then the store binding start
+   * dispatching state events.
+   * 
+   * Subsequent calls to create a socket will return the existing socket.
+   */
+  async observeFile(key: string, alt: 'media' | 'meta' = 'meta'): Promise<WebSocket> {
+    const storeKey = `${key}?alt=${alt}`;
+    const used = this.fileSockets.get(storeKey);
+    if (used && used.readyState === WebSocket.OPEN) {
+      return used;
+    }
+    const { store } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const socket = await store.sdk.file.observeFile(key, alt === 'media') as WebSocket;
+    this.fileSockets.set(storeKey, socket);
+    socket.addEventListener('message', this._fileChangeHandler.bind(this));
+    return socket;
+  }
+
+  /**
+   * Closes previously opened files socket.
+   * Does nothing when the socket is not opened.
+   */
+  async unobserveFile(key: string, alt: 'media' | 'meta' = 'meta'): Promise<void> {
+    const storeKey = `${key}?alt=${alt}`;
+    const used = this.fileSockets.get(storeKey);
+    if (!used) {
+      return;
+    }
+    this.fileSockets.delete(storeKey);
+    if (used.readyState !== WebSocket.CLOSED) {
+      used.close();
+    }
+  }
+
   protected _fileMetaHandler(e: MessageEvent): void {
     const event = JSON.parse(e.data) as IBackendEvent;
     if (event.type !== 'event') {
       return;
     }
     Events.Store.File.State.change(event);
+  }
+
+  protected _fileChangeHandler(e: MessageEvent): void {
+    const event = JSON.parse(e.data) as IBackendEvent;
+    if (event.type !== 'event') {
+      return;
+    }
+    Events.Store.File.State.fileChange(event);
   }
 
   /**

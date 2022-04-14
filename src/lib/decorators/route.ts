@@ -142,6 +142,11 @@ function onRoute(): void {
  *  this.page = '404';
  * }
  * ```
+ * 
+ * Note, the functions are called from the prototype of the parent class so the callback function won't get 
+ * access to the current class fields.
+ * 
+ * @deprecated Do not use!
  */
 export function route(properties: IRoute) {
   return (target: any, name: PropertyKey, descriptor: PropertyDescriptor): any => {
@@ -213,6 +218,11 @@ function initRoute(target: any): void {
  *  this.onRoute();
  * }
  * ```
+ * 
+ * Note, the functions are called from the prototype of the parent class so the callback function won't get 
+ * access to the current class fields.
+ * 
+ * @deprecated Do not use!
  */
 export function routeInitializer() {
   return (target: any, name: PropertyKey, descriptor: TypedPropertyDescriptor<any>): any => {
@@ -223,7 +233,7 @@ export function routeInitializer() {
 
     descriptor.value = (...args: any[]): any => {
       const result = method.apply(target, args);
-      if (typeof result.finally === 'function') {
+      if (result && typeof result.finally === 'function') {
         return result.finally(() => {
           initRoute(target);
         });

@@ -17,6 +17,10 @@ body {
   user-select: none;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .text-selectable {
   user-select: text;
 }

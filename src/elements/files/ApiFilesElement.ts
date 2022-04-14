@@ -807,17 +807,18 @@ export default class ApiFilesElement extends LitElement {
   }
 
   protected spaceTileTemplate(item: IFile): TemplateResult {
-    const { selected } = this;
+    const { selected, type } = this;
     const { info, key, kind } = item;
     const title = info.name || DefaultNamesMap[kind];
     const classes = {
       'selected-item': selected.some(i => i.key === key),
       'space-tile': true,
     };
+    const isShared = type === 'shared';
     return html`
     <div class="${classMap(classes)}" tabindex="0" data-key="${key}" data-kind="${kind}">
       <div class="space-icon">
-        <api-icon icon="folder" class="icon"></api-icon>
+        <api-icon icon="${isShared ? 'folderShared' : 'folder'}" class="icon"></api-icon>
       </div>
       <div class="space-label" aria-label="${AddLabelsMap[kind] || 'Folder'}: ${title}">${title}</div>
     </div>

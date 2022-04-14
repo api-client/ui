@@ -13,7 +13,7 @@ export const NavigationEvents = Object.freeze({
         bubbles: true,
         cancelable: true,
         composed: true,
-        detail: key,
+        detail: { key },
       });
       target.dispatchEvent(e);
     },

@@ -364,12 +364,67 @@ export const StoreEvents = Object.freeze({
       target.dispatchEvent(e);
       await ((e.detail.result as unknown) as Promise<void>);
     },
+    /**
+     * Creates a WS client that listens to the file change events.
+     * After the observer is set up then the store binding start
+     * dispatching state events.
+     * 
+     * Subsequent calls to create a socket will do nothing.
+     * 
+     * @param key The file key to observe
+     */
+    observeFile: async (key: string, alt: 'media' | 'meta' = 'meta', target: EventTarget=document.body): Promise<void> => {
+      const e = new CustomEvent(EventTypes.Store.File.observeFile, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          key,
+          alt,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      await ((e.detail.result as unknown) as Promise<void>);
+    },
+    /**
+     * Closes previously opened file observer.
+     * Does nothing when the socket is not opened.
+     * 
+     * @param key The file key to unobserve
+     */
+    unobserveFile: async (key: string, alt: 'media' | 'meta' = 'meta', target: EventTarget=document.body): Promise<void> => {
+      const e = new CustomEvent(EventTypes.Store.File.unobserveFile, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          key,
+          alt,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      await ((e.detail.result as unknown) as Promise<void>);
+    },
     State: Object.freeze({
       /**
        * Informs the application about a change in a user file.
        */
       change: (event: IBackendEvent, target: EventTarget=document.body): void => {
         const e = new CustomEvent(EventTypes.Store.File.State.change, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: event,
+        });
+        target.dispatchEvent(e);
+      },
+      /**
+       * Informs the application about a change in a user file.
+       */
+      fileChange: (event: IBackendEvent, target: EventTarget=document.body): void => {
+        const e = new CustomEvent(EventTypes.Store.File.State.fileChange, {
           bubbles: true,
           cancelable: true,
           composed: true,

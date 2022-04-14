@@ -3,6 +3,7 @@
 import { html, TemplateResult } from 'lit';
 import { IUser, Events as CoreEvents } from '@api-client/core/build/browser.js';
 import { RenderableMixin } from '../mixins/RenderableMixin.js';
+import { RouteMixin } from '../mixins/RouteMixin.js';
 import { reactive } from '../lib/decorators.js';
 import { Events } from '../events/Events.js';
 import { EventTypes } from '../events/EventTypes.js';
@@ -22,7 +23,7 @@ import '../define/alert-dialog.js';
  * Use the `@reactive()` decorator from `src/lib/decorators.js` to mark a property as reactive,
  * meaning, when the property change it calls the `render()` function.
  */
-export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
+export abstract class ApplicationScreen extends RouteMixin(RenderableMixin(EventTarget)) {
   @reactive() eventTarget: EventTarget = window;
 
   /** 
@@ -301,5 +302,23 @@ export abstract class ApplicationScreen extends RenderableMixin(EventTarget) {
       <anypoint-button emphasis="high" @click="${this._storeConfigHandler}">Configure store</anypoint-button>
     </div>
     `;
+  }
+
+  protected async observeFiles(): Promise<void> {
+    try {
+      await Events.Store.File.observeFiles();
+    } catch (e) {
+      const err = e as Error;
+      CoreEvents.Telemetry.exception(this.eventTarget, err.message, false);
+    }
+  }
+
+  protected async unobserveFiles(): Promise<void> {
+    try {
+      await Events.Store.File.unobserveFiles();
+    } catch (e) {
+      const err = e as Error;
+      CoreEvents.Telemetry.exception(this.eventTarget, err.message, false);
+    }
   }
 }
