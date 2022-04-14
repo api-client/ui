@@ -442,6 +442,7 @@ export default class ProjectNavigationElement extends LitElement {
   }
 
   protected _nameInputKeydown(e: KeyboardEvent): void {
+    e.stopPropagation();
     if (e.key === 'Escape') {
       this.edited = undefined;
     } else if (e.key === 'Enter') {
@@ -586,6 +587,7 @@ export default class ProjectNavigationElement extends LitElement {
       @dragstart="${this._itemDragStartHandler}"
     >
       <div class="list-item-content">
+        <api-icon icon="request" class="object-icon"></api-icon>
         <span class="item-label">${name}</span>
       </div>
     </li>
@@ -617,6 +619,7 @@ export default class ProjectNavigationElement extends LitElement {
       @dragstart="${this._itemDragStartHandler}"
     >
       <div class="list-item-content">
+        <api-icon icon="environment" class="object-icon"></api-icon>
         <span class="item-label">${name}</span>
       </div>
     </li>

@@ -20,6 +20,7 @@ ul {
   width: 20px;
   height: 20px;
   margin-right: 8px;
+  /* color: var(--accent-color); */
 }
 
 .list-item-content:hover {
