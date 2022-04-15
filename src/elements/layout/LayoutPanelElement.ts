@@ -114,6 +114,12 @@ export default class LayoutPanelElement extends LitElement {
       border-top-color: var(--primary-color);
     }
 
+    .tab-favicon {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+    }
+
     .close-icon {
       width: 16px;
       height: 16px;
@@ -516,7 +522,7 @@ export default class LayoutPanelElement extends LitElement {
   }
 
   protected tabTemplate(item: ILayoutItem): TemplateResult {
-    const { key, kind, label, index=0 } = item;
+    const { key, kind, label, index=0, icon } = item;
     const { panel } = this;
     const selected = !!panel && panel.selected === key;
     const classes = {
@@ -538,6 +544,7 @@ export default class LayoutPanelElement extends LitElement {
       @keydown="${this._tabKeydownHandler}"
       tabindex="0"
     >
+      ${icon ? html`<api-icon icon="${icon}" class="tab-favicon"></api-icon>` : ''}
       ${label}
       <api-icon icon="cancelFilled" class="close-icon" @click="${this._tabCloseHandler}"></api-icon>
     </div>

@@ -10,6 +10,7 @@ import { Patch } from '@api-client/json';
 import dialogStyles from '@anypoint-web-components/awc/dist/styles/AnypointDialogInternalStyles.js';
 import { Events } from '../../events/Events.js';
 import { EventTypes } from '../../events/EventTypes.js';
+import { randomString } from '../../lib/Random.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-dropdown.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-item.js';
@@ -649,7 +650,7 @@ export default class ShareFileElement extends AnypointDialogElement {
       return op;
     });
     try {
-      await Events.Store.File.patchUsers(id, ops);
+      await Events.Store.File.patchUsers(id, randomString(), ops);
       this._cancelShareUser();
     } catch (e) {
       const cause = e as Error;
@@ -723,7 +724,7 @@ export default class ShareFileElement extends AnypointDialogElement {
     }
     const id = key || file!.key;
     try {
-      await Events.Store.File.patchUsers(id, pendingPermissions);
+      await Events.Store.File.patchUsers(id, randomString(), pendingPermissions);
       this.pendingPermissions = undefined;
     } catch (e) {
       const cause = e as Error;

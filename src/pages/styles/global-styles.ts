@@ -91,4 +91,24 @@ body {
   font-weight: 200;
   text-align: center;
 }
+
+.full-error {
+  flex: 1;
+  align-items: start;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  margin: 40px;
+}
+
+.full-error h2 {
+  font-weight: 300;
+  font-size: 36px;
+}
+
+.full-error .description {
+  font-size: larger;
+  max-width: 800px;
+  color: #424242;
+}
 `;

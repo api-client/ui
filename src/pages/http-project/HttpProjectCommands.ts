@@ -1,6 +1,6 @@
 import { ContextMenuCommand } from '@api-client/context-menu';
 import { HttpProject } from '@api-client/core/build/browser.js';
-import { folder, rename, deleteFile } from '../../elements/icons/Icons.js';
+import { folder, rename, deleteFile, environment, request } from '../../elements/icons/Icons.js';
 import ProjectNavigationElement from '../../elements/project/ProjectNavigationElement.js';
 
 const commands: ContextMenuCommand[] = [
@@ -25,6 +25,7 @@ const commands: ContextMenuCommand[] = [
     target: "project-navigation",
     label: 'Add request',
     title: 'Adds a new HTTP request to the project',
+    icon: request,
     execute: (init): void => {
       const project = init.store.get('project') as HttpProject;
       const callback = init.store.get('callback') as Function;
@@ -37,6 +38,7 @@ const commands: ContextMenuCommand[] = [
     target: "project-navigation",
     label: 'Add environment',
     title: 'Adds a new environment definition to the project',
+    icon: environment,
     execute: (init): void => {
       const project = init.store.get('project') as HttpProject;
       const callback = init.store.get('callback') as Function;
@@ -67,6 +69,7 @@ const commands: ContextMenuCommand[] = [
   {
     target: 'li.project-tree-item.folder-item',
     label: 'Add request',
+    icon: request,
     execute: (init): void => {
       const project = init.store.get('project') as HttpProject;
       const callback = init.store.get('callback') as Function;
@@ -80,6 +83,7 @@ const commands: ContextMenuCommand[] = [
     target: 'li.project-tree-item.folder-item',
     label: 'Add environment',
     title: 'Adds a new environment definition to the folder',
+    icon: environment,
     execute: (init): void => {
       const project = init.store.get('project') as HttpProject;
       const callback = init.store.get('callback') as Function;
@@ -171,6 +175,24 @@ const commands: ContextMenuCommand[] = [
       nav.edited = key;
     },
   },
+  // TODO: THe project does not support removing of an environment
+  // {
+  //   target: 'li.project-tree-item.environment-item',
+  //   label: 'Delete',
+  //   icon: deleteFile,
+  //   title: 'Deletes this environment',
+  //   execute: (init): void => {
+  //     const project = init.store.get('project') as HttpProject;
+  //     const callback = init.store.get('callback') as Function;
+  //     const key = init.target.dataset.key as string;
+  //     const removed = project.removeRequest(key);
+  //     if (removed) {
+  //       callback();
+  //     } else {
+  //       throw new Error(`Request not found in the project.`);
+  //     }
+  //   },
+  // },
 
   // {
   //   target: 'li.project-tree-item.request-item',

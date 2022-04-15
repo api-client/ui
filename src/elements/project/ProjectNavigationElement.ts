@@ -555,7 +555,7 @@ export default class ProjectNavigationElement extends LitElement {
         aria-hidden="${opened ? 'false' : 'true'}"
       >
         ${folders.map(f => this.renderFolder(f, key))}
-        ${environments.map(r => this.renderEnvironment(r))}
+        ${environments.map(r => this.renderEnvironment(r, key))}
         ${requests.map(r => this.renderRequest(r, key))}
       </ul>
     </li>

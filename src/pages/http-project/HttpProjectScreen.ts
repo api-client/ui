@@ -1,7 +1,7 @@
 import { html, TemplateResult, CSSResult } from 'lit';
 import { 
   Events as CoreEvents, HttpProject, IHttpProject, IBackendEvent, HttpProjectKind, ProjectRequestKind, ProjectFolderKind,
-  IEnvironment, EnvironmentKind,
+  IEnvironment, EnvironmentKind, ApiError, IPatchRevision,
 } from '@api-client/core/build/browser.js';
 // import { ContextMenuExecuteDetail } from '@api-client/context-menu';
 import { Patch, JsonPatch } from '@api-client/json';
@@ -20,6 +20,8 @@ import '../../define/environment-editor.js';
 import { LayoutManager, ILayoutItem } from '../../elements/layout/LayoutManager.js';
 import { IRoute } from '../../mixins/RouteMixin.js';
 import NavElement from '../../elements/project/ProjectNavigationElement.js';
+import { randomString } from '../../lib/Random.js';
+import { navigate, navigatePage } from '../../lib/route.js';
 
 export default class HttpProjectScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
@@ -28,7 +30,8 @@ export default class HttpProjectScreen extends ApplicationScreen {
 
   static get routes(): IRoute[] {
     return [
-      { pattern: '/default', method: 'defaultRoute', fallback: true, name: 'HTTP Project home', title: 'HTTP Project home' }
+      { pattern: '/default', method: 'defaultRoute', fallback: true, name: 'HTTP Project home', title: 'HTTP Project home' },
+      { pattern: '/404', method: 'e404Route', fallback: true, name: 'Not found', title: 'Not found' }
     ];
   }
 
@@ -63,6 +66,19 @@ export default class HttpProjectScreen extends ApplicationScreen {
 
   protected environmentSchemas = new Map<string, IEnvironment>();
 
+  /**
+   * The list of patches made by the current user and received from the server since the beginning of this session
+   * or page reload.
+   * This is to used to recognize own patches so it won't process a patch that is already applied to the project.
+   */
+  protected livePatches = new Map<string, IPatchRevision>();
+
+  /**
+   * Own patches sent to the server.
+   * These are removed after the sever event is received.
+   */
+  protected pendingPatches = new Map<string, JsonPatch>();
+
   protected layout = new LayoutManager({ 
     dragTypes: ['text/kind', 'text/key'],
     autoStore: true,
@@ -85,14 +101,19 @@ export default class HttpProjectScreen extends ApplicationScreen {
     await this.initializeStore();
     const key = this.readFileKey();
     // async to the initialization
-    this.loadUser();
     if (!key) {
       this.reportCriticalError('The project key is not set. Go back to the start page.');
       return;
     }
     this.key = key;
-    await Events.Store.File.observeFile(key, 'media');
-    await this.requestProject(key);
+    const hasFile = await this.requestProject(key);
+    if (!hasFile) {
+      this.initializeRouting();
+      this.initialized = true;
+      return;
+    }
+    this.loadUser();
+    await this._startObservingProjectFile(key);
     await this.layout.initialize();
     this.initializeRouting();
     this.initialized = true;
@@ -101,6 +122,14 @@ export default class HttpProjectScreen extends ApplicationScreen {
     window.addEventListener(EventTypes.HttpProject.State.nameChanged, this._projectNameChanged.bind(this));
     this.layout.addEventListener('change', this._renderHandler.bind(this));
     this.layout.addEventListener('nameitem', this._nameLayoutItemHandler.bind(this));
+  }
+
+  protected async _startObservingProjectFile(key: string): Promise<void> {
+    try {
+      await Events.Store.File.observeFile(key, 'media');
+    } catch (e) {
+      this.reportCriticalError('Unable to observe the project file changes.')
+    }
   }
 
   protected resetRoute(): void {
@@ -112,23 +141,33 @@ export default class HttpProjectScreen extends ApplicationScreen {
     this.page = 'default';
   }
 
+  protected e404Route(): void {
+    this.resetRoute();
+    this.page = '404';
+  }
+
   protected readFileKey(): string | undefined {
     const url = new URL(window.location.href);
     const key = url.searchParams.get('key');
     return key || undefined;
   }
 
-  protected async requestProject(key: string): Promise<void> {
+  protected async requestProject(key: string): Promise<boolean> {
     try {
       const media = await Events.Store.File.read(key, true) as IHttpProject;
       this.schema = JSON.stringify(media);
       this.project = new HttpProject(media);
       this.menu.store.set('project', this.project);
     } catch (e) {
-      const cause = e as Error;
+      const cause = e as ApiError;
+      if (cause.code === 404) {
+        navigate('404');
+        return false;
+      }
       CoreEvents.Telemetry.exception(window, cause.message, true);
       this.reportCriticalError(cause.message);
     }
+    return true;
   }
 
   /**
@@ -155,8 +194,11 @@ export default class HttpProjectScreen extends ApplicationScreen {
       return;
     }
     this.updatingProject = true;
+    const id = randomString();
+    this.pendingPatches.set(id, diff);
     try {
-      await Events.Store.File.patch(project.key, diff, true);
+      await Events.Store.File.patch(project.key, id, diff, true);
+      this.schema = JSON.stringify(newSchema);
     } catch (e) {
       const cause = e as Error;
       CoreEvents.Telemetry.exception(window, cause.message, true);
@@ -180,8 +222,15 @@ export default class HttpProjectScreen extends ApplicationScreen {
       return;
     }
     const iProject = JSON.parse(schema);
-    const patch = info.data as JsonPatch;
-    const result = Patch.apply(iProject, patch);
+    const rev = info.data as IPatchRevision;
+    const { id } = rev;
+    const ownPatch = this.pendingPatches.get(id);
+    if (ownPatch) {
+      this.livePatches.set(id, rev);
+      this.pendingPatches.delete(id);
+      return;
+    }
+    const result = Patch.apply(iProject, rev.patch);
     this.schema = JSON.stringify(result.doc);
     // this.project = new HttpProject(result.doc as IHttpProject);
     this.project?.new(result.doc as IHttpProject);
@@ -220,6 +269,10 @@ export default class HttpProjectScreen extends ApplicationScreen {
   protected _contextMenuMutationCallback(): void {
     this.render();
     this.updateProject();
+    const { nav } = this;
+    if (nav) {
+      nav.requestUpdate();
+    }
   }
 
   protected _contextCommandHandler(): void {
@@ -243,6 +296,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
       } else {
         item.label = 'Folder';
       }
+      item.icon = 'folder';
     } else if (item.kind === ProjectRequestKind) {
       const request = this.project?.findRequest(item.key);
       if (request && request.info.name && request.info.name !== 'http://') {
@@ -252,6 +306,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
       } else {
         item.label = 'HTTP request';
       }
+      item.icon = 'request';
     } else if (item.kind === EnvironmentKind) {
       const env = this.project?.getEnvironment(item.key);
       if (env && env.info.name) {
@@ -259,6 +314,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
       } else {
         item.label = 'Environment';
       }
+      item.icon = 'environment';
     }
   }
 
@@ -327,8 +383,26 @@ export default class HttpProjectScreen extends ApplicationScreen {
   }
   
   protected mainTemplate(): TemplateResult {
+    const { page } = this;
+    if (page === '404') {
+      return this.e404Template();
+    }
     return html`<main>
       ${this.renderLayout()}
+    </main>`;
+  }
+
+  protected e404Template(): TemplateResult {
+    return html`
+    <main>
+      <div class="full-error">
+        <h2>Not found</h2>
+        <p class="description">
+          The project you are trying to open does not exist, was removed,
+          or you lost access to it.
+        </p>
+        <anypoint-button emphasis="high" @click="${(): void => { navigatePage('HttpProjectHome.html') }}">Back to start</anypoint-button>
+      </div>
     </main>`;
   }
 
@@ -364,7 +438,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     let schema = this.environmentSchemas.get(key);
     if (!schema) {
       const { project } = this;
-      const env = project && project.getEnvironment(key);
+      const env = project && project.findEnvironment(key);
       if (env) {
         schema = env.toJSON();
         this.environmentSchemas.set(key, schema);

@@ -19,11 +19,13 @@ export class WebStoreBindings extends StoreBindings {
   channel: BroadcastChannel;
 
   /**
+   * @param appId The current application suite id.
+   * @param appVersion The current application version
    * @param storeBaseUri The base URI of the "local" store to be used when the user chooses 
    * the local store over the 
    */
-  constructor(storeBaseUri: string) {
-    super();
+  constructor(appId: string, appVersion: string, storeBaseUri: string) {
+    super(appId, appVersion);
     this.storeBaseUri = storeBaseUri;
     this.channel = new BroadcastChannel('api-store');
   }

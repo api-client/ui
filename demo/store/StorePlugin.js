@@ -10,19 +10,23 @@ import Secrets from './secrets.js';
 
 const logger = new DefaultLogger();
 const store = new StoreLevelUp(logger, 'demo/store/data');
+const host = '192.168.86.249';
 const prefix = '/v1';
 const singlePort = 8550;
 const multiPort = 8551;
-const singleBaseUri = `http://localhost:${singlePort}${prefix}`;
-const multiBaseUri = `http://localhost:${multiPort}${prefix}`;
+const singleBaseUri = `http://${host}:${singlePort}${prefix}`;
+const multiBaseUri = `http://${host}:${multiPort}${prefix}`;
 
 const singleUser = /** @type IServerConfiguration */ ({
   logger,
+  portOrSocket: singlePort,
+  host,
   router: {
     prefix,
   },
   session: {
     secret: Secrets.secret,
+    expiresIn: '5d',
   },
   mode: 'single-user',
   cors: {
@@ -37,6 +41,7 @@ const singleUser = /** @type IServerConfiguration */ ({
 const multiUser = /** @type IServerConfiguration */ ({ 
   ...singleUser,
   mode: 'multi-user',
+  portOrSocket: multiPort,
   authentication: {
     type: 'oidc',
     config: {
@@ -48,7 +53,7 @@ const multiUser = /** @type IServerConfiguration */ ({
   },
   logger,
   session: {
-    expiresIn: '1d',
+    expiresIn: '5d',
     secret: Secrets.secret,
   }
 });
@@ -64,16 +69,16 @@ export default /** @type Plugin */ ({
   async serverStart(args) {
     await store.initialize();
     await singleServer.initialize();
-    await singleServer.startHttp(singlePort);
+    await singleServer.start();
     await multiServer.initialize();
-    await multiServer.startHttp(multiPort);
+    await multiServer.start();
 
     console.log(`Running store: ${singleBaseUri}, ${multiBaseUri}`);
   },
 
   async serverStop() {
-    await singleServer.stopHttp();
-    await multiServer.stopHttp();
+    await singleServer.stop();
+    await multiServer.stop();
     await store.cleanup();
   }
 });

@@ -9,6 +9,7 @@ import { TemplateResult, html } from 'lit';
 import { Events } from '../../events/Events.js';
 import LayoutPanelElement from './LayoutPanelElement.js';
 import '../../define/layout-panel.js';
+import { IconType } from '../icons/Icons.js';
 
 export type Direction = 'horizontal' | 'vertical';
 export type DropRegion = 'center' | 'east' | 'west' | 'north' | 'south';
@@ -39,6 +40,10 @@ export interface ILayoutItem {
    * The tab index.
    */
   index?: number;
+  /**
+   * The icon defined in the internal library to render with the tab.
+   */
+  icon?: IconType;
 }
 
 export interface ILayoutOptions {
