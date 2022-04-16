@@ -15,7 +15,7 @@ import mainLayout from '../styles/grid-hnmf.js';
 import { HttpProjectContextMenu } from './HttpProjectContextMenu.js';
 import '../../define/project-navigation.js';
 import '../../define/layout-panel.js';
-import '../../define/http-request.js';
+import '../../define/project-request.js';
 import '../../define/environment-editor.js';
 import { LayoutManager, ILayoutItem } from '../../elements/layout/LayoutManager.js';
 import { IRoute } from '../../mixins/RouteMixin.js';
@@ -285,6 +285,10 @@ export default class HttpProjectScreen extends ApplicationScreen {
   protected _projectNameChanged(e: Event): void {
     const { key } = (e as CustomEvent).detail;
     this.layout.requestNameUpdate(key);
+    const { nav } = this;
+    if (nav) {
+      nav.requestUpdate();
+    }
   }
 
   protected _nameLayoutItemHandler(event: Event): void {
@@ -429,7 +433,14 @@ export default class HttpProjectScreen extends ApplicationScreen {
       `;
     }
     return html`
-    <http-request .request="${request}" ?hidden="${!visible}" data-key="${key}" @change="${this._requestChangeHandler}"></http-request>
+    <project-request 
+      ?hidden="${!visible}" 
+      data-key="${key}" 
+      key="${key}" 
+      .project="${project}" 
+      renderSend
+      @change="${this._requestChangeHandler}"
+    ></project-request>
     `;
   }
 

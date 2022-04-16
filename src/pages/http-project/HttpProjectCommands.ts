@@ -3,6 +3,11 @@ import { HttpProject } from '@api-client/core/build/browser.js';
 import { folder, rename, deleteFile, environment, request } from '../../elements/icons/Icons.js';
 import ProjectNavigationElement from '../../elements/project/ProjectNavigationElement.js';
 
+function findNavigation(element: HTMLElement): ProjectNavigationElement {
+  const root = element.getRootNode() as ShadowRoot;
+  return root.host as ProjectNavigationElement;
+}
+
 const commands: ContextMenuCommand[] = [
   //
   // NAVIGATION
@@ -62,6 +67,8 @@ const commands: ContextMenuCommand[] = [
       const callback = init.store.get('callback') as Function;
       const key = init.target.dataset.key as string;
       project.addFolder(undefined, { parent: key, });
+      const nav = findNavigation(init.target as HTMLElement);
+      nav.openFolder(key);
       callback();
     },
     visible: (init) => init.store.has('project'),
@@ -75,6 +82,8 @@ const commands: ContextMenuCommand[] = [
       const callback = init.store.get('callback') as Function;
       const key = init.target.dataset.key as string;
       project.addRequest('http://', { parent: key });
+      const nav = findNavigation(init.target as HTMLElement);
+      nav.openFolder(key);
       callback();
     },
     visible: (init) => init.store.has('project'),
@@ -91,6 +100,8 @@ const commands: ContextMenuCommand[] = [
       const f = project.findFolder(key);
       if (f) {
         f.addEnvironment('New environment');
+        const nav = findNavigation(init.target as HTMLElement);
+        nav.openFolder(key);
         callback();
       }
     },
@@ -108,8 +119,7 @@ const commands: ContextMenuCommand[] = [
     title: 'Renames this folder',
     execute: (init): void => {
       const key = init.target.dataset.key as string;
-      const root = init.target.getRootNode() as ShadowRoot;
-      const nav = root.host as ProjectNavigationElement;
+      const nav = findNavigation(init.target as HTMLElement);
       nav.edited = key;
     },
   },
@@ -139,8 +149,7 @@ const commands: ContextMenuCommand[] = [
     title: 'Renames this request',
     execute: (init): void => {
       const key = init.target.dataset.key as string;
-      const root = init.target.getRootNode() as ShadowRoot;
-      const nav = root.host as ProjectNavigationElement;
+      const nav = findNavigation(init.target as HTMLElement);
       nav.edited = key;
     },
   },
@@ -170,29 +179,29 @@ const commands: ContextMenuCommand[] = [
     title: 'Renames this environment',
     execute: (init): void => {
       const key = init.target.dataset.key as string;
-      const root = init.target.getRootNode() as ShadowRoot;
-      const nav = root.host as ProjectNavigationElement;
+      const nav = findNavigation(init.target as HTMLElement);
       nav.edited = key;
     },
   },
-  // TODO: THe project does not support removing of an environment
-  // {
-  //   target: 'li.project-tree-item.environment-item',
-  //   label: 'Delete',
-  //   icon: deleteFile,
-  //   title: 'Deletes this environment',
-  //   execute: (init): void => {
-  //     const project = init.store.get('project') as HttpProject;
-  //     const callback = init.store.get('callback') as Function;
-  //     const key = init.target.dataset.key as string;
-  //     const removed = project.removeRequest(key);
-  //     if (removed) {
-  //       callback();
-  //     } else {
-  //       throw new Error(`Request not found in the project.`);
-  //     }
-  //   },
-  // },
+  
+  {
+    target: 'li.project-tree-item.environment-item',
+    label: 'Delete',
+    icon: deleteFile,
+    title: 'Deletes this environment',
+    execute: (init): void => {
+      const project = init.store.get('project') as HttpProject;
+      const callback = init.store.get('callback') as Function;
+      const key = init.target.dataset.key as string;
+      const parent = init.target.dataset.parent as string | undefined;
+      const removed = project.removeEnvironment(key, { parent });
+      if (removed) {
+        callback();
+      } else {
+        throw new Error(`Request not found in the project.`);
+      }
+    },
+  },
 
   // {
   //   target: 'li.project-tree-item.request-item',

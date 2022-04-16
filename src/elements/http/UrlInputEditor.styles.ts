@@ -8,14 +8,44 @@ export default css`
 
 .container {
   position: relative;
-  border: 1px var(--url-input-editor-border-color, #e5e5e5) solid;
   border-radius: 20px;
-  padding: 0 20px;
-  box-sizing: content-box;
   transition: border-radius 0.18s ease-in-out, border-color 0.18s ease-in-out;
+  box-sizing: content-box;
   z-index: 2;
-  background-color: inherit;
+  background: inherit;
   color: inherit;
+  display: flex;
+  align-items: center;
+}
+
+.container-prefix,
+.container-suffix {
+  border: 1px var(--url-input-editor-border-color, #e5e5e5) solid;
+  width: 20px;
+  align-self: stretch;
+  transition: border-radius 0.18s ease-in-out, border-color 0.18s ease-in-out;
+}
+
+.container-prefix {
+  border-right: none;
+  border-radius: 20px 0 0 20px;
+}
+
+.container-suffix {
+  border-left: none;
+  border-radius: 0 20px 20px 0;
+}
+
+.environment .container-prefix {
+  background: var(--url-input-editor-environment-background, #eceff1);
+}
+
+.overlay .container-prefix {
+  border-radius: 8px 0 0 0px;
+}
+
+.overlay .container-suffix {
+  border-radius: 0 8px 0 0;
 }
 
 .content-shadow {
@@ -62,8 +92,10 @@ export default css`
 .input-wrapper {
   display: flex;
   align-items: center;
-  background-color: inherit;
   color: inherit;
+  flex: 1;
+  border-top: 1px var(--url-input-editor-border-color, #e5e5e5) solid;
+  border-bottom: 1px var(--url-input-editor-border-color, #e5e5e5) solid;
 }
 
 .overlay.autocomplete .input-wrapper {
@@ -77,7 +109,7 @@ export default css`
   outline: none;
   margin-right: 8px;
   font-size: 1rem;
-  background-color: inherit;
+  background: var(--url-input-editor-background, inherit);
   color: inherit;
 }
 
@@ -154,4 +186,25 @@ url-detailed-editor {
   flex-direction: row-reverse;
 }
 
+.environment-selector {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  background: var(--url-input-editor-environment-background, #eceff1);
+  padding: 0 12px 0 8px;
+  margin-right: 8px;
+}
+
+.env-trigger {
+  margin-left: 8px;
+}
+
+.env-options {
+  box-shadow: var(--anypoint-dropdown-shadow);
+  padding: 4px 0;
+}
+
+.env-options anypoint-item {
+  padding: 0 20px;
+}
 `;

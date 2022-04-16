@@ -88,6 +88,14 @@ export default class ProjectNavigationElement extends LitElement {
     if (!node) {
       return;
     }
+    const kind = node.dataset.kind as string;
+    if (kind === ProjectFolderKind) {
+      const target = e.target as HTMLElement;
+      if (target.localName === 'api-icon' && target.classList.contains('open-icon')) {
+        this._itemEnterAction(node);
+        return;
+      }
+    }
     const { secondarySelected } = this;
     const key = node.dataset.key as string;
     this.focusListItem(node);
@@ -487,6 +495,47 @@ export default class ProjectNavigationElement extends LitElement {
     this.edited = undefined;
     Events.HttpProject.changed(this);
     Events.HttpProject.State.nameChanged(key, kind, this);
+  }
+
+  /**
+   * Allows to programmatically open a folder.
+   * It opens all parents if they are not opened.
+   * @param key The key of the folder to open.
+   */
+  openFolder(key: string): void {
+    const { openedFolders, project } = this;
+    if (!project) {
+      return;
+    }
+    const folder = project.findFolder(key, { keyOnly: true });
+    if (!folder) {
+      return;
+    }
+    if (openedFolders.includes(key)) {
+      return;
+    }
+    openedFolders.push(key);
+    let parent = folder.getParent();
+    while (parent && parent !== project) {
+      if (!openedFolders.includes(parent.key)) {
+        openedFolders.push(parent.key);
+      }
+      parent = parent.getParent();
+    }
+    this.requestUpdate();
+  }
+
+  /**
+   * Allows to programmatically close a folder.
+   * @param key The key of the folder to open.
+   */
+  closeFolder(key: string): void {
+    const { openedFolders } = this;
+    const index = openedFolders.indexOf(key);
+    if (index >= 0) {
+      openedFolders.splice(index, 1);
+      this.requestUpdate();
+    }
   }
 
   render(): TemplateResult {

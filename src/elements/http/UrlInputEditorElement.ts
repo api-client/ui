@@ -13,10 +13,10 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 */
-import { LitElement, html, CSSResult, TemplateResult } from 'lit';
+import { LitElement, html, CSSResult, TemplateResult, PropertyValueMap } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
-import { property, state } from 'lit/decorators.js';
+import { property, state, query } from 'lit/decorators.js';
 import { ValidatableMixin, EventsTargetMixin, AnypointListboxElement } from '@anypoint-web-components/awc';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
@@ -26,7 +26,7 @@ import '@anypoint-web-components/awc/dist/define/anypoint-item.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-item-body.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-listbox.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-collapse.js';
-import { Events as CoreEvents, UrlParser, EventUtils, UrlEncoder } from '@api-client/core/build/browser.js';
+import { Events as CoreEvents, UrlParser, EventUtils, UrlEncoder, Environment, Property, Server } from '@api-client/core/build/browser.js';
 import classStyles from './UrlInputEditor.styles.js';
 import UrlParamsEditorElement from './UrlParamsEditorElement.js';
 import { IconType } from '../icons/Icons.js';
@@ -111,6 +111,16 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
    */
   @property({ type: Boolean }) readOnly = false;
 
+  /**
+   * The list of environments that apply to the current request.
+   */
+  @property({ type: Array }) environments?: Environment[];
+
+  /**
+   * The key of the selected environment.
+   */
+  @property({ type: String }) environment?: string;
+
   [valueValue]: string;
 
   @state() [autocompleteOpened] = false;
@@ -164,6 +174,39 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     return node;
   }
 
+  /**
+   * Computed value when an environment change.
+   * 
+   * Reads the environment to render in the view if any is defined.
+   * When the `environment` is not set it returns the first environment.
+   */
+  @state() protected effectiveEnvironment: Environment | undefined;
+
+  /**
+   * A flag that determines whether environment selector is rendered.
+   */
+  @state() protected withEnvironment = false;
+
+  /**
+   * The list of variables to apply to the current request.
+   * This is computed when the `environments` or `environment` change.
+   */
+  @state() protected variables?: Property[];
+
+  /**
+   * The label to render in the environment selector.
+   * This is computed when the `environments` or `environment` change.
+   */
+  @state() protected environmentLabel?: string;
+
+  /**
+   * Whether the environment selector is opened.
+   */
+  @state() protected environmentSelectorOpened = false;
+
+  @query('.environment-selector')
+  envSelectorWrapper?: HTMLElement;
+
   constructor() {
     super();
     this[extValueChangeHandler] = this[extValueChangeHandler].bind(this);
@@ -189,6 +232,64 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     // node.removeEventListener(ArcModelEventTypes.UrlHistory.State.delete, this[urlHistoryDeletedHandler]);
     // node.removeEventListener(ArcModelEventTypes.destroyed, this[urlHistoryDestroyedHandler]);
     this.removeEventListener('keydown', this[keyDownHandler]);
+  }
+
+  protected updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+    super.updated(cp);
+    if (cp.has('environments') || cp.has('environment')) {
+      this._computeEnvironment();
+    }
+  }
+
+  protected _computeEnvironment(): void {
+    const { environment, environments } = this;
+    if (!Array.isArray(environments) || !environments.length) {
+      this.withEnvironment = false;
+      return;
+    }
+    this.withEnvironment = true;
+    // selected env
+    let effective = environments.find(i => i.key === environment);
+    if (!effective) {
+      [effective] = environments;
+    }
+    this.effectiveEnvironment = effective;
+
+    // variables
+    const flatProperties: Property[] = [];
+    let effectiveServer: Server | undefined;
+
+    for (const env of environments) {
+      if (env.server && env.server.uri) {
+        effectiveServer = env.server;
+      }
+      if (env.variables) {
+        for (const prop of env.variables) {
+          // environments are listed from the project's root down to the folder where the requests
+          // exists. When a folder has a variable that was already defined it is replaced.
+          const index = flatProperties.findIndex(i => i.name === prop.name);
+          if (index >= 0) {
+            flatProperties.splice(index, 1);
+          }
+          flatProperties.push(prop);
+        }
+      }
+      if (env === effective) {
+        break;
+      }
+    }
+
+    this.variables = flatProperties;
+
+    // label in the env selector
+    let renderPrefix: string | undefined;
+    if (effectiveServer) {
+      renderPrefix = effectiveServer.readUri(flatProperties);
+    }
+    if (!renderPrefix) {
+      renderPrefix = effective.info.name || 'Unnamed environment';
+    }
+    this.environmentLabel = renderPrefix;
   }
 
   /**
@@ -434,13 +535,13 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       return;
     }
     const { value = '' } = this;
-    const query = String(value).toLowerCase();
-    const rendered = items.filter(i => i.url.toLowerCase().includes(query));
+    const q = String(value).toLowerCase();
+    const rendered = items.filter(i => i.url.toLowerCase().includes(q));
     if (!rendered.length) {
       this[toggleSuggestions](false);
       return;
     }
-    if (rendered.length === 1 && rendered[0].url.toLowerCase() === query) {
+    if (rendered.length === 1 && rendered[0].url.toLowerCase() === q) {
       this[toggleSuggestions](false);
       return;
     }
@@ -624,6 +725,31 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     // this[toggleSuggestions](false);
   }
 
+  protected _selectorClickHandler(): void {
+    this.environmentSelectorOpened = true;
+  }
+
+  protected _selectorKeydownHandler(e: KeyboardEvent): void {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      this.environmentSelectorOpened = true;
+    }
+  }
+
+  protected _selectorClosed(e: Event): void {
+    EventUtils.cancelEvent(e);
+    this.environmentSelectorOpened = false;
+  }
+
+  protected _environmentSelectHandler(e: Event): void {
+    const list = e.target as AnypointListboxElement;
+    const { selected } = list;
+    // list.selected = undefined;
+    EventUtils.cancelEvent(e);
+    this.environmentSelectorOpened = false;
+    this.environment = selected as string; 
+  }
+
   render(): TemplateResult {
     const focused = this[focusedValue];
     const overlay = this[overlayOpenedValue];
@@ -633,12 +759,15 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       focused,
       overlay,
       autocomplete: acOpened,
+      'environment': this.withEnvironment,
     };
     return html`
     ${this[shadowTemplate]()}
     <div class="${classMap(classes)}">
+      <div class="container-prefix"></div>
       ${this[mainInputTemplate]()}  
       ${this[paramsEditorTemplate]()}
+      <div class="container-suffix"></div>
     </div>`;
   }
 
@@ -654,6 +783,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     };
     return html`
     <div class="input-wrapper">
+      ${this._environmentSelectorTemplate()}
       <input 
         .value="${value}" 
         class="main-input"
@@ -675,6 +805,72 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       ></api-icon>
     </div>
     ${this[urlAutocompleteTemplate]()}
+    `;
+  }
+
+  protected _environmentSelectorTemplate(): TemplateResult | string {
+    if (!this.withEnvironment) {
+      return '';
+    }
+    const { environments } = this;
+    const label = this.environmentLabel!;
+    const renderDropdown = environments!.length > 1;
+    return html`
+    <div 
+      class="environment-selector" 
+      tabindex="0" 
+      @click="${this._selectorClickHandler}" 
+      @keydown="${this._selectorKeydownHandler}"
+      aria-label="Selected environment"
+      title="Selected environment"
+    >
+      <span class="environment-label">${label}</span>
+      ${renderDropdown ? html`<api-icon icon="arrowDropDown" class="env-trigger"></api-icon>` : ''}
+    </div>
+    ${renderDropdown ? this._environmentDropdownTemplate(environments!) : ''}
+    `;
+  }
+
+  protected _environmentDropdownTemplate(environments: Environment[]): TemplateResult {
+    const effective = this.effectiveEnvironment;
+    return html`
+    <anypoint-dropdown 
+      .opened="${this.environmentSelectorOpened}"
+      .positionTarget="${this.envSelectorWrapper}"
+      fitPositionTarget
+      noOverlap
+      @overlay-opened="${EventUtils.cancelEvent}"
+      @overlay-closed="${EventUtils.cancelEvent}"
+      @iron-overlay-opened="${EventUtils.cancelEvent}"
+      @iron-overlay-closed="${EventUtils.cancelEvent}"
+      @opened="${EventUtils.cancelEvent}"
+      @closed="${this._selectorClosed}"
+    >
+      <anypoint-listbox
+        class="env-options"
+        useAriaSelected
+        slot="dropdown-content"
+        @selected="${this._environmentSelectHandler}"
+        attrForSelected="data-key"
+        .selected="${effective && effective.key}"
+      >
+        ${environments.map(e => this._environmentListItem(e))}
+      </anypoint-listbox>
+    </anypoint-dropdown>
+    `;
+  }
+
+  protected _environmentListItem(environment: Environment): TemplateResult {
+    const name = environment.info.name || 'Unnamed environment';
+    const srv = environment.getServer();
+    const url = srv?.readUri();
+    return html`
+    <anypoint-item data-key="${environment.key}">
+      <anypoint-item-body ?twoLine="${!!url}">
+        <div>${name}</div>
+        ${url ? html`<div data-secondary>${url}</div>` : ''}
+      </anypoint-item-body>
+    </anypoint-item>
     `;
   }
 

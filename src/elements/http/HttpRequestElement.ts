@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { LitElement, html, TemplateResult, CSSResult, PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ProjectRequest, HttpRequest, Events as CoreEvents, IProjectRequest } from '@api-client/core/build/browser.js';
+import { ProjectRequest, Environment, Events as CoreEvents, IProjectRequest, DeserializedPayload } from '@api-client/core/build/browser.js';
 import { EventsTargetMixin, ResizableMixin, AnypointTabsElement } from '@anypoint-web-components/awc';
 import "@anypoint-web-components/awc/dist/define/anypoint-dropdown.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-listbox.js";
@@ -19,11 +19,9 @@ export const httpMethodSelectorTemplate = Symbol('httpMethodSelectorTemplate');
 export const urlEditorTemplate = Symbol('urlEditorTemplate');
 export const methodSelectorOpened = Symbol('methodSelectorOpened');
 export const methodClosedHandler = Symbol('methodClosedHandler');
-export const methodActivateHandler = Symbol('methodActivateHandler');
 export const methodOptionsTemplate = Symbol('methodOptionsTemplate');
 export const methodSelectorClickHandler = Symbol('methodSelectorClickHandler');
 export const methodSelectorKeydownHandler = Symbol('methodSelectorKeydownHandler');
-export const urlHandler = Symbol('urlHandler');
 export const requestMenuHandler = Symbol('requestMenuHandler');
 export const tabsTemplate = Symbol('tabsTemplate');
 export const tabChangeHandler = Symbol('tabChangeHandler');
@@ -59,10 +57,44 @@ export const computeSnippetsRequestSymbol = Symbol('computeSnippetsRequest');
 export const HttpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'CONNECT', 'OPTIONS', 'TRACE'];
 export const NonPayloadMethods = ['GET', 'HEAD'];
 
+/**
+ * An element that renders an HTTP editor.
+ */
 export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin(LitElement)) {
   static get styles(): CSSResult[] {
     return [elementStyles];
   }
+
+  /**
+   * The request payload.
+   * It can be just a string or an object with the payload data depending on the content type.
+   */
+  @property() payload?: DeserializedPayload;
+
+  /**
+   * The HTTP method (or operation).
+   */
+  @property({ type: String }) method?: string;
+
+  /**
+   * The request URL
+   */
+  @property({ type: String }) url?: string;
+
+  /**
+   * The HTTP headers string.
+   */
+  @property({ type: String }) headers?: string;
+
+  /**
+   * The list of environments that apply to the current request.
+   */
+  @property({ type: Array }) environments?: Environment[];
+
+  /**
+   * The key of the selected environment.
+   */
+  @property({ type: String }) environment?: string;
 
   /**
    * The project request object.
@@ -179,13 +211,11 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    * Reads the headers value and applies the `ignoreContentOnGet` application setting.
    */
   [readHeaders](): string {
-    const expects = this.request?.getExpects();
-    if (!expects) {
+    let { headers } = this;
+    if (!headers) {
       return '';
     }
-
-    const { method = '' } = expects;
-    let { headers = '' } = expects;
+    const { method='GET' } = this;
     if (this.ignoreContentOnGet && method.toLowerCase() === 'get') {
       const reg = /^content-\S+(\s+)?:.*\n?/gim;
       headers = headers.replace(reg, '');
@@ -312,21 +342,15 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   /**
    * The handler for the HTTP method drop down.
    */
-  [methodActivateHandler](e: CustomEvent): void {
+  protected _methodActivateHandler(e: CustomEvent): void {
     this[methodSelectorOpened] = false;
-    const { request } = this;
-    if (!request) {
-      return;
-    }
-
     const { selected } = e.detail;
-    request.expects.method = selected;
+    this.method = selected;
     this.notifyRequestChanged();
     this.notifyChanged('method', selected);
-    // if (!this.isPayload && this.selectedTab === 1) {
-    //   this.selectedTab = 0;
-    // }
-
+    if (!this.isPayload && this.selectedTab === 1) {
+      this.selectedTab = 0;
+    }
     CoreEvents.Telemetry.event(this, {
       category: 'Request editor',
       action: 'Method selected',
@@ -338,15 +362,18 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   /**
    * The handler for the URL editor change event
    */
-  [urlHandler](e: Event): void {
-    const { request } = this;
-    if (!request) {
-      return;
-    }
-
+  protected _urlHandler(e: Event): void {
     const panel = e.target as UrlInputEditorElement;
     const { value } = panel;
-    request.getExpects().url = value;
+    this._updateUrl(value);
+  }
+
+  /**
+   * Commits the change in the URL.
+   * @param value The new URL value
+   */
+  protected _updateUrl(value: string): void {
+    this.url = value;
     this.notifyRequestChanged();
     this.notifyChanged('url', value);
     this[computeSnippetsRequestSymbol]();
@@ -562,12 +589,8 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   }
 
   render(): TemplateResult {
-    const { request } = this;
-    if (!request) {
-      return html``;
-    }
     return html`
-    ${this[urlMetaTemplate](request.getExpects())}
+    ${this[urlMetaTemplate]()}
     ${this[tabsTemplate]()}
     ${this[currentEditorTemplate]()}
     ${this[headersDialogTemplate]()}
@@ -577,11 +600,11 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   /**
    * @returns The template for the top line with method selector, URL, and options.
    */
-  protected [urlMetaTemplate](expects: HttpRequest): TemplateResult {
+  protected [urlMetaTemplate](): TemplateResult {
     return html`
     <div class="url-meta">
-      ${this[httpMethodSelectorTemplate](expects)}
-      ${this[urlEditorTemplate](expects)}
+      ${this[httpMethodSelectorTemplate]()}
+      ${this[urlEditorTemplate]()}
       ${this[sendButtonTemplate]()}
     </div>
     `;
@@ -590,8 +613,8 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   /**
    * @returns The template for the HTTP method selector
    */
-  protected [httpMethodSelectorTemplate](expects: HttpRequest): TemplateResult {
-    const { method } = expects;
+  protected [httpMethodSelectorTemplate](): TemplateResult {
+    const { method='GET' } = this;
     const target = this as HTMLElement;
     return html`
     <div 
@@ -608,7 +631,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
       .positionTarget="${target}" 
       verticalAlign="top"
       @closed="${this[methodClosedHandler]}"
-      @activate="${this[methodActivateHandler]}"
+      @activate="${this._methodActivateHandler}"
     >
       <anypoint-listbox 
         fallbackSelection="GET" 
@@ -639,14 +662,16 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   /**
    * @returns The template for the HTTP URL editor
    */
-  protected [urlEditorTemplate](expects: HttpRequest): TemplateResult {
-    const { url='',  } = expects;
+  protected [urlEditorTemplate](): TemplateResult {
+    const { url=''  } = this;
     const { eventsTarget } = this;
     return html`
     <url-input-editor
       .value="${url}"
       .eventsTarget="${eventsTarget}"
-      @change="${this[urlHandler]}"
+      .environments="${this.environments}"
+      .environment="${this.environment}"
+      @change="${this._urlHandler}"
     ></url-input-editor>
     `;
   }
