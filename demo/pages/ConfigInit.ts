@@ -1,5 +1,5 @@
 import { DemoBindings } from '../lib/DemoBindings.js';
-import { ConfigInitScreen, EventTypes, Router } from '../../index.js';
+import { ConfigInitScreen, EventTypes, Router } from '../../src/index.js';
 
 (async (): Promise<void> => {
   const bindings = new DemoBindings();

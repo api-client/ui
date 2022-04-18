@@ -1,5 +1,5 @@
 import { DemoBindings } from '../lib/DemoBindings.js';
-import { HttpProjectHomeScreen } from '../../index.js';
+import { HttpProjectHomeScreen } from '../../src/index.js';
 
 (async (): Promise<void> => {
   const bindings = new DemoBindings();

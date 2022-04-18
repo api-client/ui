@@ -36,4 +36,50 @@ export const HttpProjectEvents = {
       target.dispatchEvent(e);
     },
   }),
+
+  Request: Object.freeze({
+    /**
+     * Requests the application to send a project request
+     * @param key Optional key of the request to send. By default it targets the editor request.
+     * @param target Optional events target.
+     */
+    send: (target = document.body): void => {
+      const e = new Event(EventTypes.HttpProject.Request.send, {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      });
+      target.dispatchEvent(e);
+    },
+    State: Object.freeze({
+      /**
+       * Dispatches an event that informs the HTTP project's request that the url has changed.
+       * @param value The value of the request url
+       * @param target Optional events target
+       */
+      urlChange: (value: string, target = document.body): void => {
+        const e = new CustomEvent(EventTypes.HttpProject.Request.State.urlChange, {
+          bubbles: true,
+          composed: true,
+          cancelable: true,
+          detail: { value },
+        });
+        target.dispatchEvent(e);
+      },
+      /**
+       * Dispatches an event that informs the HTTP project's request that a content type header has changed.
+       * @param value The value of the content-type header
+       * @param target Optional events target
+       */
+      contentTypeChange: (value: string, target = document.body): void => {
+        const e = new CustomEvent(EventTypes.HttpProject.Request.State.contentTypeChange, {
+          bubbles: true,
+          composed: true,
+          cancelable: true,
+          detail: { value },
+        });
+        target.dispatchEvent(e);
+      },
+    }),
+  }),
 };

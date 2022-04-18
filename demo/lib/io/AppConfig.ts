@@ -17,7 +17,7 @@ class AppConfig extends IoThread {
   async initialize(): Promise<void> {
     // @ts-ignore
     // eslint-disable-next-line no-restricted-globals
-    self.onconnect = (e): void => {
+    self.onconnect = (e: any): void => {
       const port = e.ports[0] as MessagePort;
       this.ports.push(port);
       port.addEventListener('message', this._messageHandler.bind(this));

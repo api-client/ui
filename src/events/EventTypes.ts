@@ -93,5 +93,26 @@ export const EventTypes = Object.freeze({
     State: Object.freeze({
       nameChanged: 'httpprojectnamechange',
     }),
+    Request: Object.freeze({
+      send: 'requestsend',
+      State: Object.freeze({
+        urlChange: 'requeststateurlchange',
+        contentTypeChange: 'requeststatecontenttypechange',
+      }),
+    }),
+  }),
+  AppData: Object.freeze({
+    Http: Object.freeze({
+      UrlHistory: Object.freeze({
+        add: 'appdatahttpurlhistoryadd',
+        query: 'appdatahttpurlhistoryquery',
+        delete: 'appdatahttpurlhistorydelete',
+        clear: 'appdatahttpurlhistoryclear',
+        State: Object.freeze({
+          clear: 'appdatahttpurlhistorystateclear',
+          delete: 'appdatahttpurlhistorystatedelete',
+        }),
+      }),
+    }),
   }),
 });

@@ -9,6 +9,11 @@ import { IConfigEnvironment, ITelemetryConfig, IEnvConfig } from '../../lib/conf
 export class WebConfigurationBindings extends ConfigurationBindings {
   worker?: SharedWorker;
 
+  constructor(protected workerUrl: string) {
+    super();
+    // 
+  }
+
   async initialize(): Promise<void> {
     await super.initialize();
     await this.createWorker();
@@ -16,7 +21,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
 
   async createWorker(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const worker = new SharedWorker('/demo/lib/io/AppConfig.ts', {
+      const worker = new SharedWorker(this.workerUrl, {
         type: 'module',
       });
       worker.port.start();

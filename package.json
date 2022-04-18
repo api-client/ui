@@ -59,6 +59,7 @@
     "@web/dev-server": "^0.1.30",
     "@web/dev-server-esbuild": "^0.2.16",
     "@web/test-runner": "0.13.27",
+    "@web/test-runner-playwright": "^0.8.8",
     "concurrently": "^7.0.0",
     "eslint": "^8.11.0",
     "eslint-config-prettier": "^8.3.0",

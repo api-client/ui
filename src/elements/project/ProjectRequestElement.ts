@@ -56,6 +56,7 @@ export default class ProjectRequestElement extends HttpRequestElement {
     this.headers = expects.headers;
     this._readPayload(expects);
     this._readAppliedEnvironments(request);
+    this.requestUpdate();
   }
 
   protected async _readPayload(expects: HttpRequest): Promise<void> {
@@ -100,5 +101,14 @@ export default class ProjectRequestElement extends HttpRequestElement {
     }
     expects.url = value;
     super._updateUrl(value);
+  }
+
+  protected _updateHeaders(value: string): void {
+    const { expects } = this;
+    if (!expects) {
+      return;
+    }
+    expects.headers = value;
+    super._updateHeaders(value);
   }
 }

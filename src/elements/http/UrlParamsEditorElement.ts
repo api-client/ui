@@ -1,8 +1,9 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable class-methods-use-this */
 import { LitElement, html, CSSResult, TemplateResult } from 'lit';
 import { ValidatableMixin, OverlayMixin, ResizableMixin, AnypointInputElement, AnypointCheckboxElement } from '@anypoint-web-components/awc';
-import { UrlParser } from '@api-client/core/build/browser.js';
 import { property } from 'lit/decorators.js';
+import { UrlProcessor, IUrlParamPart, UrlEncoder } from '@api-client/core/build/browser.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
@@ -11,17 +12,9 @@ import styles from './UrlDetailedEditor.styles.js';
 import '../../define/api-icon.js';
 import '../../define/url-input-editor.js';
 import {
-  getHostValue,
-  findSearchParam,
-  findModelParam,
   valueValue,
   valueChanged,
   notifyChange,
-  computeModel,
-  computeSearchParams,
-  queryModelChanged,
-  updateParserSearch,
-  parserValue,
   addParamHandler,
   removeParamHandler,
   encodeQueryParameters,
@@ -42,24 +35,8 @@ import {
 /* eslint-disable no-continue */
 /* eslint-disable prefer-destructuring */
 
-export declare interface QueryParameter {
-  /**
-   * The name of the parameter
-   */
-  name: string;
-  /**
-   * The value of the parameter
-   */
-  value: string;
-  /**
-   * Whether the parameter is currently enabled.
-   */
-  enabled: boolean;
-}
 
 export declare interface ViewModel {
-  host?: string;
-  path?: string;
   anchor?: string;
 }
 
@@ -78,30 +55,14 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     return styles;
   }
 
-  /**
-   * Computed data model for the view.
-   */
-  @property() model: ViewModel = {};
-
-  /**
-   * List of query parameters model.
-   * If not set then it is computed from current URL.
-   *
-   * Model for query parameters is:
-   * - name {String} param name
-   * - value {String} param value
-   * - enabled {Boolean} is param included into the `value`
-   */
-  @property() queryParameters?: QueryParameter[];
+  protected parser = new UrlProcessor('/');
 
   /**
    * When set the editor is in read only mode.
    */
-  readOnly = false;
+  @property({ type: Boolean }) readOnly = false;
 
   [valueValue] = '';
-
-  [parserValue]?: UrlParser;
 
   /**
    * Current value of the editor.
@@ -129,91 +90,11 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
    * A handler that is called on input
    */
   [valueChanged](value: string): void {
-    const { queryParameters = [] } = this;
-    const hasParams = !!queryParameters.length;
-    if (!value && !hasParams) {
-      return;
+    if (value) {
+      this.parser = new UrlProcessor(value);
+    } else {
+      this.parser = new UrlProcessor('/');
     }
-    this[computeModel](value, queryParameters);
-  }
-
-  [computeModel](value: string, queryModel: QueryParameter[] = []): void {
-    if (!value) {
-      this.model = {};
-      this.queryParameters = [];
-      return;
-    }
-    const parser = new UrlParser(value);
-    this[parserValue] = parser;
-    const model: ViewModel = {};
-    model.host = this[getHostValue](parser) || '';
-    model.path = parser.path || '';
-    model.anchor = parser.anchor || '';
-    this.model = model;
-    this[computeSearchParams](parser, queryModel);
-  }
-
-  [computeSearchParams](parser: UrlParser, queryModel: QueryParameter[] = []): void {
-    if (!this.queryParameters) {
-      this.queryParameters = queryModel;
-    }
-    const items = this.queryParameters;
-    // 1 keep disabled items in the model
-    // 2 remove items that are in query model but not in search params
-    // 3 update value of model
-    // 4 add existing search params to the model
-    const { searchParams } = parser;
-    for (let i = queryModel.length - 1; i >= 0; i--) {
-      if (queryModel[i].enabled === false) {
-        continue;
-      }
-      const param = this[findSearchParam](searchParams, queryModel[i].name);
-      if (!param) {
-        items.splice(i, 1);
-      } else if (queryModel[i].value !== param[1]) {
-        items[i].value = param[1];
-      }
-    }
-    // Add to `queryModel` params that are in `parser.searchParams`
-    searchParams.forEach((pairs) => {
-      const param = this[findModelParam](queryModel, pairs[0]);
-      if (!param) {
-        items[items.length] = {
-          name: pairs[0],
-          value: pairs[1],
-          enabled: true
-        };
-      }
-    });
-    this.queryParameters = [...items];
-  }
-
-  [queryModelChanged](): void {
-    if (this.readOnly) {
-      return;
-    }
-    if (!this[parserValue]) {
-      this[parserValue] = new UrlParser('');
-    }
-    this[updateParserSearch](this.queryParameters);
-    this[valueValue] = this[parserValue]?.value || '';
-    this[notifyChange]();
-  }
-
-  /**
-   * Updates `queryParameters` model from change record.
-   *
-   * @param model Current model for the query parameters
-   */
-  [updateParserSearch](model: QueryParameter[] = []): void {
-    const params: string[][] = [];
-    model.forEach((item) => {
-      if (!item.enabled) {
-        return;
-      }
-      params.push([item.name, item.value]);
-    });
-    this[parserValue]!.searchParams = params;
   }
 
   /**
@@ -233,6 +114,11 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     }
   }
 
+  protected _updateValue(): void {
+    this[valueValue] = this.parser.toString();
+    this[notifyChange]();
+  }
+
   /**
    * Adds a new Query Parameter to the list.
    */
@@ -240,14 +126,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     if (this.readOnly) {
       return;
     }
-    const obj = {
-      name: '',
-      value: '',
-      enabled: true
-    };
-    const items = this.queryParameters || [];
-    items[items.length] = obj;
-    this.queryParameters = [...items];
+    this.parser.search.append('', '');
     this.requestUpdate();
     await this.updateComplete;
     this.refit();
@@ -261,10 +140,8 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   async [removeParamHandler](e: PointerEvent): Promise<void> {
     const node = (e.currentTarget as HTMLElement);
     const index = Number(node.dataset.index);
-    const items = this.queryParameters!;
-    items.splice(index, 1);
-    this.queryParameters = [...items];
-    this[queryModelChanged]();
+    this.parser.search.delete(index);
+    this._updateValue();
     this.requestUpdate();
     await this.updateComplete;
     this.refit();
@@ -287,32 +164,39 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     return result;
   }
 
-  /**
-   * Dispatches the `urlencode` event. The editor handles the action.
-   */
   [encodeQueryParameters](): void {
-    this.dispatchEvent(new CustomEvent('urlencode', {
-      composed: true
-    }));
+    const { search } = this.parser;
+    const list = search.list();
+    list.forEach((part, index) => {
+      part.name = UrlEncoder.encodeQueryString(part.name, true);
+      part.value = UrlEncoder.encodeQueryString(part.value, true);
+      search.update(index, part);
+    });
+    // TODO: UrlEncoder.decodeQueryString(part, false) on each path segment
+    this.requestUpdate();
+    this._updateValue();
     setTimeout(() => this.validate(this.value));
   }
 
-  /**
-   * Dispatches the `urldecode` event. The editor handles the action.
-   */
   [decodeQueryParameters](): void {
-    this.dispatchEvent(new CustomEvent('urldecode', {
-      composed: true
-    }));
+    const { search } = this.parser;
+    const list = search.list();
+    list.forEach((part, index) => {
+      part.name = UrlEncoder.decodeQueryString(part.name, true);
+      part.value = UrlEncoder.decodeQueryString(part.value, true);
+      search.update(index, part);
+    });
+    // TODO: UrlEncoder.encodeQueryString(part, false) on each path segment
+    this.requestUpdate();
+    this._updateValue();
     setTimeout(() => this.validate(this.value));
   }
 
   [enabledHandler](e: CustomEvent): void {
     const node = e.target as AnypointCheckboxElement;
     const index = Number(node.dataset.index);
-    const item = this.queryParameters![index];
-    item.enabled = node.checked;
-    this[queryModelChanged]();
+    this.parser.search.toggle(index, node.checked);
+    this._updateValue();
   }
 
   /**
@@ -323,60 +207,14 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     const { value } = node;
     const prop = node.dataset.property as string;
     const index = Number(node.dataset.index);
-    const item = this.queryParameters![index];
-    // @ts-ignore
-    const old = item[prop] as any;
-    if (old === value) {
-      return;
+    const list = this.parser.search.list();
+    if (prop === 'name') {
+      list[index].name = value;
+    } else {
+      list[index].value = value;
     }
-    // @ts-ignore
-    item[prop] = value;
-    this[queryModelChanged]();
-  }
-
-  [getHostValue](parser: UrlParser): string | undefined {
-    const { protocol } = parser;
-    let { host } = parser;
-    if (host) {
-      if (protocol) {
-        host = `${protocol}//${host}`;
-      }
-    } else if (protocol) {
-      host = `${protocol}//`;
-    }
-    return host;
-  }
-
-  /**
-   * Finds a search parameter in the parser's model by given name.
-   * @param searchParams Model for search params
-   * @param name Name of the parameter
-   * @returns Search parameter model item
-   */
-  [findSearchParam](searchParams: string[][], name: string): string[] | undefined {
-    for (let i = searchParams.length - 1; i >= 0; i--) {
-      if (searchParams[i][0] === name) {
-        return searchParams[i];
-      }
-    }
-    return undefined;
-  }
-
-  /**
-   * Searches for a query parameters model by given name.
-   * @param model Query parameters model
-   * @param name Name of the parameter
-   * @returns Model item.
-   */
-  [findModelParam](model: QueryParameter[], name: string): QueryParameter | undefined {
-    for (let i = 0, len = model.length; i < len; i++) {
-      const item = model[i];
-      if (!item.enabled || item.name !== name) {
-        continue;
-      }
-      return item;
-    }
-    return undefined;
+    this.parser.search.update(index, list[index]);
+    this._updateValue();
   }
 
   render(): TemplateResult {
@@ -386,7 +224,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   }
 
   [formTemplate](): TemplateResult {
-    const items = this.queryParameters || [];
+    const items = this.parser.search.list();
     const { readOnly } = this;
     return html`
     <label class="query-title">Query parameters</label>
@@ -398,7 +236,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
         class="add-param"
         ?disabled="${readOnly}"
       >
-        <arc-icon icon="addCircleOutline"></arc-icon> Add
+        <api-icon icon="add"></api-icon> Add
       </anypoint-button>
     </div>
     `;
@@ -407,7 +245,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   /**
    * @param items THe list to render
    */
-  [listTemplate](items: QueryParameter[]): TemplateResult {
+  [listTemplate](items: IUrlParamPart[]): TemplateResult {
     if (!Array.isArray(items) || !items.length) {
       return html`<p class="empty-list">Add a query parameter to the URL</p>`;
     }
@@ -422,7 +260,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     `;
   }
 
-  [paramItemTemplate](item: QueryParameter, index: number): TemplateResult {
+  [paramItemTemplate](item: IUrlParamPart, index: number): TemplateResult {
     return html`
     <div class="form-row">
       ${this[paramToggleTemplate](item, index)}
@@ -446,7 +284,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
       aria-label="Activate to remove this item"
       ?disabled="${readOnly}"
     >
-      <arc-icon icon="removeCircleOutline"></arc-icon>
+      <api-icon icon="remove"></api-icon>
     </anypoint-icon-button>
     `;
   }
@@ -454,7 +292,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   /**
    * @returns Template for the parameter name input
    */
-  [paramToggleTemplate](item: QueryParameter, index: number): TemplateResult {
+  [paramToggleTemplate](item: IUrlParamPart, index: number): TemplateResult {
     return html`
     <anypoint-switch
       data-index="${index}"
@@ -470,7 +308,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   /**
    * @returns Template for the parameter name input
    */
-  [paramNameInput](item: QueryParameter, index: number): TemplateResult {
+  [paramNameInput](item: IUrlParamPart, index: number): TemplateResult {
     const { readOnly } = this;
     return html`
     <anypoint-input
@@ -492,7 +330,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   /**
    * @returns Template for the parameter value input
    */
-  [paramValueInput](item: QueryParameter, index: number): TemplateResult {
+  [paramValueInput](item: IUrlParamPart, index: number): TemplateResult {
     const { readOnly } = this;
     return html`
     <anypoint-input

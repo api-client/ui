@@ -26,10 +26,11 @@ import '@anypoint-web-components/awc/dist/define/anypoint-item.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-item-body.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-listbox.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-collapse.js';
-import { Events as CoreEvents, UrlParser, EventUtils, UrlEncoder, Environment, Property, Server } from '@api-client/core/build/browser.js';
+import { Events as CoreEvents, IUrl, EventUtils, Environment, Property, Server } from '@api-client/core/build/browser.js';
 import classStyles from './UrlInputEditor.styles.js';
 import UrlParamsEditorElement from './UrlParamsEditorElement.js';
 import { IconType } from '../icons/Icons.js';
+import { sortUrls } from '../../lib/http/Url.js';
 import '../../define/api-icon.js';
 import '../../define/url-params-editor.js';
 
@@ -49,13 +50,10 @@ import {
   paramsOpenedHandler,
   inputHandler,
   toggleHandler,
-  valueValue,
   notifyChange,
   extValueChangeHandler,
   keyDownHandler,
-  decodeEncode,
   dispatchAnalyticsEvent,
-  processUrlParams,
   autocompleteResizeHandler,
   setShadowHeight,
   mainFocusBlurHandler,
@@ -75,6 +73,8 @@ import {
   urlHistoryDeletedHandler,
   urlHistoryDestroyedHandler,
 } from './internals.js';
+import { Events } from '../../events/Events.js';
+import { EventTypes } from '../../events/EventTypes.js';
 
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-plusplus */
@@ -121,13 +121,11 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
    */
   @property({ type: String }) environment?: string;
 
-  [valueValue]: string;
-
   @state() [autocompleteOpened] = false;
 
-  @state() [suggestionsValue]: any; // ARCUrlHistory[]
+  @state() [suggestionsValue]?: IUrl[];
 
-  @state() [renderedSuggestions]: any; // ARCUrlHistory[]
+  @state() [renderedSuggestions]?: IUrl[];
 
   [previousValue]?: string;
 
@@ -138,20 +136,6 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
   [shadowContainerOpened] = false;
 
   [shadowContainerHeight]?: number;
-
-  // get value(): string {
-  //   return this[valueValue];
-  // }
-
-  // set value(value: string) {
-  //   const old = this[valueValue];
-  //   if (old === value) {
-  //     return;
-  //   }
-  //   this[valueValue] = value;
-  //   this.requestUpdate('value', old);
-  //   this.dispatchEvent(new CustomEvent('change'));
-  // }
 
   /**
    * @returns An icon name for the main input suffix icon
@@ -217,9 +201,9 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
 
   _attachListeners(node: EventTarget): void {
     super._attachListeners(node);
-    // node.addEventListener(RequestEventTypes.State.urlChange, this[extValueChangeHandler]);
-    // node.addEventListener(ArcModelEventTypes.UrlHistory.State.delete, this[urlHistoryDeletedHandler]);
-    // node.addEventListener(ArcModelEventTypes.destroyed, this[urlHistoryDestroyedHandler]);
+    node.addEventListener(EventTypes.HttpProject.Request.State.urlChange, this[extValueChangeHandler]);
+    node.addEventListener(EventTypes.AppData.Http.UrlHistory.State.delete, this[urlHistoryDeletedHandler]);
+    node.addEventListener(EventTypes.AppData.Http.UrlHistory.State.clear, this[urlHistoryDestroyedHandler]);
     this.addEventListener('keydown', this[keyDownHandler]);
   }
 
@@ -228,9 +212,9 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
    */
   _detachListeners(node: EventTarget): void {
     super._detachListeners(node);
-    // node.removeEventListener(RequestEventTypes.State.urlChange, this[extValueChangeHandler]);
-    // node.removeEventListener(ArcModelEventTypes.UrlHistory.State.delete, this[urlHistoryDeletedHandler]);
-    // node.removeEventListener(ArcModelEventTypes.destroyed, this[urlHistoryDestroyedHandler]);
+    node.removeEventListener(EventTypes.HttpProject.Request.State.urlChange, this[extValueChangeHandler]);
+    node.removeEventListener(EventTypes.AppData.Http.UrlHistory.State.delete, this[urlHistoryDeletedHandler]);
+    node.removeEventListener(EventTypes.AppData.Http.UrlHistory.State.clear, this[urlHistoryDestroyedHandler]);
     this.removeEventListener('keydown', this[keyDownHandler]);
   }
 
@@ -296,24 +280,22 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
    * A handler that is called on input
    */
   [notifyChange](): void {
-    // RequestEvents.State.urlChange(this, this.value);
-    this.dispatchEvent(new CustomEvent('change'));
+    Events.HttpProject.Request.State.urlChange(this.value, this);
+    this.dispatchEvent(new Event('change'));
   }
 
   /**
    * A handler for the `url-value-changed` event.
    * If this element is not the source of the event then it will update the `value` property.
    * It's to be used besides the Polymer's data binding system.
-   *
-   * @param {RequestChangeEvent} e
    */
-  [extValueChangeHandler](e: any): void {
+  [extValueChangeHandler](e: Event): void {
     if (e.composedPath()[0] === this || this.readOnly) {
       return;
     }
-    const { changedProperty, changedValue } = e;
-    if (changedProperty === 'url' && changedValue !== this.value) {
-      this.value = changedValue;
+    const { value } = (e as CustomEvent).detail;
+    if (value !== this.value) {
+      this.value = value;
     }
   }
 
@@ -322,29 +304,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
    */
   toggle(): void {
     this.detailsOpened = !this.detailsOpened;
-    this.dispatchEvent(new CustomEvent('detailsopened'));
-  }
-
-  /**
-   * HTTP encode query parameters
-   */
-  encodeParameters(): void {
-    if (this.readOnly) {
-      return;
-    }
-    this[decodeEncode]('encode');
-    this[dispatchAnalyticsEvent]('Encode parameters');
-  }
-
-  /**
-   * HTTP decode query parameters
-   */
-  decodeParameters(): void {
-    if (this.readOnly) {
-      return;
-    }
-    this[decodeEncode]('decode');
-    this[dispatchAnalyticsEvent]('Decode parameters');
+    this.dispatchEvent(new Event('detailsopened'));
   }
 
   /**
@@ -361,74 +321,14 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
   }
 
   /**
-   * HTTP encode or decode query parameters depending on [type].
-   */
-  [decodeEncode](type: string): void {
-    const url = this.value;
-    if (!url) {
-      return;
-    }
-    const parser = new UrlParser(url);
-    this[processUrlParams](parser, type);
-    this.value = parser.value;
-    this[notifyChange]();
-  }
-
-
-  /**
-   * Processes query parameters and path value by `processFn`.
-   * The function has to be available on this instance.
-   * @param parser Instance of UrlParser
-   * @param processFn Function name to call on each parameter
-   */
-  [processUrlParams](parser: UrlParser, processFn: string): void {
-    const decoded = parser.searchParams.map((item) => {
-      let key;
-      let value;
-      if (processFn === 'encode') {
-        key = UrlEncoder.encodeQueryString(item[0], true);
-        value = UrlEncoder.encodeQueryString(item[1], true);
-      } else {
-        key = UrlEncoder.decodeQueryString(item[0], true);
-        value = UrlEncoder.decodeQueryString(item[1], true);
-      }
-      return [key, value];
-    });
-    parser.searchParams = decoded;
-    const { path } = parser;
-    if (path && path.length) {
-      const parts = path.split('/');
-      let tmp = '/';
-      for (let i = 0, len = parts.length; i < len; i++) {
-        let part = parts[i];
-        if (!part) {
-          continue;
-        }
-        if (processFn === 'encode') {
-          part = UrlEncoder.encodeQueryString(part, false);
-        } else {
-          part = UrlEncoder.decodeQueryString(part, false);
-        }
-        tmp += part;
-        if (i + 1 !== len) {
-          tmp += '/';
-        }
-      }
-      parser.path = tmp;
-    }
-  }
-
-  /**
    * Queries the data model for history data and sets the suggestions
    * @param q User query from the input field
    */
   async [readAutocomplete](q: string): Promise<void> {
     try {
-      // FIXME: IMplement this.
-      throw new Error(q)
-      // this[suggestionsValue] = /** @type ARCUrlHistory[] */ (await ArcModelEvents.UrlHistory.query(this, q));
+      this[suggestionsValue] = await Events.AppData.Http.UrlHistory.query(q, this);
     } catch (e) {
-      this[suggestionsValue] = /** @type ARCUrlHistory[] */ (undefined);
+      this[suggestionsValue] = undefined;
     }
   }
 
@@ -438,8 +338,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       return;
     }
     if (!this[autocompleteOpened] && ['Enter', 'NumpadEnter'].includes(e.code)) {
-      // FIXME: Add this event
-      // RequestEvents.send(this);
+      Events.HttpProject.Request.send(this);
     } else if (this[autocompleteOpened] && target.classList.contains('main-input')) {
       const { code } = e;
       if (code === 'ArrowUp') {
@@ -453,8 +352,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
         const node = this[suggestionsList];
         const { highlightedItem } = node;
         if (!highlightedItem) {
-          // FIXME: Add this event
-          // RequestEvents.send(this);
+          Events.HttpProject.Request.send(this);
           this[toggleSuggestions](false);
         } else {
           const index = node.indexOf(highlightedItem);
@@ -545,8 +443,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       this[toggleSuggestions](false);
       return;
     }
-    // @FIXME: Implement this.
-    // sortUrls(rendered, query);
+    sortUrls(rendered, q);
     this[renderedSuggestions] = rendered;
     this[toggleSuggestions](true);
     this.requestUpdate();
@@ -557,9 +454,6 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     this[setSuggestionsWidth]();
   }
 
-  /**
-   * @param {boolean} opened
-   */
   [toggleSuggestions](opened: boolean): void {
     if (!opened) {
       const element = this.shadowRoot!.querySelector('.main-input') as HTMLInputElement;
@@ -596,10 +490,11 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     const list = e.target as AnypointListboxElement;
     const { selected } = list;
     list.selected = undefined;
-    if (selected === -1 || selected === null || selected === undefined) {
+    const items = this[renderedSuggestions];
+    if (!items || selected === -1 || selected === null || selected === undefined) {
       return;
     }
-    const item = this[renderedSuggestions][selected];
+    const item = items[selected as number];
     if (!item) {
       return;
     }
@@ -676,53 +571,44 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
   /**
    * Removes the rendered suggestion from the store and from the currently rendered list.
    */
-  async [removeSuggestionHandler](e: Event): Promise<void> {
+  [removeSuggestionHandler](e: Event): void {
     e.preventDefault();
     e.stopPropagation();
-    // const node = /** @type HTMLElement */ (e.target);
-    // const { id } = node.dataset;
-    // if (!id) {
-    //   return;
-    // }
-    // await ArcModelEvents.UrlHistory.delete(this, id);
+    const node = e.target as HTMLElement;
+    const { id } = node.dataset;
+    if (!id) {
+      return;
+    }
+    Events.AppData.Http.UrlHistory.delete(id, this);
   }
 
   /**
    * Removes all stored history URLs.
    */
-  async [clearSuggestionsHandler](e: Event): Promise<void> {
+  [clearSuggestionsHandler](e: Event): void {
     e.preventDefault();
     e.stopPropagation();
-    // await ArcModelEvents.destroy(this, ['url-history']);
+    Events.AppData.Http.UrlHistory.clear(this);
   }
 
-  /**
-   * @param {ARCHistoryUrlDeletedEvent} e 
-   */
-  [urlHistoryDeletedHandler](e: any): void {
-    // const { id } = e;
-    // const items = /** @type ARCUrlHistory[] */ (this[suggestionsValue]);
-    // if (!Array.isArray(items)) {
-    //   return;
-    // }
-    // const index = items.findIndex(i => i._id === id);
-    // items.splice(index, 1);
-    // if (this[autocompleteOpened]) {
-    //   this[filterSuggestions]();
-    // }
+  
+  [urlHistoryDeletedHandler](e: Event): void {
+    const items = this[suggestionsValue];
+    if (!Array.isArray(items)) {
+      return;
+    }
+    const url = (e as CustomEvent).detail;
+    const index = items.findIndex(i => i.url === url);
+    items.splice(index, 1);
+    if (this[autocompleteOpened]) {
+      this[filterSuggestions]();
+    }
   }
 
-  /**
-   * @param {ARCModelStateDeleteEvent} e 
-   */
-  [urlHistoryDestroyedHandler](e: any): void {
-    // const { store } = e;
-    // if (!['all', 'url-history'].includes(store)) {
-    //   return;
-    // }
-    // this[suggestionsValue] = /** @type ARCUrlHistory[] */ (undefined);
-    // this[renderedSuggestions] = /** @type ARCUrlHistory[] */ (undefined);
-    // this[toggleSuggestions](false);
+  [urlHistoryDestroyedHandler](): void {
+    this[suggestionsValue] = undefined;
+    this[renderedSuggestions] = undefined;
+    this[toggleSuggestions](false);
   }
 
   protected _selectorClickHandler(): void {
@@ -839,10 +725,6 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       .positionTarget="${this.envSelectorWrapper}"
       fitPositionTarget
       noOverlap
-      @overlay-opened="${EventUtils.cancelEvent}"
-      @overlay-closed="${EventUtils.cancelEvent}"
-      @iron-overlay-opened="${EventUtils.cancelEvent}"
-      @iron-overlay-closed="${EventUtils.cancelEvent}"
       @opened="${EventUtils.cancelEvent}"
       @closed="${this._selectorClosed}"
     >
@@ -883,7 +765,8 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     if (opened && detailsOpened) {
       opened = false;
     }
-    if (opened && (!this[renderedSuggestions] || !this[renderedSuggestions].length)) {
+    const items = this[renderedSuggestions];
+    if (opened && (!items || !items.length)) {
       opened = false;
     }
     return html`
@@ -898,10 +781,6 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       noAutofocus
       noCancelOnOutsideClick
       @resize="${this[autocompleteResizeHandler]}"
-      @overlay-opened="${EventUtils.cancelEvent}"
-      @overlay-closed="${EventUtils.cancelEvent}"
-      @iron-overlay-opened="${EventUtils.cancelEvent}"
-      @iron-overlay-closed="${EventUtils.cancelEvent}"
       @opened="${EventUtils.cancelEvent}"
       @closed="${this[autocompleteClosedHandler]}"
     >
@@ -934,11 +813,10 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
   }
 
   /**
-   * @param {ARCUrlHistory} item 
    * @returns The template for an URL suggestion item.
    */
-  [suggestionItemTemplate](item: any): TemplateResult {
-    const { url, _id } = item;
+  [suggestionItemTemplate](item: IUrl): TemplateResult {
+    const { url } = item;
     // this has a11y rule disabled because we are not planning to make this so complex to use
     // where you can switch between the list context to a button context.
     return html`
@@ -946,7 +824,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       <div>${url}</div>
       <span 
         class="remove-suggestion" 
-        data-id="${_id}" 
+        data-id="${url}" 
         @click="${this[removeSuggestionHandler]}"
       >Remove</span>
     </anypoint-item>`;
@@ -986,17 +864,11 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       noOverlap
       .value="${value}"
       noCancelOnOutsideClick
-      @urlencode="${this.encodeParameters}"
-      @urldecode="${this.decodeParameters}"
       @change="${this[inputHandler]}"
       ?readOnly="${readOnly}"
       ?opened="${detailsOpened}"
       @opened="${this[paramsOpenedHandler]}"
       @closed="${this[paramsClosedHandler]}"
-      @overlay-closed="${EventUtils.cancelEvent}"
-      @overlay-opened="${EventUtils.cancelEvent}"
-      @iron-overlay-closed="${EventUtils.cancelEvent}"
-      @iron-overlay-opened="${EventUtils.cancelEvent}"
       @resize="${this[paramsResizeHandler]}"
     ></url-params-editor>
     `;

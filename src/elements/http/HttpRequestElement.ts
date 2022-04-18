@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { LitElement, html, TemplateResult, CSSResult, PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ProjectRequest, Environment, Events as CoreEvents, IProjectRequest, DeserializedPayload } from '@api-client/core/build/browser.js';
+import { ProjectRequest, Environment, Events as CoreEvents, IProjectRequest, DeserializedPayload, Headers } from '@api-client/core/build/browser.js';
 import { EventsTargetMixin, ResizableMixin, AnypointTabsElement } from '@anypoint-web-components/awc';
 import "@anypoint-web-components/awc/dist/define/anypoint-dropdown.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-listbox.js";
@@ -10,9 +10,13 @@ import "@anypoint-web-components/awc/dist/define/anypoint-tabs.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-tab.js";
 import '../../define/api-icon.js';
 import '../../define/url-input-editor.js';
+import '../../define/http-headers-editor.js';
 import UrlInputEditorElement from './UrlInputEditorElement.js';
+import HeadersEditorElement from './HeadersEditorElement.js';
 import elementStyles from './HttpRequestElementStyles.js';
 import { SecurityProcessor } from '../../lib/security/SecurityProcessor.js';
+import { EventTypes } from '../../events/EventTypes.js';
+import { Events } from '../../events/Events.js';
 
 export const urlMetaTemplate = Symbol('urlMetaTemplate');
 export const httpMethodSelectorTemplate = Symbol('httpMethodSelectorTemplate');
@@ -33,7 +37,6 @@ export const actionsTemplate = Symbol('actionsTemplate');
 export const actionsUiHandler = Symbol('actionsUiHandler');
 export const actionsHandler = Symbol('actionsHandler');
 export const snippetsTemplate = Symbol('snippetsTemplate');
-export const headersHandler = Symbol('headersHandler');
 export const bodyHandler = Symbol('bodyHandler');
 export const authorizationHandler = Symbol('authorizationHandler');
 export const configHandler = Symbol('configHandler');
@@ -179,11 +182,11 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    * @returns True when the request cannot have the payload on the message.
    */
   get isPayload(): boolean {
-    const expects = this.request?.getExpects();
-    if (!expects) {
-      return false
+    const { method } = this;
+    if (!method) {
+      return false;
     }
-    return !NonPayloadMethods.includes(expects.method);
+    return !NonPayloadMethods.includes(method);
   }
 
   constructor() {
@@ -193,13 +196,12 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
 
   _attachListeners(node: EventTarget): void {
     super._attachListeners(node);
-    // FIXME:  Implement this event
-    // node.addEventListener(RequestEventTypes.send, this[internalSendHandler]);
+    node.addEventListener(EventTypes.HttpProject.Request.send, this[internalSendHandler]);
   }
 
   _detachListeners(node: EventTarget): void {
     super._attachListeners(node);
-    // node.addEventListener(RequestEventTypes.send, this[internalSendHandler]);
+    node.addEventListener(EventTypes.HttpProject.Request.send, this[internalSendHandler]);
   }
 
   firstUpdated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
@@ -291,6 +293,8 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
       // this[awaitingOAuth2authorization] = true;
       return;
     }
+    // store the URL in the history
+    Events.AppData.Http.UrlHistory.add(this.url as string, this);
     // this.requestId = v4();
     this.notifyRequestChanged();
     // const request = this.serialize();
@@ -413,11 +417,11 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   /**
    * The handler for the headers change event from the headers editor.
    */
-  [headersHandler](e: Event): void {
+  _headersHandler(e: Event): void {
     e.preventDefault();
-    // const node = /** @type HeadersEditorElement */ (e.target);
+    const node = e.target as HeadersEditorElement;
+    const { value } = node;
     // const { value, model, source } = node;
-    // this[headersValue] = value;
     // if (!this.uiConfig) {
     //   this.uiConfig = {};
     // }
@@ -426,9 +430,15 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     // }
     // this.uiConfig.headers.model = model;
     // this.uiConfig.headers.source = source;
-    // this.contentType = HeadersParser.contentType(value);
+    this._updateHeaders(value);
+  }
+
+  protected _updateHeaders(value: string): void {
+    this.headers = value;
+    const headers = new Headers(value);
+    this.contentType = headers.get('content-type');
     this.notifyRequestChanged();
-    // this.notifyChanged('headers', value);
+    this.notifyChanged('headers', value);
     this[computeSnippetsRequestSymbol]();
   }
 
@@ -698,7 +708,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   }
 
   /**
-   * @returns {TemplateResult} The template for the request editor tabs
+   * @returns The template for the request editor tabs
    */
   [tabsTemplate](): TemplateResult {
     const { isPayload, selectedTab, } = this;
@@ -716,7 +726,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   }
 
   /**
-   * @returns {TemplateResult} The template for the current editor
+   * @returns The template for the current editor
    */
   [currentEditorTemplate](): TemplateResult {
     const { selectedTab, isPayload } = this;
@@ -738,28 +748,28 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   }
 
   /**
-   * @param {boolean} visible Whether the panel should not be hidden
-   * @returns {TemplateResult} The template for the headers editor
+   * @param visible Whether the panel should not be hidden
+   * @returns The template for the headers editor
    */
   [headersTemplate](visible: boolean): TemplateResult {
     const {
       eventsTarget,
-      // headers,
-      // .value="${headers}"
+      headers,
       readOnly,
     } = this;
     return html`
-    <headers-editor
+    <http-headers-editor
       ?hidden="${!visible}"
       .eventsTarget="${eventsTarget}"
-      @change="${this[headersHandler]}"
+      .value="${headers || ''}"
+      @change="${this._headersHandler}"
       ?readonly="${readOnly}"
-    ></headers-editor>`;
+    ></http-headers-editor>`;
   }
 
   /**
-   * @param {boolean} visible Whether the panel should not be hidden
-   * @returns {TemplateResult} The template for the body editor
+   * @param visible Whether the panel should not be hidden
+   * @returns The template for the body editor
    */
   [bodyTemplate](visible: boolean): TemplateResult {
     const {
@@ -786,8 +796,8 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   }
 
   /**
-   * @param {boolean} visible Whether the panel should not be hidden
-   * @returns {TemplateResult} The template for the authorization editor
+   * @param visible Whether the panel should not be hidden
+   * @returns The template for the authorization editor
    */
   [authorizationTemplate](visible: boolean): TemplateResult|string {
     return html`TO DO: ${visible}`;
