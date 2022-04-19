@@ -1,9 +1,8 @@
-import { IUrl } from '@api-client/core/build/browser';
+import { ContextChangeRecord, ContextDeleteRecord, IRequestUiMeta, IUrl } from '@api-client/core/build/browser';
 import { AppDataBindings } from '../base/AppDataBindings.js';
 import { IoCommand, IoEvent, IoNotification } from '../base/PlatformBindings.js';
 
 export class WebAppDataBindings extends AppDataBindings {
-  
   worker?: SharedWorker;
 
   constructor(protected workerUrl: string) {
@@ -59,5 +58,21 @@ export class WebAppDataBindings extends AppDataBindings {
 
   clearUrlHistory(): Promise<void> {
     return this.invoke('clearUrlHistory');
+  }
+
+  deleteProjectUi(id: string): Promise<ContextDeleteRecord> {
+    return this.invoke('deleteProjectUi', id);
+  }
+
+  setHttpRequestUi(pid: string, id: string, meta: IRequestUiMeta): Promise<ContextChangeRecord<IRequestUiMeta>> {
+    return this.invoke('setHttpRequestUi', pid, id, meta);
+  }
+
+  getHttpRequestUi(pid: string, id: string): Promise<IRequestUiMeta> {
+    return this.invoke('getHttpRequestUi', pid, id);
+  }
+
+  deleteHttpRequestUi(pid: string, id: string): Promise<ContextDeleteRecord> {
+    return this.invoke('deleteHttpRequestUi', pid, id);
   }
 }

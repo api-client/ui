@@ -114,5 +114,15 @@ export const EventTypes = Object.freeze({
         }),
       }),
     }),
+    Ui: Object.freeze({
+      HttpProject: Object.freeze({
+        delete: 'appdatauiprojectdelete',
+        HttpRequest: Object.freeze({
+          set: 'appdatauiprojectrequestset',
+          get: 'appdatauiprojectrequestget',
+          delete: 'appdatauiprojectrequestdelete',
+        }),
+      }),
+    }),
   }),
 });

@@ -404,7 +404,10 @@ export default class AuthorizationSelectorElement extends MultiSelectableMixin(L
    * the ARIA attribute, and if so then it renders it in the slot.
    */
   [processDocs](): void {
-    const slot = this.shadowRoot!.querySelector('slot[name="aria"]') as HTMLSlotElement;
+    if (!this.shadowRoot) {
+      return;
+    }
+    const slot = this.shadowRoot.querySelector('slot[name="aria"]') as HTMLSlotElement;
     if (!slot) {
       return;
     }

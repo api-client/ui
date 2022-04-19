@@ -1,7 +1,8 @@
 import { PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization } from '@api-client/core/build/browser.js';
+import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents } from '@api-client/core/build/browser.js';
 import HttpRequestElement from '../http/HttpRequestElement.js';
+import { Events } from '../../events/Events.js';
 
 /**
  * An element that specializes in rendering an HTTP request that is defined on an HttpProject.
@@ -38,6 +39,7 @@ export default class ProjectRequestElement extends HttpRequestElement {
     this.method = 'GET';
     this.environments = undefined;
     this.environment = undefined;
+    this.ui = undefined;
   }
 
   protected _processRequestChange(): void {
@@ -62,6 +64,7 @@ export default class ProjectRequestElement extends HttpRequestElement {
     this._readAppliedEnvironments(request);
     this._computeSnippetsRequest();
     this.requestUpdate();
+    this._readRequestUi(project.key, key);
   }
 
   protected async _readPayload(expects: HttpRequest): Promise<void> {
@@ -124,5 +127,39 @@ export default class ProjectRequestElement extends HttpRequestElement {
     }
     request.authorization = auth;
     super._updateAuthorization(auth);
+  }
+
+  protected async _readRequestUi(pid: string, id: string): Promise<void> {
+    try {
+      const data = await Events.AppData.Http.Ui.HttpProject.HttpRequest.get(pid, id, this);
+      if (data) {
+        this.ui = new RequestUiMeta(data);
+      } else {
+        this.ui = undefined;
+      }
+    } catch (e) {
+      this.ui = undefined;
+    }
+  }
+
+  protected async _updateRequestUi(meta: RequestUiMeta): Promise<void> {
+    const { project, key } = this;
+    if (!project || !key) {
+      this._cleanupRequest();
+      return;
+    }
+    try {
+      await Events.AppData.Http.Ui.HttpProject.HttpRequest.set(project.key, key, meta.toJSON(), this);
+    } catch (e) {
+      const cause = e as Error;
+      CoreEvents.Telemetry.exception(this, cause.message, false);
+    }
+  }
+
+  notifyChanged(type: string, value: any): void {
+    if (type === 'ui') {
+      this._updateRequestUi(value);
+    }
+    super.notifyChanged(type, value);
   }
 }

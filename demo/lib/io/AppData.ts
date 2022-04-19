@@ -1,4 +1,4 @@
-import { IUrl } from '@api-client/core/build/browser.js';
+import { ContextChangeRecord, ContextDeleteRecord, IRequestUiMeta, IUrl } from '@api-client/core/build/browser.js';
 import SharedWorkerThread from './SharedWorkerThread.js';
 import AppDataStore from '../../../src/bindings/web/AppDataStore.js';
 
@@ -26,6 +26,22 @@ class AppData extends SharedWorkerThread {
   async clearUrlHistory(): Promise<void> {
     await this.urlHistory.clearUrlHistory();
     this.notifyClients('Events.AppData.Http.UrlHistory.State.clear');
+  }
+
+  deleteProjectUi(id: string): Promise<ContextDeleteRecord> {
+    return this.urlHistory.deleteProjectUi(id);
+  }
+
+  setHttpRequestUi(pid: string, id: string, meta: IRequestUiMeta): Promise<ContextChangeRecord<IRequestUiMeta>> {
+    return this.urlHistory.setHttpRequestUi(pid, id, meta);
+  }
+
+  getHttpRequestUi(pid: string, id: string): Promise<IRequestUiMeta> {
+    return this.urlHistory.getHttpRequestUi(pid, id);
+  }
+
+  deleteHttpRequestUi(pid: string, id: string): Promise<ContextDeleteRecord> {
+    return this.urlHistory.deleteHttpRequestUi(pid, id);
   }
 }
 

@@ -7,6 +7,7 @@ import {
   IOAuth2Authorization,
   IHttpRequest,
   HttpRequest,
+  RequestUiMeta,
 } from '@api-client/core/build/browser.js';
 import { EventsTargetMixin, ResizableMixin, AnypointTabsElement } from '@anypoint-web-components/awc';
 import "@anypoint-web-components/awc/dist/define/anypoint-dropdown.js";
@@ -183,6 +184,11 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   }
 
   @state() [methodSelectorOpened] = false;
+
+  /**
+   * Optional instance of the `RequestUiMeta` to store the UI state.
+   */
+  @property({ type: Object }) ui?: RequestUiMeta;
 
   /**
    * @returns True when the request cannot have the payload on the message.
@@ -412,12 +418,12 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     const tabs = e.target as AnypointTabsElement;
     this.selectedTab = Number(tabs.selected);
     this.refreshEditors();
-    // if (!this.uiConfig) {
-    //   this.uiConfig = {};
-    // }
-    // this.uiConfig.selectedEditor = this.selectedTab;
+    if (!this.ui) {
+      this.ui = new RequestUiMeta();
+    }
+    this.ui.selectedEditor = this.selectedTab;
     this.notifyRequestChanged();
-    // this.notifyChanged('uiConfig', this.uiConfig);
+    this.notifyChanged('ui', this.ui);
     const labels = ['Headers', 'Body', 'Authorization', 'Actions', 'Config', 'Code snippets'];
     CoreEvents.Telemetry.event(this, {
       category: 'Request editor',
@@ -445,17 +451,17 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   _headersHandler(e: Event): void {
     e.preventDefault();
     const node = e.target as HeadersEditorElement;
-    const { value } = node;
-    // const { value, model, source } = node;
-    // if (!this.uiConfig) {
-    //   this.uiConfig = {};
-    // }
-    // if (!this.uiConfig.headers) {
-    //   this.uiConfig.headers = {};
-    // }
-    // this.uiConfig.headers.model = model;
-    // this.uiConfig.headers.source = source;
+    const { value, source } = node;
+    if (!this.ui) {
+      this.ui = new RequestUiMeta();
+    }
+    if (!this.ui.headers) {
+      this.ui.headers = {};
+    }
+    // this.ui.headers.model = model;
+    this.ui.headers.source = source;
     this._updateHeaders(value);
+    this.notifyChanged('ui', this.ui);
   }
 
   protected _updateHeaders(value: string): void {
@@ -475,12 +481,12 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     // const node = /** @type BodyEditorElement */ (e.target);
     // const { value, model, selected } = node;
     // this.payload = value;
-    // if (!this.uiConfig) {
-    //   this.uiConfig = {};
-    // }
-    // if (!this.uiConfig.body) {
-    //   this.uiConfig.body = {};
-    // }
+    if (!this.ui) {
+      this.ui = new RequestUiMeta();
+    }
+    if (!this.ui.body) {
+      this.ui.body = {};
+    }
     // this.uiConfig.body.model = model;
     // this.uiConfig.body.selected = selected;
     this.notifyRequestChanged();
@@ -495,9 +501,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   [authorizationHandler](e: Event): void {
     e.preventDefault();
     const selector = e.target as AuthorizationSelectorElement;
-    const { type } = selector;
-    // TODO: add the selected state to the UI state.
-    // selected, 
+    const { type, selected } = selector;
     const methods = selector.items as AuthorizationMethodElement[];
     const result: RequestAuthorization[] = [];
     methods.forEach((authMethod) => {
@@ -509,14 +513,15 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
       auth.enabled = enabled;
       result.push(auth);
     });
-    // if (!this.uiConfig) {
-    //   this.uiConfig = {};
-    // }
-    // if (!this.uiConfig.authorization) {
-    //   this.uiConfig.authorization = {};
-    // }
-    // this.uiConfig.authorization.selected = /** @type number */ (selected);
+    if (!this.ui) {
+      this.ui = new RequestUiMeta();
+    }
+    if (!this.ui.authorization) {
+      this.ui.authorization = {};
+    }
+    this.ui.authorization.selected = selected as number;
     this._updateAuthorization(result);
+    this.notifyChanged('ui', this.ui);
   }
 
   protected _updateAuthorization(auth: RequestAuthorization[]): void {
@@ -538,9 +543,9 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     // const prop = type === 'request' ? 'requestActions' : 'responseActions';
     // this[prop] = /** @type RunnableAction[] */ (list);
     // const { selected } = panel;
-    // if (!this.uiConfig) {
-    //   this.uiConfig = {};
-    // }
+    if (!this.ui) {
+      this.ui = new RequestUiMeta();
+    }
     // if (!this.uiConfig.actions) {
     //   this.uiConfig.actions = {};
     // }
@@ -548,6 +553,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     this.notifyRequestChanged();
     // this.notifyChanged(prop, list);
     this.requestUpdate();
+    this.notifyChanged('ui', this.ui);
   }
 
   /**
@@ -557,15 +563,15 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     e.preventDefault();
     // const panel = /** @type ARCActionsElement */ (e.target);
     // const { selected } = panel;
-    // if (!this.uiConfig) {
-    //   this.uiConfig = {};
-    // }
+    if (!this.ui) {
+      this.ui = new RequestUiMeta();
+    }
     // if (!this.uiConfig.actions) {
     //   this.uiConfig.actions = {};
     // }
     // this.uiConfig.actions.selected = selected;
     this.notifyRequestChanged();
-    // this.notifyChanged('uiConfig', this.uiConfig);
+    this.notifyChanged('ui', this.ui);
   }
 
   /**
@@ -757,15 +763,14 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     const headersVisible = selectedTab === 0;
     const bodyVisible = isPayload && selectedTab === 1;
     const authVisible = selectedTab === 2;
-    const actionsVisible = selectedTab === 3;
     const codeVisible = selectedTab === 3;
-
+    // const actionsVisible = selectedTab === 3;
+    // ${this[actionsTemplate](actionsVisible)}
     return html`
     <div class="panel">
     ${this[headersTemplate](headersVisible)}
     ${this[bodyTemplate](bodyVisible)}
     ${this[authorizationTemplate](authVisible)}
-    ${this[actionsTemplate](actionsVisible)}
     ${this[snippetsTemplate](codeVisible)}
     </div>
     `;
@@ -824,13 +829,11 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    * @returns The template for the authorization editor
    */
   [authorizationTemplate](visible: boolean): TemplateResult|string {
-    const { oauth2RedirectUri, authorization } = this;
-    // , uiConfig={}
-    // const { authorization: authUi={} } = uiConfig;
-    // ui: authUi,
+    const { oauth2RedirectUri, authorization, ui } = this;
     const config = {
       oauth2RedirectUri,
       hidden: !visible,
+      ui,
     };
     return authorizationTemplates(this[authorizationHandler], config, authorization);
   }
@@ -879,18 +882,15 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     <anypoint-dialog .opened="${contentHeadersDialogOpened}" @closed="${this[contentWarningCloseHandler]}">
       <h2>Headers are not valid</h2>
       <div>
-        <p>The <b>GET</b> request should not contain <b>content-*</b> headers. It may
-        cause the server to behave unexpectedly.</p>
+        <p>
+          The <b>GET</b> request should not contain <b>content-*</b> headers. It may
+          cause the server to behave unexpectedly.
+        </p>
         <p><b>Do you want to continue?</b></p>
       </div>
       <div class="buttons">
-        <anypoint-button
-          data-dialog-dismiss
-        >Cancel request</anypoint-button>
-        <anypoint-button
-          data-dialog-confirm
-          @click="${this[sendIgnoreValidation]}"
-        >Continue</anypoint-button>
+        <anypoint-button data-dialog-dismiss >Cancel request</anypoint-button>
+        <anypoint-button data-dialog-confirm @click="${this[sendIgnoreValidation]}">Continue</anypoint-button>
       </div>
     </anypoint-dialog>`
   }

@@ -1,10 +1,10 @@
 import { html, TemplateResult } from 'lit';
-import { HttpCertificate, IBasicAuthorization, IBearerAuthorization, ICCAuthorization, INtlmAuthorization, IOAuth2Authorization, IOidcAuthorization, RequestAuthorization } from '@api-client/core/build/browser.js';
+import { HttpCertificate, IBasicAuthorization, IBearerAuthorization, ICCAuthorization, INtlmAuthorization, IOAuth2Authorization, IOidcAuthorization, RequestAuthorization, RequestUiMeta } from '@api-client/core/build/browser.js';
 import '../../define/authorization-selector.js';
 import '../../define/authorization-method.js';
 
 export interface AuthorizationTemplateOptions {
-  // ui?: ArcRequest.AuthMeta;
+  ui?: RequestUiMeta;
   oauth2RedirectUri?: string;
   hidden?: boolean;
 }
@@ -162,8 +162,8 @@ function readConfiguration(config: RequestAuthorization[], type: string): Reques
 }
 
 export default function authorizationTemplate(changeHandler: Function, config: AuthorizationTemplateOptions, auth: RequestAuthorization[] = []): TemplateResult {
-  const { oauth2RedirectUri, hidden } = config;
-  // anypoint, outlined, ui={},
+  const { oauth2RedirectUri, hidden, ui } = config;
+  const selected = ui && ui.authorization && typeof ui.authorization.selected === 'number' ? ui.authorization.selected : 0;
   // const { selected=0 } = ui;
   // .selected="${selected}"
   const enabled: number[] = [];
@@ -180,6 +180,7 @@ export default function authorizationTemplate(changeHandler: Function, config: A
     horizontal
     multi
     .selectedValues="${enabled}"
+    .selected="${selected}"
   >
     
     ${basicTemplate(readConfiguration(auth, 'basic'))}

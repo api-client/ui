@@ -1,5 +1,11 @@
-import { IUrl } from '@api-client/core/build/browser.js';
+import { IUrl, ContextDeleteEvent, ContextReadEvent, ContextUpdateEvent, IRequestUiMeta, ContextChangeRecord, ContextDeleteRecord } from '@api-client/core/build/browser.js';
 import { EventTypes } from './EventTypes.js';
+
+export interface IRequestUiInsertDetail {
+  pid: string;
+  id: string;
+  meta: IRequestUiMeta;
+}
 
 export const AppDataEvents = Object.freeze({
   Http: Object.freeze({
@@ -100,6 +106,68 @@ export const AppDataEvents = Object.freeze({
           });
           target.dispatchEvent(e);
         },
+      }),
+    }),
+    Ui: Object.freeze({
+      HttpProject: Object.freeze({
+        /**
+         * Triggered when a project is removed from a space.
+         * Cleans the UI state for all data stored under the project.
+         * 
+         * @param id The project id.
+         * @param target Optional events target
+         */
+        delete: async (id: string, target: EventTarget=document.body): Promise<ContextDeleteRecord | undefined> => {
+          const e = new ContextDeleteEvent(EventTypes.AppData.Ui.HttpProject.delete, id);
+          target.dispatchEvent(e);
+          return e.detail.result;
+        },
+        HttpRequest: Object.freeze({
+          /**
+           * Sets an UI state for an HTTP request in a project
+           * 
+           * @param pid The project id.
+           * @param id The id of the request.
+           * @param target Optional events target
+           * @returns The created object or undefined when the context store was not initialized.
+           */
+          set: async (pid: string, id: string, meta: IRequestUiMeta, target: EventTarget=document.body): Promise<ContextChangeRecord<IRequestUiMeta> | undefined> => {
+            const e = new ContextUpdateEvent<IRequestUiInsertDetail, IRequestUiMeta>(EventTypes.AppData.Ui.HttpProject.HttpRequest.set, { 
+              item: {
+                id,
+                pid,
+                meta,
+              },
+              parent: pid,
+            });
+            target.dispatchEvent(e);
+            return e.detail.result;
+          },
+          /**
+           * Reads an UI state for an HTTP request in a project
+           * 
+           * @param pid The project id.
+           * @param id The id of the request.
+           * @param target Optional events target
+           */
+          get: async (pid: string, id: string, target: EventTarget=document.body): Promise<IRequestUiMeta | undefined> => {
+            const e = new ContextReadEvent<IRequestUiMeta>(EventTypes.AppData.Ui.HttpProject.HttpRequest.get, id, pid);
+            target.dispatchEvent(e);
+            return e.detail.result;
+          },
+          /**
+           * Deletes an UI state for an HTTP request in a project
+           * 
+           * @param pid The project id.
+           * @param id The id of the request.
+           * @param target Optional events target
+           */
+          delete: async (pid: string, id: string, target: EventTarget=document.body): Promise<ContextDeleteRecord | undefined> => {
+            const e = new ContextDeleteEvent(EventTypes.AppData.Ui.HttpProject.HttpRequest.delete, id, pid);
+            target.dispatchEvent(e);
+            return e.detail.result;
+          },
+        }),
       }),
     }),
   }),

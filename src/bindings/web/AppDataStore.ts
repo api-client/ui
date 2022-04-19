@@ -1,8 +1,10 @@
-import { IUrl } from '@api-client/core/build/browser.js';
+import { ContextChangeRecord, ContextDeleteRecord, IRequestUiMeta, IUrl } from '@api-client/core/build/browser.js';
 
 function setMidnight(date: Date): void {
   date.setHours(0, 0, 0, 0);
 }
+
+const HighChar = `\uffff`;
 
 export default class AppDataStore {
   protected _db?: IDBDatabase;
@@ -16,7 +18,7 @@ export default class AppDataStore {
       return this._db;
     }
     return new Promise((resolve, reject) => {
-      const request = globalThis.indexedDB.open("ApiClientData", 1)
+      const request = globalThis.indexedDB.open("ApiClientData", 2);
       request.onerror = (): void => {
         reject(new Error('Unable to open URL history database.'));
       };
@@ -32,8 +34,16 @@ export default class AppDataStore {
 
   protected _versionchange(e: IDBVersionChangeEvent): void {
     const db = (e.target as IDBOpenDBRequest).result;
-    // URL history
-    db.createObjectStore('UrlHistory', { keyPath: 'url' });
+    const names = db.objectStoreNames;
+    if (!names.contains('UrlHistory')) {
+      // URL history
+      db.createObjectStore('UrlHistory', { keyPath: 'url' });
+    }
+    if (!names.contains('ProjectRequestUi')) {
+      // HTTP Project request UI meta
+      // Note, keys are generated as "" + project id + "\uffff" + request id + ""
+      db.createObjectStore('ProjectRequestUi');
+    }
   }
 
   /**
@@ -141,6 +151,61 @@ export default class AppDataStore {
       tx.onerror = (): void => reject(new Error('Unable to clear the history URL store.'));
       const store = tx.objectStore("UrlHistory");
       store.clear();
+    });
+  }
+
+  async deleteProjectUi(id: string): Promise<ContextDeleteRecord> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const keyRange = IDBKeyRange.bound(id, `${id}${HighChar}${HighChar}`, false, false);
+      const tx = db.transaction(['ProjectRequestUi'], 'readwrite');
+      tx.oncomplete = (): void => resolve({ id });
+      tx.onerror = (): void => reject(new Error('Unable to clear project\'s UI data.'));
+      const store = tx.objectStore("ProjectRequestUi");
+      store.delete(keyRange);
+    });
+  }
+
+  async setHttpRequestUi(pid: string, id: string, meta: IRequestUiMeta): Promise<ContextChangeRecord<IRequestUiMeta>> {
+    const key = `${pid}${HighChar}${id}`;
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(['ProjectRequestUi'], 'readwrite');
+      tx.oncomplete = (): void  => resolve({
+        key: id,
+        parent: pid,
+        item: meta,
+      });
+      tx.onerror = (): void  => reject(new Error('Unable to insert into the project request UI store.'));
+      const store = tx.objectStore("ProjectRequestUi");
+      store.put(meta, key);
+    });
+  }
+
+  async getHttpRequestUi(pid: string, id: string): Promise<IRequestUiMeta> {
+    const key = `${pid}${HighChar}${id}`;
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(['ProjectRequestUi']);
+      const store = tx.objectStore("ProjectRequestUi");
+      const request = store.get(key);
+      request.onerror = (): void => reject(new Error(`Unable to read the request UI data.`));
+      request.onsuccess = (): void => resolve(request.result);
+    });
+  }
+
+  async deleteHttpRequestUi(pid: string, id: string): Promise<ContextDeleteRecord> {
+    const key = `${pid}${HighChar}${id}`;
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(['ProjectRequestUi'], 'readwrite');
+      tx.oncomplete = (): void => resolve({
+        id,
+        parent: pid,
+      });
+      tx.onerror = (): void => reject(new Error('Unable to delete from the project request UI store.'));
+      const store = tx.objectStore("ProjectRequestUi");
+      store.delete(key);
     });
   }
 }
