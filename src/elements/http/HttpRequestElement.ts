@@ -1,7 +1,13 @@
 /* eslint-disable class-methods-use-this */
 import { LitElement, html, TemplateResult, CSSResult, PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ProjectRequest, Environment, Events as CoreEvents, IProjectRequest, DeserializedPayload, Headers } from '@api-client/core/build/browser.js';
+import { 
+  Environment, Events as CoreEvents, DeserializedPayload, Headers,
+  RequestAuthorization,
+  IOAuth2Authorization,
+  IHttpRequest,
+  HttpRequest,
+} from '@api-client/core/build/browser.js';
 import { EventsTargetMixin, ResizableMixin, AnypointTabsElement } from '@anypoint-web-components/awc';
 import "@anypoint-web-components/awc/dist/define/anypoint-dropdown.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-listbox.js";
@@ -11,12 +17,16 @@ import "@anypoint-web-components/awc/dist/define/anypoint-tab.js";
 import '../../define/api-icon.js';
 import '../../define/url-input-editor.js';
 import '../../define/http-headers-editor.js';
+import '../../define/http-snippets.js';
 import UrlInputEditorElement from './UrlInputEditorElement.js';
 import HeadersEditorElement from './HeadersEditorElement.js';
 import elementStyles from './HttpRequestElementStyles.js';
 import { SecurityProcessor } from '../../lib/security/SecurityProcessor.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import { Events } from '../../events/Events.js';
+import authorizationTemplates from './RequestAuth.template.js';
+import AuthorizationSelectorElement from '../authorization/AuthorizationSelectorElement.js';
+import AuthorizationMethodElement from '../authorization/AuthorizationMethodElement.js';
 
 export const urlMetaTemplate = Symbol('urlMetaTemplate');
 export const httpMethodSelectorTemplate = Symbol('httpMethodSelectorTemplate');
@@ -55,7 +65,6 @@ export const importCURL = Symbol('importCURL');
 export const curlCloseHandler = Symbol('curlCloseHandler');
 export const sendButtonTemplate = Symbol('sendButtonTemplate');
 export const snippetsRequestSymbol = Symbol('snippetsRequest');
-export const computeSnippetsRequestSymbol = Symbol('computeSnippetsRequest');
 
 export const HttpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'CONNECT', 'OPTIONS', 'TRACE'];
 export const NonPayloadMethods = ['GET', 'HEAD'];
@@ -99,15 +108,12 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    */
   @property({ type: String }) environment?: string;
 
-  /**
-   * The project request object.
-   */
-  @property({ type: Object }) request?: ProjectRequest;
-
   /** 
    * The Current content type value.
    */
   @property({ type: String }) contentType?: string;
+
+  @property({ type: Array }) authorization?: RequestAuthorization[];
 
   /**
    * Redirect URL for the OAuth2 authorization.
@@ -161,7 +167,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    */
   @property({ type: Boolean }) noSendOnLoading = false;
 
-  @state() [snippetsRequestSymbol]?: IProjectRequest;
+  @state() [snippetsRequestSymbol]?: IHttpRequest;
 
   /**
    * An index of currently opened tab.
@@ -172,7 +178,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   /**
    * A request object that is used to render the code snippets.
    */
-  get snippetsRequest(): IProjectRequest | undefined {
+  get snippetsRequest(): IHttpRequest | undefined {
     return this[snippetsRequestSymbol];
   }
 
@@ -206,7 +212,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
 
   firstUpdated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.firstUpdated(changedProperties);
-    this[computeSnippetsRequestSymbol]();
+    this._computeSnippetsRequest();
   }
 
   /**
@@ -244,20 +250,19 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    * @return This returns `true` only for valid OAuth 2 method that has no access token.
    */
   requiresAuthorization(): boolean {
-    if (!this.request) {
-      return false;
-    }
-    const { authorization=[] } = this.request;
+    const { authorization=[] } = this;
     const oauth = authorization.find((method) => method.enabled && method.type === 'oauth 2');
     if (!oauth) {
       return false;
     }
-    // FIXME: When having auth methods
-    // const authMethod = /** @type AuthorizationMethodElement */ (this.shadowRoot!.querySelector('authorization-method[type="oauth 2"]'));
-    // const cnf = /** @type OAuth2Authorization */ (oauth.config);
-    // if (authMethod.validate() && !cnf.accessToken) {
-    //   return true;
-    // }
+    const authMethod = this.shadowRoot!.querySelector('authorization-method[type="oauth 2"]') as AuthorizationMethodElement | null;
+    if (!authMethod) {
+      return false;
+    }
+    const cnf = oauth.config as IOAuth2Authorization;
+    if (authMethod.validate() && !cnf.accessToken) {
+      return true;
+    }
     return false;
   }
 
@@ -275,6 +280,26 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
       return false;
     }
     return true;
+  }
+
+  /**
+   * Serializes the current values to the `IHttpRequest`
+   */
+  async serialize(): Promise<IHttpRequest> {
+    const instance = new HttpRequest();
+    if (this.url) {
+      instance.url = this.url;
+    }
+    if (this.method) {
+      instance.method = this.method;
+    }
+    if (this.headers) {
+      instance.headers = this.headers;
+    }
+    if (this.payload) {
+      instance.writePayload(this.payload);
+    }
+    return instance.toJSON();
   }
 
   /**
@@ -360,7 +385,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
       action: 'Method selected',
       label: selected,
     });
-    this[computeSnippetsRequestSymbol]();
+    this._computeSnippetsRequest();
   }
 
   /**
@@ -380,7 +405,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     this.url = value;
     this.notifyRequestChanged();
     this.notifyChanged('url', value);
-    this[computeSnippetsRequestSymbol]();
+    this._computeSnippetsRequest();
   }
 
   async [tabChangeHandler](e: Event): Promise<void> {
@@ -439,7 +464,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     this.contentType = headers.get('content-type');
     this.notifyRequestChanged();
     this.notifyChanged('headers', value);
-    this[computeSnippetsRequestSymbol]();
+    this._computeSnippetsRequest();
   }
 
   /**
@@ -460,7 +485,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     // this.uiConfig.body.selected = selected;
     this.notifyRequestChanged();
     // this.notifyChanged('payload', value);
-    this[computeSnippetsRequestSymbol]();
+    this._computeSnippetsRequest();
   }
 
   /**
@@ -469,23 +494,21 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    */
   [authorizationHandler](e: Event): void {
     e.preventDefault();
-    // const selector = /** @type AuthorizationSelectorElement */ (e.target);
-    // const { selected, type } = selector;
-    // const methods = /** @type AuthorizationMethodElement[] */ (selector.items);
-    // const result = /** @type RequestAuthorization[] */ ([]);
-    // methods.forEach((authMethod) => {
-    //   const { type: mType } = authMethod;
-    //   const config = (authMethod && authMethod.serialize) ? authMethod.serialize() : undefined;
-    //   const valid = (authMethod && authMethod.validate) ? authMethod.validate() : true;
-    //   const enabled = type.includes(mType);
-    //   result.push({
-    //     config,
-    //     type: mType,
-    //     enabled,
-    //     valid,
-    //   });
-    // });
-    // this.authorization = result;
+    const selector = e.target as AuthorizationSelectorElement;
+    const { type } = selector;
+    // TODO: add the selected state to the UI state.
+    // selected, 
+    const methods = selector.items as AuthorizationMethodElement[];
+    const result: RequestAuthorization[] = [];
+    methods.forEach((authMethod) => {
+      const { type: mType } = authMethod;
+      const config = (authMethod && authMethod.serialize) ? authMethod.serialize() : undefined;
+      const valid = (authMethod && authMethod.validate) ? authMethod.validate() : true;
+      const enabled = type!.includes(mType!);
+      const auth = RequestAuthorization.fromTypedConfig(mType as any, config as any, valid);
+      auth.enabled = enabled;
+      result.push(auth);
+    });
     // if (!this.uiConfig) {
     //   this.uiConfig = {};
     // }
@@ -493,10 +516,15 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     //   this.uiConfig.authorization = {};
     // }
     // this.uiConfig.authorization.selected = /** @type number */ (selected);
+    this._updateAuthorization(result);
+  }
+
+  protected _updateAuthorization(auth: RequestAuthorization[]): void {
+    this.authorization = auth;
     this.notifyRequestChanged();
-    // this.notifyChanged('authorization', result);
+    this.notifyChanged('authorization', auth);
     this.requestUpdate();
-    this[computeSnippetsRequestSymbol]();
+    this._computeSnippetsRequest();
   }
 
   /**
@@ -587,13 +615,9 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    * These are different from the actual values in the request as
    * they contain authorization values applied to it.
    */
-  [computeSnippetsRequestSymbol](): void {
-    const { request } = this;
-    if (!request) {
-      return;
-    }
-    const serialized = request.toJSON();
-    const { authorization=[] } = serialized;
+  async _computeSnippetsRequest(): Promise<void> {
+    const serialized = await this.serialize();
+    const { authorization=[] } = this;
     SecurityProcessor.applyAuthorization(serialized, authorization, { immutable: true });
     this[snippetsRequestSymbol] = serialized;
   }
@@ -734,7 +758,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     const bodyVisible = isPayload && selectedTab === 1;
     const authVisible = selectedTab === 2;
     const actionsVisible = selectedTab === 3;
-    const codeVisible = selectedTab === 4;
+    const codeVisible = selectedTab === 3;
 
     return html`
     <div class="panel">
@@ -800,17 +824,15 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    * @returns The template for the authorization editor
    */
   [authorizationTemplate](visible: boolean): TemplateResult|string {
-    return html`TO DO: ${visible}`;
-    // const { oauth2RedirectUri, authorization, uiConfig={} } = this;
+    const { oauth2RedirectUri, authorization } = this;
+    // , uiConfig={}
     // const { authorization: authUi={} } = uiConfig;
-    // const config = {
-    //   oauth2RedirectUri,
-    //   outlined, 
-    //   anypoint,
-    //   ui: authUi,
-    //   hidden: !visible,
-    // };
-    // return authorizationTemplates(this[authorizationHandler], config, authorization);
+    // ui: authUi,
+    const config = {
+      oauth2RedirectUri,
+      hidden: !visible,
+    };
+    return authorizationTemplates(this[authorizationHandler], config, authorization);
   }
 
   /**
@@ -844,21 +866,8 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     if (!visible) {
       return '';
     }
-    const { expects } = this[snippetsRequestSymbol] || {};
-    const { url = '', method = '', headers = '', payload = '' } = expects || {};
-    let data;
-    if (typeof payload === 'string') {
-      data = payload;
-    }
-    return html`
-    <http-code-snippets
-      scrollable
-      .url="${url}"
-      .method="${method}"
-      .headers="${headers}"
-      .payload="${data}"
-    ></http-code-snippets>
-    `;
+    const request = this[snippetsRequestSymbol];
+    return html`<http-snippets .request="${request}" ></http-snippets>`;
   }
 
   /**

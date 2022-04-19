@@ -38,6 +38,18 @@
       "rules": {
         "class-methods-use-this": "off"
       }
+    },
+    {
+      "files": [ "src/**/*.ts" ],
+      "rules": {
+        "no-useless-constructor": "off",
+        "no-empty-function": "off"
+      }
     }
-  ]
+  ],
+  "globals": {
+    "EventListener": true,
+    "Prism": true,
+    "GlobalEventHandlers": true
+  }
 }

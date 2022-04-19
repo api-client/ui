@@ -1,6 +1,6 @@
 import { PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ProjectRequest, HttpRequest, Events as CoreEvents, HttpProject, DeserializedPayload } from '@api-client/core/build/browser.js';
+import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization } from '@api-client/core/build/browser.js';
 import HttpRequestElement from '../http/HttpRequestElement.js';
 
 /**
@@ -22,6 +22,8 @@ export default class ProjectRequestElement extends HttpRequestElement {
   @property({ type: String, reflect: true }) key?: string;
 
   @state() expects?: HttpRequest;
+
+  protected request?: ProjectRequest;
 
   protected updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(cp);
@@ -49,13 +51,16 @@ export default class ProjectRequestElement extends HttpRequestElement {
       this._cleanupRequest();
       return;
     }
+    this.request = request;
     const expects = request.getExpects();
     this.expects = expects;
     this.method = expects.method;
     this.url = expects.url;
     this.headers = expects.headers;
+    this.authorization =  request.authorization;
     this._readPayload(expects);
     this._readAppliedEnvironments(request);
+    this._computeSnippetsRequest();
     this.requestUpdate();
   }
 
@@ -110,5 +115,14 @@ export default class ProjectRequestElement extends HttpRequestElement {
     }
     expects.headers = value;
     super._updateHeaders(value);
+  }
+
+  protected _updateAuthorization(auth: RequestAuthorization[]): void {
+    const { request } = this;
+    if (!request) {
+      return;
+    }
+    request.authorization = auth;
+    super._updateAuthorization(auth);
   }
 }

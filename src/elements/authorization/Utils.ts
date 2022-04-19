@@ -4,15 +4,15 @@
  * @param type Type value
  * @return Normalized value.
  */
-export const normalizeType = (type: string): string => String(type).toLowerCase();
+export const normalizeType = (type?: string): string => String(type).toLowerCase();
 
 export const METHOD_BASIC = "basic";
 export const METHOD_BEARER = "bearer";
 export const METHOD_NTLM = "ntlm";
 export const METHOD_DIGEST = "digest";
-export const METHOD_OAUTH1 = "oauth 1";
 export const METHOD_OAUTH2 = "oauth 2";
 export const METHOD_OIDC = "open id";
+export const METHOD_CC = 'client certificate';
 export const CUSTOM_CREDENTIALS = "Custom credentials";
 
 /**
@@ -73,9 +73,9 @@ export function generateState(): string {
  * @param baseUri Base URI to use.
  * @returns Final URL value.
  */
-export function readUrlValue(url: string, baseUri: string): string {
+export function readUrlValue(url?: string, baseUri?: string): string {
   if (!url || !baseUri) {
-    return url;
+    return '';
   }
   const result = String(url);
   if (result[0] === '/') {

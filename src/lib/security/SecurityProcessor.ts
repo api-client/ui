@@ -1,6 +1,6 @@
 /* eslint-disable no-continue */
 import { 
-  IProjectRequest, IRequestAuthorization, IBasicAuthorization, IOAuth2Authorization, Headers,
+  IHttpRequest, IRequestAuthorization, RequestAuthorization, IBasicAuthorization, IOAuth2Authorization, Headers,
   IBearerAuthorization, IOidcAuthorization,
 } from '@api-client/core/build/browser.js';
 import {
@@ -24,7 +24,7 @@ export class SecurityProcessor {
   /**
    * Applies authorization configuration to the request object.
    */
-  static applyAuthorization(request: IProjectRequest, authorization: IRequestAuthorization[], opts: IAuthApplyOptions={}): void {
+  static applyAuthorization(request: IHttpRequest, authorization: (IRequestAuthorization | RequestAuthorization)[], opts: IAuthApplyOptions={}): void {
     if (!Array.isArray(authorization) || !authorization.length) {
       return;
     }
@@ -67,38 +67,38 @@ export class SecurityProcessor {
   /**
    * Injects basic auth header into the request headers.
    */
-  static applyBasicAuth(request: IProjectRequest, config: IBasicAuthorization): void {
+  static applyBasicAuth(request: IHttpRequest, config: IBasicAuthorization): void {
     const { username, password } = config;
     if (!username) {
       return;
     }
     const value = btoa(`${username}:${password || ''}`);
 
-    const headers = new Headers(request.expects.headers || '');
+    const headers = new Headers(request.headers || '');
     headers.append('authorization', `Basic ${value}`);
-    request.expects.headers = headers.toString();
+    request.headers = headers.toString();
   }
 
   /**
    * Injects oauth 2 auth header into the request headers.
    */
-  static applyOAuth2(request: IProjectRequest, config: IOAuth2Authorization): void {
+  static applyOAuth2(request: IHttpRequest, config: IOAuth2Authorization): void {
     const { accessToken, tokenType='Bearer', deliveryMethod='header', deliveryName='authorization' } = config;
     if (!accessToken) {
       return;
     }
     const value = `${tokenType} ${accessToken}`;
     if (deliveryMethod === 'header') {
-      const headers = new Headers(request.expects.headers || '');
+      const headers = new Headers(request.headers || '');
       headers.append(deliveryName, value);
-      request.expects.headers = headers.toString();
+      request.headers = headers.toString();
     } else if (deliveryMethod === 'query') {
-      const { url } = request.expects;
+      const { url } = request;
       try {
         // todo: this won't work when variables are used.
         const parsed = new URL(url);
         parsed.searchParams.append(deliveryName, value);
-        request.expects.url = parsed.toString();
+        request.url = parsed.toString();
       } catch (e) {
         // ...
       }
@@ -108,7 +108,7 @@ export class SecurityProcessor {
   /**
    * Injects OpenID Connect auth header into the request headers.
    */
-  static applyOpenId(request: IProjectRequest, config: IOidcAuthorization): void {
+  static applyOpenId(request: IHttpRequest, config: IOidcAuthorization): void {
     const { accessToken } = config;
     if (accessToken) {
       SecurityProcessor.applyOAuth2(request, config);
@@ -120,12 +120,12 @@ export class SecurityProcessor {
   /**
    * Injects bearer auth header into the request headers.
    */
-  static applyBearer(request: IProjectRequest, config: IBearerAuthorization): void {
+  static applyBearer(request: IHttpRequest, config: IBearerAuthorization): void {
     const { token } = config;
     const value = `Bearer ${token}`;
 
-    const headers = new Headers(request.expects.headers || '');
+    const headers = new Headers(request.headers || '');
     headers.append('authorization', value);
-    request.expects.headers = headers.toString();
+    request.headers = headers.toString();
   }
 }

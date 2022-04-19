@@ -71,4 +71,9 @@ anypoint-input {
   color: var(--headers-editor-color, #3b548c);
   background-color: var(--headers-editor-background-color, var(--primary-background-color, initial));
 }
+
+/* For autocomplete */
+.highlight {
+  background-color: rgba(0, 0, 0, 0.12);
+}
 `;
