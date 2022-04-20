@@ -194,7 +194,8 @@ export default class HttpProjectScreen extends ApplicationScreen {
       return;
     }
     this.updatingProject = true;
-    const id = randomString();
+    // gives 2.092279e+13 permutations.
+    const id = randomString(16);
     this.pendingPatches.set(id, diff);
     try {
       await Events.Store.File.patch(project.key, id, diff, true);

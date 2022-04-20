@@ -103,7 +103,7 @@ authorization-method {
   cursor: pointer;
 }
 
-.method-selector arc-icon {
+.method-selector api-icon {
   margin-left: 12px;
 }
 

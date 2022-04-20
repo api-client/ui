@@ -1,6 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { LitElement, html, TemplateResult, CSSResult, PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { 
   Environment, Events as CoreEvents, DeserializedPayload, Headers,
   RequestAuthorization,
@@ -19,6 +20,7 @@ import '../../define/api-icon.js';
 import '../../define/url-input-editor.js';
 import '../../define/http-headers-editor.js';
 import '../../define/http-snippets.js';
+import '../../define/body-editor.js';
 import UrlInputEditorElement from './UrlInputEditorElement.js';
 import HeadersEditorElement from './HeadersEditorElement.js';
 import elementStyles from './HttpRequestElementStyles.js';
@@ -28,6 +30,7 @@ import { Events } from '../../events/Events.js';
 import authorizationTemplates from './RequestAuth.template.js';
 import AuthorizationSelectorElement from '../authorization/AuthorizationSelectorElement.js';
 import AuthorizationMethodElement from '../authorization/AuthorizationMethodElement.js';
+import BodyEditorElement from './BodyEditorElement.js';
 
 export const urlMetaTemplate = Symbol('urlMetaTemplate');
 export const httpMethodSelectorTemplate = Symbol('httpMethodSelectorTemplate');
@@ -44,13 +47,9 @@ export const currentEditorTemplate = Symbol('currentEditorTemplate');
 export const headersTemplate = Symbol('headersTemplate');
 export const bodyTemplate = Symbol('bodyTemplate');
 export const authorizationTemplate = Symbol('authorizationTemplate');
-export const actionsTemplate = Symbol('actionsTemplate');
-export const actionsUiHandler = Symbol('actionsUiHandler');
-export const actionsHandler = Symbol('actionsHandler');
 export const snippetsTemplate = Symbol('snippetsTemplate');
 export const bodyHandler = Symbol('bodyHandler');
 export const authorizationHandler = Symbol('authorizationHandler');
-export const configHandler = Symbol('configHandler');
 export const headersValue = Symbol('headersValue');
 export const uiConfigValue = Symbol('uiConfigValue');
 export const readHeaders = Symbol('readHeaders');
@@ -94,10 +93,30 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    */
   @property({ type: String }) url?: string;
 
+  protected _headers?: string;
+
   /**
    * The HTTP headers string.
    */
-  @property({ type: String }) headers?: string;
+  @property({ type: String }) 
+  get headers(): string | undefined {
+    return this._headers;
+  }
+
+  set headers(value: string | undefined) {
+    const old = this._headers;
+    if (old === value) {
+      return;
+    }
+    this._headers = value;
+    if (value) {
+      const parsed = new Headers(value);
+      this.contentType = parsed.get('content-type');
+    } else {
+      this.contentType = undefined;
+    }
+    this.requestUpdate();
+  }
 
   /**
    * The list of environments that apply to the current request.
@@ -478,20 +497,26 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    */
   [bodyHandler](e: Event): void {
     e.preventDefault();
-    // const node = /** @type BodyEditorElement */ (e.target);
-    // const { value, model, selected } = node;
-    // this.payload = value;
+    const node = e.target as BodyEditorElement;
+    const { value, model, selected } = node;
     if (!this.ui) {
       this.ui = new RequestUiMeta();
     }
     if (!this.ui.body) {
       this.ui.body = {};
     }
-    // this.uiConfig.body.model = model;
-    // this.uiConfig.body.selected = selected;
-    this.notifyRequestChanged();
-    // this.notifyChanged('payload', value);
+    this.ui.body.model = model;
+    this.ui.body.selected = selected;
+    
+    this._updatePayload(value);
     this._computeSnippetsRequest();
+    this.notifyChanged('ui', this.ui);
+  }
+
+  protected _updatePayload(value: any): void {
+    this.payload = value;
+    this.notifyRequestChanged();
+    this.notifyChanged('payload', value);
   }
 
   /**
@@ -530,59 +555,6 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     this.notifyChanged('authorization', auth);
     this.requestUpdate();
     this._computeSnippetsRequest();
-  }
-
-  /**
-   * The handler for the actions editor change event
-   */
-  [actionsHandler](e: CustomEvent): void {
-    e.preventDefault();
-    // const panel = /** @type ARCActionsElement */ (e.target);
-    // const { type } = e.detail;
-    // const list = type === 'request' ? panel.request : panel.response;
-    // const prop = type === 'request' ? 'requestActions' : 'responseActions';
-    // this[prop] = /** @type RunnableAction[] */ (list);
-    // const { selected } = panel;
-    if (!this.ui) {
-      this.ui = new RequestUiMeta();
-    }
-    // if (!this.uiConfig.actions) {
-    //   this.uiConfig.actions = {};
-    // }
-    // this.uiConfig.actions.selected = selected;
-    this.notifyRequestChanged();
-    // this.notifyChanged(prop, list);
-    this.requestUpdate();
-    this.notifyChanged('ui', this.ui);
-  }
-
-  /**
-   * The handler for the actions editor UI state change event
-   */
-  [actionsUiHandler](e: Event): void {
-    e.preventDefault();
-    // const panel = /** @type ARCActionsElement */ (e.target);
-    // const { selected } = panel;
-    if (!this.ui) {
-      this.ui = new RequestUiMeta();
-    }
-    // if (!this.uiConfig.actions) {
-    //   this.uiConfig.actions = {};
-    // }
-    // this.uiConfig.actions.selected = selected;
-    this.notifyRequestChanged();
-    this.notifyChanged('ui', this.ui);
-  }
-
-  /**
-   * The handler for the config editor change event
-   */
-  [configHandler](e: Event): void {
-    e.preventDefault();
-    // const node = /** @type ArcRequestConfigElement */ (e.target);
-    // this.config = node.config;
-    this.notifyRequestChanged();
-    // this.notifyChanged('config', this.config);
   }
 
   /**
@@ -741,10 +713,11 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    * @returns The template for the request editor tabs
    */
   [tabsTemplate](): TemplateResult {
-    const { isPayload, selectedTab, } = this;
+    const { isPayload, selectedTab, ui } = this;
+    const selected = ui && ui.selectedEditor || selectedTab;
     return html`
     <anypoint-tabs
-      .selected="${selectedTab}"
+      .selected="${selected}"
       @selectedchange="${this[tabChangeHandler]}"
       class="editor-tabs"
     >
@@ -764,8 +737,6 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     const bodyVisible = isPayload && selectedTab === 1;
     const authVisible = selectedTab === 2;
     const codeVisible = selectedTab === 3;
-    // const actionsVisible = selectedTab === 3;
-    // ${this[actionsTemplate](actionsVisible)}
     return html`
     <div class="panel">
     ${this[headersTemplate](headersVisible)}
@@ -802,22 +773,23 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    */
   [bodyTemplate](visible: boolean): TemplateResult {
     const {
-      // payload,
+      payload,
       readOnly,
       contentType,
-      // uiConfig={},
+      ui,
     } = this;
-    // const { body={} } = uiConfig;
-    // const { model, selected } = body;
-    // const typedSelected = /** @type {"raw" | "urlEncode" | "multipart" | "file"} */ (selected);
-    // .value="${!model && payload || undefined}"
-    // selected="${ifDefined(typedSelected)}" 
-    //   .model="${model}"
+    const body = ui && ui.body;
+    const selected = body && body.selected as any;
+    const model = body && body.model;
+    
     return html`
     <body-editor
       ?hidden="${!visible}"
       ?readOnly="${readOnly}"
       .contentType="${contentType}"
+      .model="${model}"
+      .value="${!model && payload || undefined}"
+      selected="${ifDefined(selected)}"
       @change="${this[bodyHandler]}"
       @select="${this[bodyHandler]}"
     ></body-editor>
@@ -836,29 +808,6 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
       ui,
     };
     return authorizationTemplates(this[authorizationHandler], config, authorization);
-  }
-
-  /**
-   * @param visible Whether the panel should be rendered
-   * @returns The template for the ARC request actions editor
-   */
-  [actionsTemplate](visible: boolean): TemplateResult|string {
-    if (!visible) {
-      return '';
-    }
-    return 'TODO';
-    // const { requestActions, responseActions, outlined, anypoint } = this;
-    // return html`
-    // <arc-actions
-    //   .request="${requestActions}"
-    //   .response="${responseActions}"
-    //   ?anypoint="${anypoint}"
-    //   ?outlined="${outlined}"
-    //   slot="content"
-    //   @change="${this[actionsHandler]}"
-    //   @selectedchange="${this[actionsUiHandler]}"
-    // ></arc-actions>
-    // `;
   }
 
   /**

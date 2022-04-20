@@ -85,20 +85,14 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
     this._contentTypeHandler = this._contentTypeHandler.bind(this);
   }
 
-  /**
-   * @param {EventTarget} node
-   */
   _attachListeners(node: EventTarget): void {
     super._attachListeners(node);
-    node.addEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, this._contentTypeHandler);
+    node.addEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, this._contentTypeHandler as any);
   }
 
-  /**
-   * @param {EventTarget} node
-   */
   _detachListeners(node: EventTarget): void {
     super._detachListeners(node);
-    node.removeEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, this._contentTypeHandler);
+    node.removeEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, this._contentTypeHandler as any);
   }
 
   /**
@@ -152,15 +146,9 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
     this.requestUpdate();
   }
 
-  /**
-   * @param {RequestChangeEvent} e
-   */
-  _contentTypeHandler(e: any): void {
-    const { changedProperty, changedValue } = e;
-    if (changedProperty !== 'content-type') {
-      return;
-    }
-    this.updateHeader('content-type', changedValue);
+  _contentTypeHandler(e: CustomEvent): void {
+    const { value } = e.detail;
+    this.updateHeader('content-type', value);
   }
 
   /**

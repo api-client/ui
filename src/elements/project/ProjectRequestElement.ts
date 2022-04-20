@@ -129,6 +129,19 @@ export default class ProjectRequestElement extends HttpRequestElement {
     super._updateAuthorization(auth);
   }
 
+  protected _updatePayload(value: any): void {
+    this._updatePayloadAsync(value);
+  }
+
+  protected async _updatePayloadAsync(value: any): Promise<void> {
+    const { expects } = this;
+    if (!expects) {
+      return;
+    }
+    await expects.writePayload(value);
+    super._updatePayload(value);
+  }
+
   protected async _readRequestUi(pid: string, id: string): Promise<void> {
     try {
       const data = await Events.AppData.Http.Ui.HttpProject.HttpRequest.get(pid, id, this);
