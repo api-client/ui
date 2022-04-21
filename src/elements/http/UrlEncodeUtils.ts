@@ -145,7 +145,6 @@ export function createViewModel(input: string): IProperty[] {
     result = result.replace(/^([^\\:]{1,}):(.*)$/gm, '$1=$2&').replace(/\n/gm, '');
     result = result.substring(0, result.length - 1);
   }
-
   return createParamsArray(result);
 }
 
@@ -246,7 +245,7 @@ export function encodeUrlEncoded(input: IProperty[] | string): IProperty[] | str
   const result = typed.map((obj) => {
     const item = { ...obj };
     item.name = encodeQueryString(item.name);
-    item.value = encodeValue(String(item.value || ''));
+    item.value = encodeValue(item.value as string || '');
     return item;
   });
   if (isArray) {
@@ -290,7 +289,7 @@ export function decodeUrlEncoded(input: IProperty[] | string): IProperty[] | str
     // eslint-disable-next-line no-param-reassign
     obj.name = decodeQueryString(obj.name);
     // eslint-disable-next-line no-param-reassign
-    obj.value = decodeValue(String(obj.value || ''));
+    obj.value = decodeValue(obj.value as string || '');
   });
   if (isArray) {
     return typed;

@@ -4,6 +4,7 @@ import {
   ICCAuthorization, HttpCertificate, Events as CoreEvents, EventTypes as CoreEventTypes, ContextStateUpdateEvent, 
   ContextStateDeleteEvent,
 } from '@api-client/core/build/browser.js';
+import '@anypoint-web-components/awc/dist/define/date-time.js';
 import { html, TemplateResult } from 'lit';
 import { AuthUiInit } from '../types.js';
 import AuthUiBase from "./AuthUiBase.js";

@@ -53,7 +53,6 @@ export const authorizationHandler = Symbol('authorizationHandler');
 export const headersValue = Symbol('headersValue');
 export const uiConfigValue = Symbol('uiConfigValue');
 export const readHeaders = Symbol('readHeaders');
-export const awaitingOAuth2authorization = Symbol('awaitingOAuth2authorization');
 export const headersDialogTemplate = Symbol('headersDialogTemplate');
 export const contentWarningCloseHandler = Symbol('contentWarningCloseHandler');
 export const sendIgnoreValidation = Symbol('sendIgnoreValidation');
@@ -126,12 +125,12 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   /**
    * The key of the selected environment.
    */
-  @property({ type: String }) environment?: string;
+  @property({ type: String, reflect: true }) environment?: string;
 
   /** 
    * The Current content type value.
    */
-  @property({ type: String }) contentType?: string;
+  @property({ type: String, reflect: true }) contentType?: string;
 
   @property({ type: Array }) authorization?: RequestAuthorization[];
 
@@ -145,47 +144,47 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   /**
    * When set the editor is in read only mode.
    */
-  @property({ type: Boolean }) readOnly = false;
+  @property({ type: Boolean, reflect: true }) readOnly = false;
 
   /**
    * A value to be passed to the OAuth 2 `authorizationUri` property in case
    * if current configuration has no value.
    * This is to be used as a default value.
    */
-  @property({ type: String }) oauth2AuthorizationUri?: string;
+  @property({ type: String, reflect: true }) oauth2AuthorizationUri?: string;
 
   /**
    * A value to be passed to the OAuth 2 `accessTokenUri` property in case
    * if current configuration has no value.
    * This is to be used as a default value.
    */
-  @property({ type: String }) oauth2AccessTokenUri?: string;
+  @property({ type: String, reflect: true }) oauth2AccessTokenUri?: string;
 
   /**
    * When set it ignores all `content-*` headers when the request method is `GET`.
    * When not set or `false` it renders a warning message.
    */
-  @property({ type: Boolean }) ignoreContentOnGet = false;
+  @property({ type: Boolean, reflect: true }) ignoreContentOnGet = false;
 
   /** 
    * When set the `content-` headers warning dialog is rendered.
    */
-  @property({ type: Boolean }) contentHeadersDialogOpened = false;
+  @property({ type: Boolean, reflect: true }) contentHeadersDialogOpened = false;
 
   /** 
    * When set it renders the send request button.
    */
-  @property({ type: Boolean }) renderSend = false;
+  @property({ type: Boolean, reflect: true }) renderSend = false;
 
   /**
    * To be set when the request is being transported.
    */
-  @property({ type: Boolean }) loading = false;
+  @property({ type: Boolean, reflect: true }) loading = false;
 
   /** 
    * When set the editor does not allow to send the request if one is already loading.
    */
-  @property({ type: Boolean }) noSendOnLoading = false;
+  @property({ type: Boolean, reflect: true }) noSendOnLoading = false;
 
   @state() [snippetsRequestSymbol]?: IHttpRequest;
 
@@ -193,7 +192,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    * An index of currently opened tab.
    * @default 0
    */
-  @property({ type: Number }) selectedTab = 0;
+  @property({ type: Number, reflect: true }) selectedTab = 0;
 
   /**
    * A request object that is used to render the code snippets.
@@ -219,6 +218,18 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     }
     return !NonPayloadMethods.includes(method);
   }
+
+  protected _awaitingOAuth2authorization = false;
+
+  /**
+   * This is set by the internal logic. When `ignoreContentOnGet` is set and the headers have `content-` headers
+   * a dialog is rendered when trying to send the request. When the user chooses to ignore the warning this
+   * flag makes sure that `send()` does not check headers.
+   * 
+   * @todo(pawel): This should be done in the request logic module plugin.
+   * Plugins can stop request indefinitely or cancel it.
+   */
+  ignoreValidationOnGet = false;
 
   constructor() {
     super();
@@ -296,7 +307,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
    * @param request The request object
    * @return True if headers are invalid.
    */
-  validateContentHeaders(request: any): boolean {
+  validateContentHeaders(request: IHttpRequest): boolean {
     const method = request.method || 'get';
     if (method.toLowerCase() !== 'get') {
       return false;
@@ -330,7 +341,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   /**
    * Dispatches the send request event to the ARC request engine.
    */
-  send(): void {
+  async send(): Promise<void> {
     if (this.loading && this.noSendOnLoading) {
       return;
     }
@@ -338,25 +349,27 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
       return;
     }
     if (this.requiresAuthorization()) {
-      // const authMethod = /** @type AuthorizationMethodElement */ (this.shadowRoot.querySelector('authorization-method[type="oauth 2"]'));
-      // authMethod.authorize();
-      // this[awaitingOAuth2authorization] = true;
+      const authMethod = this.shadowRoot!.querySelector('authorization-method[type="oauth 2"]') as AuthorizationMethodElement;
+      authMethod.authorize();
+      this._awaitingOAuth2authorization = true;
       return;
     }
     // store the URL in the history
     Events.AppData.Http.UrlHistory.add(this.url as string, this);
     // this.requestId = v4();
-    this.notifyRequestChanged();
-    // const request = this.serialize();
-    // if (!this.ignoreValidationOnGet && this.validateContentHeaders(request.request)) {
-    //   this.contentHeadersDialogOpened = true;
-    //   return;
-    // }
+    const request = await this.serialize();
+    if (!this.ignoreValidationOnGet && this.validateContentHeaders(request)) {
+      this.contentHeadersDialogOpened = true;
+      return;
+    }
+
+    // FIXME: Add core transport events
     // TransportEvents.request(this, request);
-    // TelemetryEvents.event(this, {
-    //   category: 'Request editor',
-    //   action: 'Send request',
-    // });
+    
+    CoreEvents.Telemetry.event(this, {
+      category: 'Request editor',
+      action: 'Send request',
+    });
   }
 
   /**
@@ -584,7 +597,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
   }
 
   [sendIgnoreValidation](): void {
-    // this.ignoreValidationOnGet = true;
+    this.ignoreValidationOnGet = true;
     this.send();
   }
 

@@ -354,7 +354,7 @@ export default class BodyMultipartEditorElement extends LitElement {
     if (!item.enabled) {
       this.value.delete(item.name);
     } else if (item.enabled && item.name) {
-      const setValue = item.isFile ? this[internalModel][index].value : item.value;
+      const setValue = item.isFile ? this[internalModel][index].file! : item.value;
       this[setFormValue](item, setValue);
     }
     this[notifyChange]();

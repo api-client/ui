@@ -1,6 +1,6 @@
 import { assert, aTimeout, fixture, html, nextFrame } from '@open-wc/testing';
 import sinon from 'sinon';
-import { ProjectMock, Property } from '@api-client/core';
+import { ProjectMock, Property } from '@api-client/core/build/browser.js';
 import { loadMonaco } from '../MonacoSetup.js';
 import '../../../src/define/body-formdata-editor.js';
 import { addParamHandler } from '../../../src/elements/http/internals.js';

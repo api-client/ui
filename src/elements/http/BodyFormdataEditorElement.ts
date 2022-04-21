@@ -58,17 +58,17 @@ export default class BodyFormdataEditorElement extends LitElement {
   /**
    * When set the editor is in read only mode.
    */
-  @property({ type: Boolean }) readOnly = false;
+  @property({ type: Boolean, reflect: true }) readOnly = false;
 
   /**
    * When set all controls are disabled in the form
    */
-  @property({ type: Boolean }) disabled = false;
+  @property({ type: Boolean, reflect: true }) disabled = false;
 
   /** 
    * When set it automatically encodes and decodes values.
    */
-  @property({ type: Boolean }) autoEncode = false;
+  @property({ type: Boolean, reflect: true }) autoEncode = false;
 
   [valueValue] = '';
 

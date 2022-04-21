@@ -187,17 +187,17 @@ export default class BodyEditorElement extends ResizableMixin(LitElement) {
   /**
    * When set the editor is in read only mode.
    */
-  @property({ type: Boolean }) readOnly = false;
+  @property({ type: Boolean, reflect: true }) readOnly = false;
 
   /**
    * When set all controls are disabled in the form
    */
-  @property({ type: Boolean }) disabled = false;
+  @property({ type: Boolean, reflect: true }) disabled = false;
 
   /** 
    * When set it automatically encodes and decodes values.
    */
-  @property({ type: Boolean }) autoEncode = false;
+  @property({ type: Boolean, reflect: true }) autoEncode = false;
 
 
   /** 
@@ -205,7 +205,7 @@ export default class BodyEditorElement extends ResizableMixin(LitElement) {
    * This disables option "current header value", in raw editor, and disabled information about 
    * content-type header update.
    */
-  @property({ type: Boolean }) ignoreContentType = false;
+  @property({ type: Boolean, reflect: true }) ignoreContentType = false;
 
   /**
    * @returns True when the current value is a file (or blob).
@@ -221,7 +221,7 @@ export default class BodyEditorElement extends ResizableMixin(LitElement) {
    * The current request content type. It is passed to the `raw` editor
    * to detect current language.
    */
-  @property({ type: String })
+  @property({ type: String, reflect: true })
   get contentType(): string | undefined {
     return this[contentTypeValue];
   }

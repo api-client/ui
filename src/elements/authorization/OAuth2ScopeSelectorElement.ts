@@ -151,18 +151,18 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
    */
   @property({ type: Boolean }) disabled = false;
 
-  [valueValue]: string[] = [];
+  [valueValue]?: string[] = [];
 
   /**
    * List of scopes entered by the user. It can be used it pre-select scopes
    * by providing an array with scope values.
    */
-  @property({ type: Array }) 
-  get value(): string[] {
+  @property({ type: Array })
+  get value(): string[] | undefined {
     return this[valueValue];
   }
 
-  set value(value: string[]) {
+  set value(value: string[] | undefined) {
     const old = this[valueValue];
     /* istanbul ignore if */
     if (old === value) {
@@ -173,7 +173,7 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
     this[autoValidateHandler](this.autoValidate);
   }
 
-  [allowedScopesValue]: AllowedScope[] | string[] = [];
+  [allowedScopesValue]?: AllowedScope[] | string[] = [];
 
   [allowedIsObject] = false;
 
@@ -195,12 +195,12 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
    * When the description is provided it will be displayed below the name
    * of the scope.
    */
-  @property({ type: Array }) 
-  get allowedScopes(): AllowedScope[] | string[] {
+  @property({ type: Array })
+  get allowedScopes(): AllowedScope[] | string[] | undefined {
     return this[allowedScopesValue];
   }
 
-  set allowedScopes(value: AllowedScope[] | string[]) {
+  set allowedScopes(value: AllowedScope[] | string[] | undefined) {
     const old = this[allowedScopesValue];
     /* istanbul ignore if */
     if (old === value) {
@@ -320,7 +320,7 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
    *
    * @param scope Scope value to add
    */
-  add(scope: string|Suggestion): void {
+  add(scope: string | Suggestion): void {
     const scopeValue = typeof scope === 'string' ? scope : scope.value;
     if (!scopeValue) {
       return;
@@ -391,7 +391,7 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
    * strings or objects
    * @returns Normalized scopes list for autocomplete.
    */
-  [normalizeScopes](scopes: string[] | AllowedScope[]): Suggestion[]|undefined {
+  [normalizeScopes](scopes?: string[] | AllowedScope[]): Suggestion[] | undefined {
     if (!scopes || !scopes.length) {
       return undefined;
     }
@@ -415,7 +415,7 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
    * `allowedScopes` array if it is an object (return `true`) or
    * string (return `false`);
    */
-  [computeAllowedIsObject](allowedScopes: string[]|AllowedScope[]): boolean {
+  [computeAllowedIsObject](allowedScopes?: string[] | AllowedScope[]): boolean {
     if (!allowedScopes || !allowedScopes.length) {
       return false;
     }
@@ -493,7 +493,7 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
   }
 
   render(): TemplateResult {
-    return html `
+    return html`
     <div class="container">
       <label class="form-label">Scopes</label>
       <div class="input-container">
@@ -507,7 +507,7 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
   /**
    * @returns The template for the scopes list
    */
-  [scopesListTemplate](): TemplateResult|string {
+  [scopesListTemplate](): TemplateResult | string {
     const { value } = this;
     if (!value || !value.length) {
       return '';
@@ -591,7 +591,7 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
   /**
    * @returns THe template for the autocomplete element, if needed.
    */
-  [autocompleteTemplate](): TemplateResult|string {
+  [autocompleteTemplate](): TemplateResult | string {
     const source = this[autocompleteScopes];
     const target = this[inputTarget];
     if (!target || !Array.isArray(source) || !source.length) {

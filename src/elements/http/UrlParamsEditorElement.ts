@@ -1,5 +1,4 @@
 /* eslint-disable no-param-reassign */
-/* eslint-disable class-methods-use-this */
 import { LitElement, html, CSSResult, TemplateResult } from 'lit';
 import { ValidatableMixin, OverlayMixin, ResizableMixin, AnypointInputElement, AnypointCheckboxElement } from '@anypoint-web-components/awc';
 import { property } from 'lit/decorators.js';
@@ -31,21 +30,6 @@ import {
   paramValueInput,
 } from './internals.js';
 
-/* eslint-disable no-plusplus */
-/* eslint-disable no-continue */
-/* eslint-disable prefer-destructuring */
-
-
-export declare interface ViewModel {
-  anchor?: string;
-}
-
-/** @typedef {import('./UrlParamsEditorElement').QueryParameter} QueryParameter */
-/** @typedef {import('./UrlParamsEditorElement').ViewModel} ViewModel */
-/** @typedef {import('lit-element').TemplateResult} TemplateResult */
-/** @typedef {import('@anypoint-web-components/awc').AnypointInputElement} AnypointInputElement */
-/** @typedef {import('@anypoint-web-components/awc').AnypointCheckboxElement} AnypointCheckboxElement */
-
 /**
  * An element that works with the `url-input-editor` that renders an overlay
  * with query parameter values.
@@ -55,12 +39,12 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     return styles;
   }
 
-  protected parser = new UrlProcessor('/');
+  protected _parser = new UrlProcessor('/');
 
   /**
    * When set the editor is in read only mode.
    */
-  @property({ type: Boolean }) readOnly = false;
+  @property({ type: Boolean, reflect: true }) readOnly = false;
 
   [valueValue] = '';
 
@@ -82,6 +66,13 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     this[valueChanged](value);
   }
 
+  /**
+   * The model used to build the view.
+   */
+  get model(): UrlProcessor {
+    return this._parser;
+  }
+
   [notifyChange](): void {
     this.dispatchEvent(new Event('change'));
   }
@@ -89,11 +80,11 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   /**
    * A handler that is called on input
    */
-  [valueChanged](value: string): void {
+  [valueChanged](value?: string): void {
     if (value) {
-      this.parser = new UrlProcessor(value);
+      this._parser = new UrlProcessor(value);
     } else {
-      this.parser = new UrlProcessor('/');
+      this._parser = new UrlProcessor('/');
     }
   }
 
@@ -115,7 +106,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   }
 
   protected _updateValue(): void {
-    this[valueValue] = this.parser.toString();
+    this[valueValue] = this._parser.toString();
     this[notifyChange]();
   }
 
@@ -126,7 +117,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     if (this.readOnly) {
       return;
     }
-    this.parser.search.append('', '');
+    this._parser.search.append('', '');
     this.requestUpdate();
     await this.updateComplete;
     this.refit();
@@ -140,7 +131,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   async [removeParamHandler](e: PointerEvent): Promise<void> {
     const node = (e.currentTarget as HTMLElement);
     const index = Number(node.dataset.index);
-    this.parser.search.delete(index);
+    this._parser.search.delete(index);
     this._updateValue();
     this.requestUpdate();
     await this.updateComplete;
@@ -165,7 +156,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   }
 
   [encodeQueryParameters](): void {
-    const { search } = this.parser;
+    const { search } = this._parser;
     const list = search.list();
     list.forEach((part, index) => {
       part.name = UrlEncoder.encodeQueryString(part.name, true);
@@ -179,7 +170,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   }
 
   [decodeQueryParameters](): void {
-    const { search } = this.parser;
+    const { search } = this._parser;
     const list = search.list();
     list.forEach((part, index) => {
       part.name = UrlEncoder.decodeQueryString(part.name, true);
@@ -195,7 +186,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   [enabledHandler](e: CustomEvent): void {
     const node = e.target as AnypointCheckboxElement;
     const index = Number(node.dataset.index);
-    this.parser.search.toggle(index, node.checked);
+    this._parser.search.toggle(index, node.checked);
     this._updateValue();
   }
 
@@ -207,13 +198,13 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     const { value } = node;
     const prop = node.dataset.property as string;
     const index = Number(node.dataset.index);
-    const list = this.parser.search.list();
+    const list = this._parser.search.list();
     if (prop === 'name') {
       list[index].name = value;
     } else {
       list[index].value = value;
     }
-    this.parser.search.update(index, list[index]);
+    this._parser.search.update(index, list[index]);
     this._updateValue();
   }
 
@@ -224,7 +215,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   }
 
   [formTemplate](): TemplateResult {
-    const items = this.parser.search.list();
+    const items = this._parser.search.list();
     const { readOnly } = this;
     return html`
     <label class="query-title">Query parameters</label>
@@ -271,8 +262,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
   }
 
   /**
-   * @param {number} index
-   * @return {TemplateResult} Template for the parameter name input
+   * @return Template for the parameter name input
    */
   [paramRemoveTemplate](index: number): TemplateResult {
     const { readOnly } = this;

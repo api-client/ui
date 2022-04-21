@@ -89,7 +89,7 @@ export default class BodyRawEditorElement extends ResizableMixin(LitElement) {
   /** 
    * Uses the current content type to detect language support.
    */
-  @property({ type: String })
+  @property({ type: String, reflect: true })
   get contentType(): string | undefined {
     return this[contentTypeValue];
   }
@@ -114,7 +114,7 @@ export default class BodyRawEditorElement extends ResizableMixin(LitElement) {
   /**
    * When set the editor is in read only mode.
    */
-  @property({ type: Boolean })
+  @property({ type: Boolean, reflect: true })
   get readOnly(): boolean {
     return this[readOnlyValue];
   }

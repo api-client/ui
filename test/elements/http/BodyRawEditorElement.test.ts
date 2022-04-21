@@ -63,8 +63,7 @@ describe('BodyRawEditorElement()', () => {
     it('sets the editor model', () => {
       element.contentType = 'application/json';
       const model = element.editor.getModel();
-      // @ts-ignore
-      assert.equal(model.getModeId(), 'json');
+      assert.equal(model.getLanguageId(), 'json');
     });
 
     [
@@ -78,8 +77,7 @@ describe('BodyRawEditorElement()', () => {
       it(`sets the editor language for ${mime}`, () => {
         element.contentType = mime;
         const model = element.editor.getModel();
-        // @ts-ignore
-        assert.equal(model.getModeId(), lang);
+        assert.equal(model.getLanguageId(), lang);
       });
     });
   });

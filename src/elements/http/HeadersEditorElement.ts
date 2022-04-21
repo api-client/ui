@@ -65,12 +65,12 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
   /**  
    * When enabled it renders source mode (code mirror editor with headers support)
    */    
-  @property({ type: Boolean }) source = false;
+  @property({ type: Boolean, reflect: true }) source = false;
 
   /**
    * When set the editor is in read only mode.
    */
-  @property({ type: Boolean }) readOnly = false;
+  @property({ type: Boolean, reflect: true }) readOnly = false;
   
   
   @query('anypoint-autocomplete')

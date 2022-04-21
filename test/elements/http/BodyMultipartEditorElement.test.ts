@@ -303,7 +303,8 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       await element[valueChanged](form);
       const item = element[internalModel][2];
       delete item.enabled;
-      assert.typeOf(item.value, 'blob', 'has the file object');
+      assert.typeOf(item.file, 'blob', 'has the file object');
+      assert.equal(item.value, 'data:text/plain;base64,YmxvYi12YWx1ZQ==', 'has the file as string as the value');
       assert.equal(item.name, 'file');
       assert.equal(item.fileName, 'file.txt');
       assert.isTrue(item.isFile);
@@ -487,7 +488,7 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       assert.typeOf(value.get(name), 'string', 'the part has the correct type');
     });
 
-    it('re-enabled the file part', async () => {
+    it('re-enabled a file part', async () => {
       const item = (element.shadowRoot.querySelector('.form-row:nth-child(3) anypoint-switch'));
       (item as HTMLElement).click();
       await nextFrame();
@@ -644,8 +645,8 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
     it('changes the value in the [internalModel]', async () => {
       const e = generateChangeEvent();
       await element[filePartValueHandler](e);
-      // @ts-ignore
-      assert.equal(element[internalModel][2].value.name, 'other.txt', 'the value is updated');
+      const f = element[internalModel][2].file as File;
+      assert.equal(f.name, 'other.txt', 'the value is updated');
     });
 
     it('updated the value', async () => {

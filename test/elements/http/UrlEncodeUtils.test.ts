@@ -50,7 +50,7 @@ describe('UrlEncodeUtils', () => {
        ];
       const compare: IProperty[] = [
         { ...base, 'name': 'test', 'value': ['encoded+value', 'other+value'] },
-        Property.String('encoded name', 'encoded+value').toJSON(),
+        Property.String('encoded+name', 'encoded+value').toJSON(),
       ];
       const result = encodeUrlEncoded(src);
       assert.deepEqual(result, compare);
@@ -74,8 +74,8 @@ describe('UrlEncodeUtils', () => {
     });
   
     it('Decode encoded string with repeatable parameters', () => {
-      const compare = 'test=encoded value&test=other value&encoded name=encoded value';
       const src = 'test=encoded+value&encoded+name=encoded+value&test=other+value';
+      const compare = 'test=encoded value&test=other value&encoded name=encoded value';
       const result = decodeUrlEncoded(src);
       assert.equal(result, compare);
     });

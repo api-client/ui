@@ -99,17 +99,17 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
   /**
    * True if detailed editor is opened.
    */
-  @property({ type: Boolean }) detailsOpened = false;
+  @property({ type: Boolean, reflect: true }) detailsOpened = false;
 
   /**
    * Default protocol for the URL if it's missing.
    */
-  @property({ type: String }) defaultProtocol = 'http';
+  @property({ type: String, reflect: true }) defaultProtocol = 'http';
 
   /**
    * When set the editor is in read only mode.
    */
-  @property({ type: Boolean }) readOnly = false;
+  @property({ type: Boolean, reflect: true }) readOnly = false;
 
   /**
    * The list of environments that apply to the current request.
@@ -119,7 +119,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
   /**
    * The key of the selected environment.
    */
-  @property({ type: String }) environment?: string;
+  @property({ type: String, reflect: true }) environment?: string;
 
   @state() [autocompleteOpened] = false;
 
@@ -207,9 +207,6 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     this.addEventListener('keydown', this[keyDownHandler]);
   }
 
-  /**
-   * @param {EventTarget} node
-   */
   _detachListeners(node: EventTarget): void {
     super._detachListeners(node);
     node.removeEventListener(EventTypes.HttpProject.Request.State.urlChange, this[extValueChangeHandler]);
@@ -388,7 +385,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     this[previousValue] = this.value;
     this.value = node.value;
     this[notifyChange]();
-    if (node.classList.contains('main-input')) {
+    if (!this.detailsOpened && node.classList.contains('main-input')) {
       this.renderSuggestions();
     }
   }
@@ -802,7 +799,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
   }
 
   /**
-   * @returns {TemplateResult[]|string} The template for the suggestions list.
+   * @returns The template for the suggestions list.
    */
   [suggestionsListTemplate](): TemplateResult[] | string {
     const items = this[renderedSuggestions];
