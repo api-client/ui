@@ -19,6 +19,7 @@ export { PlatformBindings } from './bindings/base/PlatformBindings.js';
 export { StoreBindings } from './bindings/base/StoreBindings.js';
 export { NavigationBindings } from './bindings/base/NavigationBindings.js';
 export { AppDataBindings } from './bindings/base/AppDataBindings.js';
+export { HttpBindings } from './bindings/base/HttpBindings.js';
 
 // Events
 

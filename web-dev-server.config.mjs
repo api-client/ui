@@ -14,6 +14,13 @@ export default /** @type {import('@web/dev-server').DevServerConfig} */ ({
     exportConditions: ['browser', 'development'],
   },
 
+  // mimeTypes: {
+  //   // serve all json files as js
+  //   // '**/*.json': 'js',
+  //   // serve .module.css files as js
+  //   '**/monaco-editor/esm/vs/editor/standalone/**/.css': 'js',
+  // },
+
   /** Compile JS for older browsers. Requires @web/dev-server-esbuild plugin */
   // esbuildTarget: 'auto'
 

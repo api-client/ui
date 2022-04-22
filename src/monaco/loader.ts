@@ -15,15 +15,26 @@ export function createEnvironment(monacoBase: string): void {
       const prefix = `${base}esm/vs/`;
       const langPrefix = `${prefix}language/`;
       switch (label) {
-        case 'json': url = `${langPrefix}json/json.worker.js`; break;
-        case 'css': url = `${langPrefix}css/css.worker.js`; break;
-        case 'html': url = `${langPrefix}html/html.worker.js`; break;
+        case 'json': url = `${langPrefix}json/json.worker.js?worker`; break;
+        case 'css':
+        case 'scss':
+        case 'less':
+          url = `${langPrefix}css/css.worker.js`; 
+          break;
+        case 'html':
+			  case 'handlebars':
+			  case 'razor':
+          url = `${langPrefix}html/html.worker.js`; 
+          break;
         case 'javascript':
-        case 'typescript': url = `${langPrefix}typescript/ts.worker.js`; break;
+        case 'typescript': 
+          url = `${langPrefix}typescript/ts.worker.js`; 
+          break;
         default: url = `${prefix}editor/editor.worker.js`; break;
       }
       return new Worker(url, {
-        type: 'module'
+        type: 'module',
+        name: label,
       });
     }
   }

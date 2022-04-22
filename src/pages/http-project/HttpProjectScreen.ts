@@ -98,6 +98,9 @@ export default class HttpProjectScreen extends ApplicationScreen {
   }
 
   async initialize(): Promise<void> {
+    if (!await this.isPlatformSupported()) {
+      return;
+    }
     await this.initializeStore();
     const key = this.readFileKey();
     // async to the initialization

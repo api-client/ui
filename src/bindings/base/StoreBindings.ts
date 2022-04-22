@@ -46,10 +46,12 @@ export abstract class StoreBindings extends PlatformBindings {
     window.addEventListener(EventTypes.Store.initEnvironment, this.initEnvHandler.bind(this));
     window.addEventListener(EventTypes.Store.info, this.storeInfoHandler.bind(this));
     window.addEventListener(EventTypes.Store.Global.setEnv, this.setGlobalEnvHandler.bind(this));
+    window.addEventListener(EventTypes.Store.Global.getEnv, this.getGlobalEnvHandler.bind(this));
     
     // Auth
     window.addEventListener(EventTypes.Store.Auth.authenticate, this.storeAuthHandler.bind(this));
     window.addEventListener(EventTypes.Store.Auth.isAuthenticated, this.storeIsAuthenticatedHandler.bind(this));
+    window.addEventListener(EventTypes.Store.Auth.getToken, this.getTokenHandler.bind(this));
 
     // Files
     window.addEventListener(EventTypes.Store.File.list, this.fileListHandler.bind(this));
@@ -95,10 +97,22 @@ export abstract class StoreBindings extends PlatformBindings {
     e.detail.result = this.setGlobalEnvironment(e.detail.env);
   }
 
+  protected getGlobalEnvHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.getGlobalEnvironment();
+  }
+
   protected storeIsAuthenticatedHandler(input: Event): void {
     const e = input as CustomEvent;
     e.preventDefault();
     e.detail.result = this.isAuthenticated(e.detail.env);
+  }
+
+  protected getTokenHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.getCurrentToken();
   }
 
   protected fileListHandler(input: Event): void {
@@ -208,6 +222,14 @@ export abstract class StoreBindings extends PlatformBindings {
     this.store = store;
   }
 
+  async getGlobalEnvironment(): Promise<IConfigEnvironment> {
+    const { globalEnvironment } = this;
+    if (!globalEnvironment) {
+      throw new Error(`The current environment is not set.`);
+    }
+    return globalEnvironment;
+  }
+
   /**
    * Checks whether the user is authenticated in the store for the environment
    * @param env Optional environment if different than the global environment
@@ -242,6 +264,11 @@ export abstract class StoreBindings extends PlatformBindings {
       await Events.Config.Environment.update(env || this.globalEnvironment!);
     }
     return result;
+  }
+
+  async getCurrentToken(): Promise<string | undefined> {
+    const { store } = this;
+    return store && store.sdk && store.sdk.token || undefined;
   }
 
   /**

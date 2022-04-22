@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 import { PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents } from '@api-client/core/build/browser.js';
@@ -175,4 +176,17 @@ export default class ProjectRequestElement extends HttpRequestElement {
     }
     super.notifyChanged(type, value);
   }
+
+  // protected _notifySend(): void {
+  //   const { project, key } = this;
+  //   if (!project || !key) {
+  //     throw new Error(`The project request is not initialized.`);
+  //   }
+  //   const opts: IProjectRunnerOptions = {
+  //     environment: this.environment,
+  //     request: [key],
+  //     recursive: true,
+  //   };
+  //   CoreEvents.Transport.Project.send(this, project.key, opts);
+  // }
 }

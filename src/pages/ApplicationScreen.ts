@@ -9,6 +9,7 @@ import { Events } from '../events/Events.js';
 import { EventTypes } from '../events/EventTypes.js';
 import { IConfigEnvironment } from '../lib/config/Config.js';
 import '../define/alert-dialog.js';
+import supportedPlatform from '../lib/SupportedPlatform.js';
 
 /**
  * A base class for pages build outside the LitElement. It uses `lit-html` 
@@ -90,6 +91,14 @@ export abstract class ApplicationScreen extends RouteMixin(RenderableMixin(Event
     mql.addEventListener('change', (e) => {
       this.isMobile = e.matches;
     });
+  }
+
+  async isPlatformSupported(): Promise<boolean> {
+    const result = await supportedPlatform();
+    if (!result) {
+      this.page = 'unsupported-platform';
+    }
+    return result;
   }
 
   initStoreChange(): void {
@@ -274,6 +283,7 @@ export abstract class ApplicationScreen extends RouteMixin(RenderableMixin(Event
     switch (this.page) {
       case 'auth-required': return this.renderAuthRequired();
       case 'env-required': return this.renderEnvRequired();
+      case 'unsupported-platform': return this.renderPlatformNotSupported();
       default: return html`<p class="general-error">Unknown state. Did you set the <i>initialized</i> flag?</p>`;
     }
   }
@@ -300,6 +310,18 @@ export abstract class ApplicationScreen extends RouteMixin(RenderableMixin(Event
         Open the <b>store configuration</b> screen to configure the connection.
       </p>
       <anypoint-button emphasis="high" @click="${this._storeConfigHandler}">Configure store</anypoint-button>
+    </div>
+    `;
+  }
+
+  protected renderPlatformNotSupported(): TemplateResult {
+    return html`
+    <div class="auth-required-screen">
+      <h1>Unsupported platform</h1>
+      <p class="message">
+        It looks like your browser does not support one of the crucial features needed to run
+        this application. Accept our apologies, we work hard to support as many browsers as possible. 
+      </p>
     </div>
     `;
   }

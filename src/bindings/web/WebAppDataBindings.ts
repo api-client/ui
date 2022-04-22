@@ -18,6 +18,7 @@ export class WebAppDataBindings extends AppDataBindings {
     return new Promise((resolve, reject) => {
       const worker = new SharedWorker(this.workerUrl, {
         type: 'module',
+        name: 'AppData',
       });
       worker.port.start();
       worker.onerror = (): void => reject(new Error('Unable to initialize the IO process.'));

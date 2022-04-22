@@ -4,10 +4,12 @@ export const EventTypes = Object.freeze({
     initEnvironment: 'configstoreinitenv',
     Global: Object.freeze({
       setEnv: 'storesetgloablenvironment',
+      getEnv: 'storegetgloablenvironment',
     }),
     Auth: Object.freeze({
       isAuthenticated: 'storeaisauthenticated',
       authenticate: 'storeauthenticate',
+      getToken: 'storeauthgettoken',
     }),
     File: Object.freeze({
       list: 'storefileslist',

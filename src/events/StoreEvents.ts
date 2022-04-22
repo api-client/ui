@@ -139,7 +139,22 @@ export const StoreEvents = Object.freeze({
       });
       target.dispatchEvent(e);
       await (e.detail.result as unknown);
-    }
+    },
+    /**
+     * Reads the currently set global environment.
+     */
+    getEnv: async (target: EventTarget=document.body): Promise<IConfigEnvironment> => {
+      const e = new CustomEvent(EventTypes.Store.Global.getEnv, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return (e.detail.result as unknown) as Promise<IConfigEnvironment>;
+    },
   }),
   Auth: Object.freeze({
     /**
@@ -181,6 +196,25 @@ export const StoreEvents = Object.freeze({
       });
       target.dispatchEvent(e);
       return ((e.detail.result as unknown) as Promise<ISessionInitInfo>);
+    },
+    /**
+     * Reads the store access token in use, if any.
+     * Note, this does not perform authentication. The user has to be already authenticated.
+     * 
+     * @param target Optional events target.
+     * @returns The current access token value to use in the store or undefined if none is in use, or the event is not handled.
+     */
+    getToken: async (target: EventTarget=document.body): Promise<string | undefined> => {
+      const e = new CustomEvent(EventTypes.Store.Auth.getToken, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<string | undefined>);
     },
   }),
   File: Object.freeze({

@@ -23,6 +23,7 @@ export class WebConfigurationBindings extends ConfigurationBindings {
     return new Promise((resolve, reject) => {
       const worker = new SharedWorker(this.workerUrl, {
         type: 'module',
+        name: 'AppConfig',
       });
       worker.port.start();
       worker.onerror = (): void => reject(new Error('Unable to initialize the IO process.'));

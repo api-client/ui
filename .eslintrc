@@ -50,6 +50,8 @@
   "globals": {
     "EventListener": true,
     "Prism": true,
+    "RequestInit": true,
+    "WorkerType": true,
     "GlobalEventHandlers": true
   }
 }

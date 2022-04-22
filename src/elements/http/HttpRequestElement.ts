@@ -70,6 +70,9 @@ export const NonPayloadMethods = ['GET', 'HEAD'];
 
 /**
  * An element that renders an HTTP editor.
+ * 
+ * @fires send A custom event when the user requested to send the request. The detail object is the editor's request.
+ * @fires abort When the user requested to abort the ongoing request.
  */
 export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin(LitElement)) {
   static get styles(): CSSResult[] {
@@ -362,21 +365,27 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
       this.contentHeadersDialogOpened = true;
       return;
     }
-
-    // FIXME: Add core transport events
-    // TransportEvents.request(this, request);
-    
+    this._notifySend(request);
     CoreEvents.Telemetry.event(this, {
       category: 'Request editor',
       action: 'Send request',
     });
   }
 
+  protected _notifySend(request: IHttpRequest): void {
+    this.dispatchEvent(new CustomEvent('send', {
+      detail: {
+        request,
+        authorization: this.authorization,
+      },
+    }));
+  }
+
   /**
    * Aborts the request
    */
   abort(): void {
-    // TransportEvents.abort(this, this.requestId);
+    this.dispatchEvent(new Event('abort'));
   }
 
   [internalSendHandler](e: Event): void {
