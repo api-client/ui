@@ -113,6 +113,7 @@ export abstract class DemoPage extends RenderableMixin(EventTarget) {
   pageTemplate(): TemplateResult {
     return html`
     ${this.headerTemplate()}
+    ${this.navigationTemplate()}
     <main>
       ${this.contentTemplate()}
     </main>`;
@@ -130,6 +131,10 @@ export abstract class DemoPage extends RenderableMixin(EventTarget) {
       <div class="spacer"></div>
       ${this._viewControlsTemplate()}
     </header>`;
+  }
+
+  navigationTemplate(): TemplateResult {
+    return html``;
   }
 
   /**

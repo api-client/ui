@@ -207,7 +207,7 @@ export default class HttpSnippetsElement extends LitElement {
   protected _tabsTemplate(): TemplateResult {
     return html`
     <anypoint-tabs
-      fitcontainer
+      fitContainer
       attrForSelected="data-id"
       .selected="${this._parent}"
       @select="${this._groupHandler}"
@@ -224,7 +224,7 @@ export default class HttpSnippetsElement extends LitElement {
     }
     return html`
     <anypoint-tabs
-      fitcontainer
+      fitContainer
       attrForSelected="data-id"
       .selected="${selected}"
       @select="${this._subHandler}"

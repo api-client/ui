@@ -85,7 +85,7 @@ export class PrismHighlighter {
       // @ts-ignore
       return Prism.languages[lang];
     }
-    switch (lang.substr(0, 2)) {
+    switch (lang.substring(0, 2)) {
       case 'js':
       case 'es':
       case 'mj':

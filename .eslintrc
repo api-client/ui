@@ -52,6 +52,7 @@
     "Prism": true,
     "RequestInit": true,
     "WorkerType": true,
+    "FormDataEntryValue": true,
     "GlobalEventHandlers": true
   }
 }

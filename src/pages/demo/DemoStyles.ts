@@ -89,4 +89,44 @@ p {
 .centered.xx-large {
   max-width: 1800px;
 }
+
+#app.with-nav {
+  display: grid;
+  grid-template:
+    "header header" 72px
+    "nav content" auto / minmax(200px, 2fr) 10fr;
+}
+
+#app.with-nav header {
+  grid-area: header;
+}
+
+#app.with-nav nav {
+  grid-area: nav;
+}
+
+#app.with-nav content {
+  grid-area: nav;
+}
+
+.nav-item {
+  appearance: none;
+  border: none;
+  background-color: transparent;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0px 20px;
+  border-radius: 0 20px 20px 0;
+}
+
+.nav-item:hover {
+  background: #eeeeee;
+}
+
+.nav-item:active {
+  background: #e3f2fd;
+}
 `;
