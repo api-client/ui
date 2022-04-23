@@ -136,6 +136,10 @@ export function imageBody(mime: string): 'binary' | 'svg' | undefined {
   return 'binary';
 }
 
+export function isTextFormBody(mime: string): boolean {
+  return mime === 'application/x-www-form-urlencoded';
+}
+
 export function isTextBody(mime: string): boolean {
-  return isJsonBody(mime) || isXmlBody(mime) || imageBody(mime) === 'svg';
+  return isJsonBody(mime) || isXmlBody(mime) || imageBody(mime) === 'svg' || isTextFormBody(mime);
 }

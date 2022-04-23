@@ -14,6 +14,8 @@ import 'prismjs/components/prism-markdown.js';
 import 'prismjs/components/prism-markup.js';
 import 'prismjs/components/prism-yaml.js';
 import 'prismjs/components/prism-xml-doc.js';
+import 'prismjs/components/prism-http.js';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.min.js';
 import { ensureBodyString, imageBody, isBinaryBody, isPdfBody, isTextBody } from '../../lib/http/Payload.js';
 
 enum BodyType {
@@ -33,6 +35,7 @@ enum ViewType {
   Parsed,
   ImageSvg,
   ImageBinary,
+  ImageError,
   Pdf,
   Binary,
 }
@@ -45,6 +48,47 @@ export default class LogBodyElement extends LitElement {
     return [
       prismStyles,
       css`
+      pre[class*="language-"].line-numbers {
+        position: relative;
+        padding-left: 3.8em;
+        counter-reset: linenumber;
+      }
+
+      pre[class*="language-"].line-numbers > code {
+        position: relative;
+        white-space: inherit;
+      }
+
+      .line-numbers .line-numbers-rows {
+        position: absolute;
+        pointer-events: none;
+        top: 0;
+        font-size: 100%;
+        left: -3.8em;
+        width: 3em; /* works for line-numbers below 1000 lines */
+        letter-spacing: -1px;
+        border-right: 1px solid #999;
+
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      .line-numbers-rows > span {
+        display: block;
+        counter-increment: linenumber;
+      }
+
+      .line-numbers-rows > span:before {
+        content: counter(linenumber);
+        color: #999;
+        display: block;
+        padding-right: 0.8em;
+        text-align: right;
+      }
+      `,
+      css`
       :host {
         display: block;
       }
@@ -52,6 +96,10 @@ export default class LogBodyElement extends LitElement {
       .raw-panel > code {
         overflow: auto;
         user-select: text;
+      }
+
+      pre[class*="language-"].raw-panel {
+        white-space: pre;
       }
       `,
     ];
@@ -76,7 +124,7 @@ export default class LogBodyElement extends LitElement {
 
   @state() protected _body?: DeserializedPayload;
 
-  @state() protected _type: BodyType = BodyType.nil;
+  @state() protected _bodyType: BodyType = BodyType.nil;
 
   @state() protected _viewType: ViewType = ViewType.Parsed;
 
@@ -92,6 +140,9 @@ export default class LogBodyElement extends LitElement {
     if (cp.has('payload') || cp.has('contentType')) {
       this._prepare();
     }
+    if (cp.has('_bodyType') || cp.has('_viewType')) {
+      this._prismComplete();
+    }
   }
 
   /**
@@ -104,15 +155,15 @@ export default class LogBodyElement extends LitElement {
     this._body = undefined;
     this._tokens = undefined;
     this._viewType = ViewType.Parsed;
-    this._type = BodyType.nil;
+    this._bodyType = BodyType.nil;
 
     if (!payload) {
-      this._type = BodyType.nil;
+      this._bodyType = BodyType.nil;
       return;
     }
     const body = await this._deserialize(payload);
     if (body === undefined || body === null || !body) {
-      this._type = BodyType.nil;
+      this._bodyType = BodyType.nil;
       return;
     }
 
@@ -144,7 +195,7 @@ export default class LogBodyElement extends LitElement {
       this._body = body;
       this._viewType = ViewType.Parsed;
     }
-    this._type = this._typeFromType(this._body);
+    this._bodyType = this._typeFromType(this._body);
     this._tokenize();
   }
 
@@ -182,11 +233,11 @@ export default class LogBodyElement extends LitElement {
    * Depending on the body type and the contentType, it prepares the tokens to be rendered in the view.
    */
   protected _tokenize(): void {
-    const { contentType, _type: type, _body: body, raw } = this;
-    if (raw) {
-      this._tokens = body as string;
-      return;
-    }
+    const { contentType, _bodyType: type, _body: body } = this;
+    // if (raw && type !== BodyType.FormData) {
+    //   this._tokens = body as string;
+    //   return;
+    // }
     switch  (type) {
       case BodyType.String: this._tokens = this._tokenizeStringContent(body as string, contentType); break;
       case BodyType.FormData: this._tokens = this._tokenizeFormDataContent(body as FormData); break;
@@ -199,20 +250,20 @@ export default class LogBodyElement extends LitElement {
 
   protected _tokenizeStringContent(body: string, contentType: string = ''): string {
     const { raw } = this;
-    let finalBody = body;
-    if (!raw) {
-      finalBody = this._formatBody(finalBody, contentType);
+    if (raw) {
+      return body;
     }
-    const grammar = getLanguage(contentType);
+    const finalBody = this._formatBody(body, contentType);
+    const info = getLanguage(contentType);
     const env = {
       code: finalBody,
-      grammar,
-      language: contentType,
+      grammar: info.grammar,
+      language: info.lang,
     };
     // @ts-ignore
     Prism.hooks.run('before-highlight', env);
     // @ts-ignore
-    return Prism.highlight(finalBody, grammar, contentType);
+    return Prism.highlight(finalBody, info.grammar, info.lang);
   }
 
   protected _formatBody(body: string, contentType: string = ''): string {
@@ -229,6 +280,7 @@ export default class LogBodyElement extends LitElement {
   }
 
   protected _tokenizeFormDataContent(body: FormData): string {
+    const { raw } = this;
     const boundary = '7MA4YWxkTrZu0gW';
     const lineBreak = "\r\n"
     const templates: string[] = [];
@@ -246,6 +298,9 @@ export default class LogBodyElement extends LitElement {
     });
     templates.push(`--${boundary}${lineBreak}`);
     const code = templates.join('');
+    if (raw) {
+      return code;
+    }
     const highlight = new PrismHighlighter();
     return highlight.tokenize(code, 'http');
   }
@@ -264,10 +319,48 @@ export default class LogBodyElement extends LitElement {
     }
   }
 
+  protected _prismComplete(): void {
+    const { _body, _tokens } = this;
+    const element = this.shadowRoot?.querySelector('#rawCode');
+    if (!element) {
+      return;
+    }
+    let body = '';
+    if (typeof _body === 'string') {
+      body = _body;
+    } else if (typeof _tokens === 'string') {
+      body = _tokens;
+    }
+    const env = {
+      code: body,
+      element,
+    };
+    try {
+      // @ts-ignore
+      Prism.hooks.run('complete', env);
+      
+      // @ts-ignore
+      Prism.plugins.lineNumbers.resize(element.parentElement!);
+    } catch (e) {
+      // ...
+    }
+  }
+
+  /**
+   * A handler for the image error event.
+   * This occurs when rendering an image via the img tag but the image URL is invalid.
+   */
+  protected _imageErrorHandler(): void {
+    this._viewType = ViewType.ImageError;
+  }
+
   protected render(): TemplateResult {
-    const { _body: body, _type: type, _viewType: view } = this;
+    const { _body: body, _bodyType: type, _viewType: view } = this;
     if (type === BodyType.nil) {
       return html`<p class="no-info">No data available.</p>`;
+    }
+    if (view === ViewType.ImageError) {
+      return this._imageErrorView();
     }
     if (view === ViewType.Parsed) {
       return this._stringBodyView()
@@ -288,13 +381,19 @@ export default class LogBodyElement extends LitElement {
     return this._bufferBodyView(body as ArrayBuffer | Buffer);
   }
 
+  protected _emptyBodyTemplate(): TemplateResult {
+    return html`
+    <div class="content-info empty">
+      <p>The response has no body object or the response is an empty string.</p>
+    </div>
+    `;
+  }
+
   protected _stringBodyView(): TemplateResult {
     const { raw, _tokens } = this;
     const content = raw ? _tokens : unsafeHTML(this._tokens);
     return html`
-    <div class="raw-panel string">
-      <code class="code language-snippet"><pre>${content}</pre></code>
-    </div>
+    <pre class="raw-panel string language-snippet line-numbers"><code id="rawCode" class="code">${content}</code></pre>
     `;
   }
 
@@ -324,7 +423,10 @@ export default class LogBodyElement extends LitElement {
   }
 
   protected _imageSvgBodyView(): TemplateResult {
-    const { _body } = this;
+    const { _body, raw } = this;
+    if (raw) {
+      return this._stringBodyView();
+    }
     const div = window.document.createElement('div');
     div.innerHTML = String(_body);
     const svgEl = div.firstElementChild;
@@ -354,8 +456,19 @@ export default class LogBodyElement extends LitElement {
       return html`<p class="no-info">No image data</p>`;
     }
     return html`
-      <div class="image-container">
-        <img class="img-preview" src="${_tokens}" alt="">
-      </div>`;
+    <div class="image-container">
+      <img class="img-preview" src="${_tokens}" alt="" @error="${this._imageErrorHandler}">
+    </div>`;
+  }
+
+  protected _imageErrorView(): TemplateResult {
+    const { _tokens } = this;
+    if (!_tokens) {
+      return html`<p class="no-info">No image data</p>`;
+    }
+    return html`
+    <div class="error-container">
+      <b>The image URL is invalid</b>: "${_tokens}"
+    </div>`;
   }
 }

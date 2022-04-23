@@ -3,126 +3,94 @@ import { LitElement, html, TemplateResult, css, CSSResult, PropertyValueMap } fr
 import { IRequestLog, RequestLog, SentRequest, Response, ErrorResponse, Headers } from "@api-client/core/build/browser.js";
 import { property, state } from "lit/decorators.js";
 import { classMap } from 'lit/directives/class-map.js';
+import { statusTemplate, StatusStyles } from "./HttpStatus.js";
 
 /**
  * An element that renders summary headers view for an HTTP response.
  */
 export default class LogHeadersElement extends LitElement {
-  static get styles(): CSSResult {
-    return css`
-    :host {
-      display: block;
-    }
+  static get styles(): CSSResult[] {
+    return [
+      StatusStyles,
+      css`
+      :host {
+        display: block;
+      }
 
-    .tree {
-      list-style: none;
-      padding: 0 0 4px 0;
-      margin: 0;
-    }
+      .tree {
+        list-style: none;
+        padding: 0 0 4px 0;
+        margin: 0;
+      }
 
-    .tree-parent {
-      list-style: none;
-      font-weight: 600;
-      min-height: 32px;
-      display: flex;
-      align-items: center;
-      user-select: none;
-    }
+      .tree-parent {
+        list-style: none;
+        font-weight: 600;
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        user-select: none;
+      }
 
-    .tree-parent::before {
-      user-select: none;
-      margin-right: 8px;
-      font-size: small;
-      content: "\\25B8";
-    }
+      .tree-parent::before {
+        user-select: none;
+        margin-right: 8px;
+        font-size: small;
+        content: "\\25B8";
+      }
 
-    .tree-parent.closed::before {
-      margin-left: 4px;
-      margin-right: 8px;
-    }
-    
-    .tree-parent.opened::before {
-      content: "\\25BC";
-    }
+      .tree-parent.closed::before {
+        margin-left: 4px;
+        margin-right: 8px;
+      }
+      
+      .tree-parent.opened::before {
+        content: "\\25BC";
+      }
 
-    .tree-item {
-      min-height: var(--headers-list-item-min-height, 20px);
-      user-select: text;
-      word-break: break-all;
-      font-family: var(--arc-font-code-family);
-      list-style: none;
-      margin: 0px;
-      display: flex;
-      align-items: start;
-      min-height: 32px;
-      box-sizing: border-box;
-      padding: 8px 0px 0px 16px;
-    }
+      .tree-item {
+        min-height: var(--headers-list-item-min-height, 20px);
+        user-select: text;
+        word-break: break-all;
+        font-family: var(--arc-font-code-family);
+        list-style: none;
+        margin: 0px;
+        display: flex;
+        align-items: start;
+        min-height: 32px;
+        box-sizing: border-box;
+        padding: 8px 0px 0px 16px;
+      }
 
-    .tree-item > span {
-      display: inline-block;
-    }
+      .tree-item > span {
+        display: inline-block;
+      }
 
-    .tree-item-name {
-      white-space: nowrap;
-      margin-right: 8px;
-    }
+      .tree-item-name {
+        white-space: nowrap;
+        margin-right: 8px;
+      }
 
-    .auto-link {
-      color: var(--link-color);
-    }
+      .auto-link {
+        color: var(--link-color);
+      }
 
-    .children {
-      border-bottom: 1px #e5e5e5 solid;
-      padding-bottom: 8px;
-      padding-left: 0;
-      margin-bottom: 8px;
-    }
+      .children {
+        border-bottom: 1px #e5e5e5 solid;
+        padding-bottom: 8px;
+        padding-left: 0;
+        margin-bottom: 8px;
+      }
 
-    .children.collapsed {
-      display: none;
-    }
+      .children.collapsed {
+        display: none;
+      }
 
-    .status-code {
-      align-items: center;
-      display: inline-flex;
-    }
-
-    .status-info::before,
-    .status-ok::before, 
-    .status-redirect::before, 
-    .status-client-error::before,
-    .status-server-error::before {
-      content: " ";
-      width: 12px;
-      height: 12px;
-      border-radius: 20px;
-      background-color: gray;
-      display: inline-block;
-      vertical-align: middle;
-      margin-right: 8px;
-    }
-
-    .status-ok::before {
-      background-color: var(--status-code-color-200, rgb(36, 107, 39));
-    }
-
-    .status-redirect::before {
-      background-color: var(--status-code-color-300, rgb(48, 63, 159));
-    }
-
-    .status-client-error::before {
-      background-color: var(--status-code-color-400, rgb(171, 86, 0));
-    }
-
-    .status-server-error::before {
-      background-color: var(--status-code-color-500, rgb(211, 47, 47));
-    }
-
-    .active {
-      background: var(--log-headers-active-background, #e3f2fd);
-    }
-    `;
+      .active {
+        background: var(--log-headers-active-background, #e3f2fd);
+      }
+      `
+    ];
   }
 
   private _httpLog?: IRequestLog | RequestLog;
@@ -728,19 +696,7 @@ export default class LogHeadersElement extends LitElement {
       return '';
     }
     const { status = 0, statusText = '' } = response;
-    let codeClass = '';
-    if (status >= 100 && status < 200) {
-      codeClass = 'status-info';
-    } else if (status >= 200 && status < 300) {
-      codeClass = 'status-ok';
-    } else if (status >= 300 && status < 400) {
-      codeClass = 'status-redirect';
-    } else if (status >= 400 && status < 500) {
-      codeClass = 'status-client-error';
-    } else {
-      codeClass = 'status-server-error';
-    }
-    const tpl = html`<span class="status-code ${codeClass}">${status} ${statusText}</span>`;
+    const tpl = statusTemplate(status, statusText);
     return this._treeItemTemplate('Status Code', tpl, `${id}-status-code`);
   }
 

@@ -1,42 +1,84 @@
-export function getLanguage(mime = ''): Prism.Grammar {
+export interface IPrismLangInfo {
+  grammar: Prism.Grammar;
+  lang: string;
+}
+
+export function getLanguage(mime = ''): IPrismLangInfo {
   if (!mime) {
-    // @ts-ignore
-    return Prism.languages.plain;
+    return {
+      lang: 'plain',
+      // @ts-ignore
+      grammar: Prism.languages.plain
+    };
   }
   if (mime.includes('json')) {
-    // @ts-ignore
-    return Prism.languages.json;
+    return {
+      lang: 'json',
+      // @ts-ignore
+      grammar: Prism.languages.json,
+    };
   }
   if (mime.includes('xml')) {
-    // @ts-ignore
-    return Prism.languages.xml;
+    return {
+      lang: 'xml',
+      // @ts-ignore
+      grammar: Prism.languages.xml,
+    };
   }
   if (mime.includes('markdown')) {
-    // @ts-ignore
-    return Prism.languages.markdown;
+    return {
+      lang: 'markdown',
+      // @ts-ignore
+      grammar: Prism.languages.markdown,
+    };
   }
   if (mime.includes('yaml') || mime.includes('/raml')) {
-    // @ts-ignore
-    return Prism.languages.yaml;
+    return {
+      lang: 'yaml',
+      // @ts-ignore
+      grammar: Prism.languages.yaml,
+    };
   }
   if (mime.includes('/javascript')) {
-    // @ts-ignore
-    return Prism.languages.javascript;
+    return {
+      lang: 'javascript',
+      // @ts-ignore
+      grammar: Prism.languages.javascript,
+    };
   }
   if (mime.includes('/css')) {
-    // @ts-ignore
-    return Prism.languages.css;
+    return {
+      lang: 'css',
+      // @ts-ignore
+      grammar: Prism.languages.css,
+    };
   }
   if (mime.includes('svg')) {
-    // @ts-ignore
-    return Prism.languages.svg;
+    return {
+      lang: 'svg',
+      // @ts-ignore
+      grammar: Prism.languages.svg,
+    };
   }
   if (mime.includes('/html')) {
-    // @ts-ignore
-    return Prism.languages.svg;
+    return {
+      lang: 'html',
+      // @ts-ignore
+      grammar: Prism.languages.html,
+    };
   }
-  // @ts-ignore
-  return Prism.languages.clike;
+  if (mime.includes('/form-data')) {
+    return {
+      lang: 'http',
+      // @ts-ignore
+      grammar: Prism.languages.http,
+    };
+  }
+  return {
+    lang: 'clike',
+    // @ts-ignore
+    grammar: Prism.languages.clike,
+  };
 }
 
 /* [

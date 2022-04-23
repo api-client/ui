@@ -1,23 +1,55 @@
 /* eslint-disable class-methods-use-this */
 import { LitElement, html, TemplateResult, CSSResult, css } from 'lit';
-import { IRequestLog, RequestLog, Headers, DeserializedPayload } from "@api-client/core/build/browser.js";
+import { IRequestLog, RequestLog, Headers, ErrorResponse, Response, RequestTime, ResponseRedirect } from "@api-client/core/build/browser.js";
 import { property, state } from "lit/decorators.js";
 import { AnypointTabsElement } from "@anypoint-web-components/awc";
 import "@anypoint-web-components/awc/dist/define/anypoint-tabs.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-tab.js";
+import { statusTemplate, StatusStyles } from "./HttpStatus.js";
 import '../../define/log-headers.js';
 import '../../define/log-body.js';
+import '../../define/log-timings.js';
 
 /**
  * An element that renders the view for a core's `IRequestLog`.
  */
 export default class RequestLogElement extends LitElement {
-  static get styles(): CSSResult {
-    return css`
-    :host {
-      display: block;
-    }
-    `;
+  static get styles(): CSSResult[] {
+    return [
+      StatusStyles,
+      css`
+      :host {
+        display: block;
+      }
+
+      .status-row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        min-height: 56px;
+        padding: 20px 0;
+        overflow: auto;
+      }
+
+      .status-label {
+        width: 40px;
+        margin-right: 24px;
+      }
+
+      .redirect-value {
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .redirect-value log-body {
+        overflow: auto;
+      }
+
+      .header-name {
+        font-weight: 600;
+      }
+      `,
+    ];
   }
 
   protected _httpLog?: IRequestLog | RequestLog;
@@ -93,9 +125,20 @@ export default class RequestLogElement extends LitElement {
     return !!response.payload;
   }
 
-  @state() protected _requestPayload?: DeserializedPayload;
+  get hasResponse(): boolean {
+    const { _log } = this;
+    if (!_log) {
+      return false;
+    }
+    const { response } = _log;
+    return !!response;
+  }
 
-  @state() protected _responsePayload?: DeserializedPayload;
+  @state() protected _isErrorResponse = false;
+
+  @state() protected _timingsData?: RequestTime[];
+
+  @state() protected _redirectsData?: ResponseRedirect[];
 
   /**
    * Reads the payload to the original format for both the request and the response.
@@ -103,27 +146,37 @@ export default class RequestLogElement extends LitElement {
   protected async _processPayload(): Promise<void> {
     const { _log } = this;
     if (!_log) {
+      this._isErrorResponse = false;
+      this._timingsData = undefined;
+      this._redirectsData = undefined;
       return;
     }
-    const { request, response } = _log;
-    if (request) {
-      if (request.payload) {
-        this._requestPayload = await request.readPayload();
-      } else {
-        this._requestPayload = undefined;
-      }
+    const { response } = _log;
+    if (!response) {
+      this._isErrorResponse = false;
+      this._timingsData = undefined;
+      this._redirectsData = undefined;
     } else {
-      this._requestPayload = undefined;
-    }
-
-    if (response) {
-      if (response.payload) {
-        this._responsePayload = await response.readPayload();
-      } else {
-        this._responsePayload = undefined;
+      this._isErrorResponse = ErrorResponse.isErrorResponse(response);
+      // computes list of redirects.
+      if (!this._isErrorResponse) {
+        const r = response as Response;
+        const timings: RequestTime[] = [];
+        const redirects: ResponseRedirect[] = [];
+        if (Array.isArray(_log.redirects)) {
+          _log.redirects.forEach((rdr) => {
+            redirects.push(rdr);
+            if (rdr.timings) {
+              timings.push(rdr.timings);
+            }
+          });
+        }
+        if (r.timings) {
+          timings.push(r.timings);
+        }
+        this._timingsData = timings;
+        this._redirectsData = redirects;
       }
-    } else {
-      this._responsePayload = undefined;
     }
   }
 
@@ -168,8 +221,8 @@ export default class RequestLogElement extends LitElement {
       case 'payload': tpl = this._payloadTemplate(_log); break;
       case 'preview': tpl = this._previewTemplate(_log); break;
       case 'response': tpl = this._responseTemplate(_log); break;
-      case 'timings': tpl = this._timingsTemplate(_log); break;
-      case 'redirects': tpl = this._redirectsTemplate(_log); break;
+      case 'timings': tpl = this._timingsTemplate(); break;
+      case 'redirects': tpl = this._redirectsTemplate(); break;
       default:
         tpl = this._headersTemplate(_log);
     }
@@ -184,7 +237,7 @@ export default class RequestLogElement extends LitElement {
    */
   protected _headersTemplate(info: RequestLog): TemplateResult {
     return html`
-    <log-headers .httpLog="${info}"></log-headers>
+    <log-headers .httpLog="${info}" role="tabpanel"></log-headers>
     `;
   }
 
@@ -202,7 +255,7 @@ export default class RequestLogElement extends LitElement {
     const parser = new Headers(request.headers);
     const mime = parser.get('content-type');
     return html`
-    <log-body .payload="${request.payload}" .contentType="${mime}"></log-body>
+    <log-body .payload="${request.payload}" .contentType="${mime}" role="tabpanel"></log-body>
     `;
   }
 
@@ -219,9 +272,8 @@ export default class RequestLogElement extends LitElement {
     }
     const parser = new Headers(response.headers);
     const mime = parser.get('content-type');
-    // FIXME: This may be an error response.
     return html`
-    <log-body .payload="${response.payload}" .contentType="${mime}"></log-body>
+    <log-body .payload="${response.payload}" .contentType="${mime}" role="tabpanel"></log-body>
     `;
   }
 
@@ -235,17 +287,83 @@ export default class RequestLogElement extends LitElement {
     }
     const parser = new Headers(response.headers);
     const mime = parser.get('content-type');
-    // FIXME: This may be an error response.
     return html`
-    <log-body .payload="${response.payload}" .contentType="${mime}" raw></log-body>
+    <log-body .payload="${response.payload}" .contentType="${mime}" raw role="tabpanel"></log-body>
     `;
   }
 
-  protected _timingsTemplate(info: RequestLog): TemplateResult {
-    return html``;
+  protected _timingsTemplate(): TemplateResult {
+    const { _timingsData } = this;
+    if (!_timingsData || !_timingsData.length) {
+      return this._noDataTemplate();
+    }
+    return html`<log-timings .timings="${_timingsData}" role="tabpanel"></log-timings>`;
   }
 
-  protected _redirectsTemplate(info: RequestLog): TemplateResult {
-    return html``;
+  protected _redirectsTemplate(): TemplateResult {
+    const { _redirectsData } = this;
+    if (!_redirectsData || !_redirectsData.length) {
+      return this._noDataTemplate();
+    }
+    return html`
+    <div role="tabpanel">
+      ${_redirectsData.map((item, index) => this._redirectTemplate(item, index))}
+    </div>
+    `;
+  }
+
+  protected _redirectTemplate(item: ResponseRedirect, index: number): TemplateResult {
+    const { url, response } = item;
+    if (!response) {
+      return html`
+      <div class="status-row">
+        <div class="status-label text">#<span>${index + 1}</span></div>
+        <div class="redirect-value">This redirect has no response data</div>
+      </div>
+      `;
+    }
+    const headers = new Headers(response.headers);
+    const mime = headers.get('content-type');
+    return html`
+    <div class="status-row">
+      <div class="status-label text">#<span>${index + 1}</span></div>
+      <div class="redirect-value">
+        <div class="redirect-code">
+          ${statusTemplate(response.status, response.statusText)}
+        </div>
+        <div class="redirect-location">
+          <a href="${url}" class="auto-link">${url}</a>
+        </div>
+        ${this._headersRawTemplate(headers)}
+        ${response.payload ? html`<log-body .payload="${response.payload}" .contentType="${mime}" role="tabpanel"></log-body>` : ''}
+      </div>
+    </div>
+    `;
+  }
+
+  protected _headersRawTemplate(header: Headers): TemplateResult | string {
+    const templates: TemplateResult[] = [];
+    header.forEach((value, name) => {
+      templates.push(html`
+      <li>
+        <span class="header-name">${name}</span>
+        <span class="header-value">${value}</span>
+      </li>
+      `);
+    });
+    if (!templates.length) {
+      return '';
+    }
+    return html`
+    <ul>
+      ${templates}
+    </ul>
+    `;
+  }
+
+  protected _noDataTemplate(): TemplateResult {
+    return html`
+    <div class="no-data">No data to render in this view.</div>
+    `;
   }
 }

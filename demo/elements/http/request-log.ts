@@ -1,8 +1,13 @@
 import { html, TemplateResult } from 'lit';
-import { IRequestLog, ProjectMock, RequestLog, Headers } from '@api-client/core/build/browser.js';
+import { IRequestLog, ProjectMock, RequestLog, Headers, IRequestLogInit } from '@api-client/core/build/browser.js';
 import { DemoPage } from '../../../src/pages/demo/DemoPage.js';
 import '../../../src/define/request-log.js';
 import { reactive } from '../../../src/lib/decorators.js';
+
+const ResourceIcons = [
+  'favorite.png', 'fingerprint.png', 'stars.png', 'calendar-month.png', 'theaters.png', 'home-work.png',
+  'print.png', 'mood.png',
+];
 
 class ComponentDemoPage extends DemoPage {
   componentName = 'Request Log';
@@ -17,7 +22,12 @@ class ComponentDemoPage extends DemoPage {
   }
 
   async initLog(): Promise<void> {
-    this.httpLog = await this.mock.projectRequest.log();
+    this.httpLog = await this.mock.projectRequest.log({
+      response: {
+        timings: true,
+      },
+      redirects: true,
+    });
   }
 
   protected _generatorClick(e: Event): void {
@@ -53,20 +63,29 @@ class ComponentDemoPage extends DemoPage {
       contentType = 'application/xml';
     } else if (type === 'svg') {
       contentType = 'image/svg+xml';
+    } else if (type === 'form-data') {
+      contentType = 'multipart/form-data';
+    } else if (type === 'urlencoded') {
+      contentType = 'application/x-www-form-urlencoded';
     }
-    let log = await this.mock.projectRequest.log({
+    const init: IRequestLogInit = {
       response: {
         statusGroup: 2,
         payload: {
           contentType,
           force: true,
-        }
-      }
-    });
+        },
+        timings: true,
+      },
+    };
+    if (type === 'redirects') {
+      init.redirects = true;
+    }
+
+    let log = await this.mock.projectRequest.log(init);
 
     if (type === 'png') {
-      const icons = ['favorite.png', 'fingerprint.png', 'stars.png'];
-      const icon = this.mock.random.pickOne(icons);
+      const icon = this.mock.random.pickOne(ResourceIcons);
       const response = await fetch(`/demo/resources/${icon}`);
       const data = await response.arrayBuffer();
       const instance = new RequestLog(log);
@@ -95,6 +114,9 @@ class ComponentDemoPage extends DemoPage {
       <button class="nav-item" data-generator="response" data-type="xml">XML response</button>
       <button class="nav-item" data-generator="response" data-type="svg">SVG image response</button>
       <button class="nav-item" data-generator="response" data-type="png">PNG image response</button>
+      <button class="nav-item" data-generator="response" data-type="form-data">Form Data response</button>
+      <button class="nav-item" data-generator="response" data-type="urlencoded">URL encoded response</button>
+      <button class="nav-item" data-generator="response" data-type="redirects">Redirects</button>
     </nav>
     `;
   }
