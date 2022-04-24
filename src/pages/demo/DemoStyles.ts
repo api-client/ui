@@ -9,6 +9,7 @@ html {
 body {
   font-family: 'Roboto', 'Noto', sans-serif;
   font-size: 15px;
+  user-select: none;
 }
 
 .demo {
@@ -88,6 +89,10 @@ p {
 
 .centered.xx-large {
   max-width: 1800px;
+}
+
+.centered.auto-width {
+  max-width: unset;
 }
 
 #app.with-nav {
