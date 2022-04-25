@@ -2,8 +2,8 @@ import { html, TemplateResult, CSSResult } from 'lit';
 import { Events as CoreEvents, ProjectKind, WorkspaceKind, IFile } from '@api-client/core/build/browser.js';
 import { Events } from '../../events/Events.js';
 import { ApplicationScreen } from '../ApplicationScreen.js';
-import { reactive, route, routeInitializer, query } from '../../lib/decorators.js';
-import { IRouteResult } from '../../lib/decorators/route.js';
+import { reactive, query } from '../../lib/decorators.js';
+import { IRoute, IRouteResult } from '../../mixins/RouteMixin.js';
 import { buildRoute, navigate } from '../../lib/route.js';
 import styles from './HomeStyles.js';
 import globalStyles from '../styles/global-styles.js';
@@ -15,9 +15,20 @@ import '../../define/api-files.js';
 
 type NavigationPage = 'files' | 'recent' | 'shared';
 
-export default class HttpProjectHomeScreen extends ApplicationScreen {
+export default class StartScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
     return [styles, globalStyles, layout];
+  }
+
+  static get routes(): IRoute[] {
+    return [
+      { pattern: '/recent', method: 'recentRoute', fallback: true, name: 'Recent', title: 'Recent projects' },
+      { pattern: '/files', method: 'filesRoute', name: 'Projects', title: 'Your projects' },
+      { pattern: '/shared', method: 'sharedRoute', name: 'Shared', title: 'Shared projects' },
+      { pattern: '/files/(?<key>.*)', method: 'spaceRoute', name: 'Space', title: 'A space' },
+      { pattern: '/shared/(?<key>.*)', method: 'sharedFileRoute', name: 'Shared file', title: 'Shared space' },
+      { pattern: '*', method: 'telemetryRoute' },
+    ];
   }
 
   /**
@@ -37,11 +48,14 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
   @query('main', true)
   main?: HTMLElement;
 
-  @routeInitializer()
   async initialize(): Promise<void> {
+    if (!await this.isPlatformSupported()) {
+      return;
+    }
     await this.initializeStore();
     await this.readViewConfig();
     await this.observeFiles();
+    this.initializeRouting();
     this.initialized = true;
     // async to the initialization
     this.loadUser();
@@ -73,25 +87,21 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     this.parent = undefined;
   }
 
-  @route({ pattern: '/recent', fallback: true, name: 'Recent', title: 'Recent projects' })
   protected recentRoute(): void {
     this.resetRoute();
     this.page = 'recent';
   }
 
-  @route({ pattern: '/files', name: 'Projects', title: 'Your projects' })
-  protected projectsRoute(): void {
+  protected filesRoute(): void {
     this.resetRoute();
     this.page = 'files';
   }
 
-  @route({ pattern: '/shared', name: 'Shared', title: 'Shared projects' })
   protected sharedRoute(): void {
     this.resetRoute();
     this.page = 'shared' as NavigationPage;
   }
 
-  @route({ pattern: '/files/(?<key>.*)', name: 'Space', title: 'A space' })
   protected spaceRoute(info: IRouteResult): void {
     if (!info.params || !info.params.key) {
       throw new Error(`Invalid route configuration. Missing parameters.`);
@@ -102,7 +112,6 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     this.parent = key;
   }
 
-  @route({ pattern: '/shared/(?<key>.*)', name: 'Shared file', title: 'Shared space' })
   protected sharedFileRoute(info: IRouteResult): void {
     if (!info.params || !info.params.key) {
       throw new Error(`Invalid route configuration. Missing parameters.`);
@@ -113,7 +122,6 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     this.parent = key;
   }
 
-  @route({ pattern: '*' })
   protected telemetryRoute(info: IRouteResult): void {
     CoreEvents.Telemetry.view(this.eventTarget || window, info.route.name || info.route.pattern || '/');
   }
@@ -149,7 +157,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
   protected headerTemplate(): TemplateResult {
     return html`
     <header class="start-page-header">
-      <h1 class="start-page-header-title">HTTP Project</h1>
+      <h1 class="start-page-header-title">API Client</h1>
       <app-settings-menu .user="${this.user}"></app-settings-menu>
     </header>
     `;
@@ -161,7 +169,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
     <nav aria-label="Application sections">
       <ul class="navigation-list">
         <li class="navigation-item ${page === 'recent' ? 'selected' : ''}"><a href="${buildRoute('recent')}">Recent</a></li>
-        <li class="navigation-item ${page === 'files' ? 'selected' : ''}"><a href="${buildRoute('files')}">Projects</a></li>
+        <li class="navigation-item ${page === 'files' ? 'selected' : ''}"><a href="${buildRoute('files')}">Files</a></li>
         <li class="navigation-item ${page === 'shared' ? 'selected' : ''}"><a href="${buildRoute('shared')}">Shared with me</a></li>
       </ul>
     </nav>
@@ -184,7 +192,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
 
   protected recentTemplate(): TemplateResult {
     return html`
-    <h2 class="section-title text-selectable">Recent projects</h2>
+    <h2 class="section-title text-selectable">Recent</h2>
     `;
   }
 
@@ -199,7 +207,7 @@ export default class HttpProjectHomeScreen extends ApplicationScreen {
       .viewType="${viewType || 'list'}"
       .scrollTarget="${this.main}"
       .user="${this.user}"
-      listTitle="Your projects"
+      listTitle="Your files"
       multiSelect
       canShare
       canTrash

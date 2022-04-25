@@ -8,7 +8,7 @@ export { default as ApiIconElement } from "./elements/icons/ApiIconElement.js";
 export { default as ConfigInitScreen } from "./pages/init/ConfigInitScreen.js";
 export { default as ConfigAuthenticateScreen } from "./pages/init/ConfigAuthenticateScreen.js";
 export { default as AnalyticsConsentScreen } from "./pages/init/AnalyticsConsentScreen.js";
-export { default as HttpProjectHomeScreen } from "./pages/http-project/HttpProjectHomeScreen.js";
+export { default as StartScreen } from "./pages/start/StartScreen.js";
 export { default as HttpProjectScreen } from "./pages/http-project/HttpProjectScreen.js";
 export { default as StoreConfigScreen } from "./pages/store/StoreConfigScreen.js";
 
