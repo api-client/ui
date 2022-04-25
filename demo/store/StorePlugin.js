@@ -64,6 +64,7 @@ const multiUser = /** @type IServerConfiguration */ ({
 const proxyConfig = /** @type IServerProxyConfiguration */ ({
   port: proxyPort,
   prefix,
+  logger,
   cors: {
     enabled: true,
     cors: {

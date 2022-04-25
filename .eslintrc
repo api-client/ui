@@ -53,6 +53,7 @@
     "RequestInit": true,
     "WorkerType": true,
     "FormDataEntryValue": true,
+    "MutationObserverInit": true,
     "GlobalEventHandlers": true
   }
 }

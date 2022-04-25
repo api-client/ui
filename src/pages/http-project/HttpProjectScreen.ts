@@ -17,6 +17,7 @@ import '../../define/project-navigation.js';
 import '../../define/layout-panel.js';
 import '../../define/project-request.js';
 import '../../define/environment-editor.js';
+import '../../define/share-file.js';
 import { LayoutManager, ILayoutItem } from '../../elements/layout/LayoutManager.js';
 import { IRoute } from '../../mixins/RouteMixin.js';
 import NavElement from '../../elements/project/ProjectNavigationElement.js';
@@ -117,12 +118,14 @@ export default class HttpProjectScreen extends ApplicationScreen {
     }
     this.loadUser();
     await this._startObservingProjectFile(key);
+    this.layout.opts.storeKey = `api-client.http-project.layout.${key}`;
     await this.layout.initialize();
     this.initializeRouting();
     this.initialized = true;
     window.addEventListener(EventTypes.Store.File.State.fileChange, this._fileChangeHandler.bind(this));
     window.addEventListener(EventTypes.HttpProject.changed, this._contextMenuMutationCallback);
     window.addEventListener(EventTypes.HttpProject.State.nameChanged, this._projectNameChanged.bind(this));
+    window.addEventListener(EventTypes.HttpProject.Request.rename, this._renameRequestHandler.bind(this) as EventListener);
     this.layout.addEventListener('change', this._renderHandler.bind(this));
     this.layout.addEventListener('nameitem', this._nameLayoutItemHandler.bind(this));
   }
@@ -295,6 +298,28 @@ export default class HttpProjectScreen extends ApplicationScreen {
     }
   }
 
+  protected _renameRequestHandler(e: CustomEvent<any>): void {
+    const { key, name } = e.detail;
+    if (!key || !name) {
+      return;
+    }
+    const { project } = this;
+    if (!project) {
+      return;
+    }
+    const request = project.findRequest(key);
+    if (!request) {
+      return;
+    }
+    request.info.name = name;
+    this.layout.requestNameUpdate(key);
+    const { nav } = this;
+    if (nav) {
+      nav.requestUpdate();
+    }
+    this.updateProject();
+  }
+
   protected _nameLayoutItemHandler(event: Event): void {
     const item = (event as CustomEvent).detail as ILayoutItem;
     if (item.kind === ProjectFolderKind) {
@@ -359,6 +384,18 @@ export default class HttpProjectScreen extends ApplicationScreen {
     this.updateProject();
   }
 
+  protected _shareHandler(): void {
+    const dialog = document.createElement('share-file');
+    dialog.key = this.key!;
+    dialog.user = this.user;
+    dialog.opened = true;
+    dialog.withBackdrop = true;
+    document.body.appendChild(dialog);
+    dialog.addEventListener('closed', () => {
+      document.body.removeChild(dialog);
+    });
+  }
+
   pageTemplate(): TemplateResult {
     const { initialized } = this;
     if (!initialized) {
@@ -379,7 +416,10 @@ export default class HttpProjectScreen extends ApplicationScreen {
     return html`
     <header class="start-page-header">
       <h1 class="start-page-header-title">${title}</h1>
-      <app-settings-menu .user="${this.user}"></app-settings-menu>
+      <anypoint-button emphasis="high" @click="${this._shareHandler}" class="toolbar-action">
+        <api-icon icon="personAdd"></api-icon> Share
+      </anypoint-button>
+      <app-settings-menu .user="${this.user}" class="toolbar-action"></app-settings-menu>
     </header>
     `;
   }

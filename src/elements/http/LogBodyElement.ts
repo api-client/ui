@@ -23,8 +23,8 @@ enum BodyType {
   nil,
   // a string value
   String,
-  // File or Blob
   Blob,
+  File,
   // Multipart FormData object
   FormData,
   // Buffer, ArrayBuffer, UInt8Array, generally binary.
@@ -93,13 +93,22 @@ export default class LogBodyElement extends LitElement {
         display: block;
       }
 
+      .raw-panel,
+      .error-container,
+      .no-info {
+        user-select: text;
+      }
+
       .raw-panel > code {
         overflow: auto;
-        user-select: text;
       }
 
       pre[class*="language-"].raw-panel {
         white-space: pre;
+      }
+
+      .padded-panel {
+        padding: 0 20px;
       }
       `,
     ];
@@ -167,6 +176,8 @@ export default class LogBodyElement extends LitElement {
       return;
     }
 
+    const typedSerialized = payload as ISafePayload;
+
     if (contentType) {
       // TODO: add specialized view for application/x-www-form-urlencoded
       const image = imageBody(contentType);
@@ -187,6 +198,9 @@ export default class LogBodyElement extends LitElement {
       } else if (body instanceof FormData) {
         this._viewType = ViewType.Parsed;
         this._body = body;
+      } else if (typedSerialized.type === 'file' || typedSerialized.type === 'blob') {
+        this._viewType = ViewType.Binary;
+        this._body = body;
       } else {
         this._viewType = ViewType.Parsed;
         this._body = ensureBodyString(body);
@@ -206,9 +220,12 @@ export default class LogBodyElement extends LitElement {
     if (typeof type === 'string') {
       return BodyType.String;
     } 
+    if (type instanceof File) {
+      return BodyType.File;
+    }
     if (type instanceof Blob) {
       return BodyType.Blob;
-    } 
+    }
     if(type instanceof FormData) {
       return BodyType.FormData;
     }
@@ -241,7 +258,10 @@ export default class LogBodyElement extends LitElement {
     switch  (type) {
       case BodyType.String: this._tokens = this._tokenizeStringContent(body as string, contentType); break;
       case BodyType.FormData: this._tokens = this._tokenizeFormDataContent(body as FormData); break;
-      case BodyType.Buffer: this._tokens = this._tokenizeBuffer(body as ArrayBuffer | Buffer, contentType); break;
+      case BodyType.Buffer: this._tokens = this._tokenizeBuffer(body as ArrayBuffer | Buffer); break;
+      case BodyType.File: 
+      case BodyType.Blob: 
+        this._tokens = this._tokenizeFile(); break;
       default:
         this._tokens = undefined; 
         break;
@@ -296,7 +316,7 @@ export default class LogBodyElement extends LitElement {
         templates.push(`{…file content…}${lineBreak}`);
       }
     });
-    templates.push(`--${boundary}${lineBreak}`);
+    templates.push(`--${boundary}${lineBreak}--`);
     const code = templates.join('');
     if (raw) {
       return code;
@@ -305,18 +325,46 @@ export default class LogBodyElement extends LitElement {
     return highlight.tokenize(code, 'http');
   }
 
-  protected _tokenizeBuffer(body: ArrayBuffer | Buffer, contentType?: string): string | undefined {
+  // protected _tokenizeBuffer(body: ArrayBuffer | Buffer, contentType?: string): string | undefined {
+  //   if (typeof body === 'string') {
+  //     return undefined;
+  //   }
+  //   try {
+  //     const arr = new Uint8Array(body);
+  //     const str = arr.reduce((data, byte) => data + String.fromCharCode(byte), '');
+  //     const enc = btoa(str);
+  //     return `data:${contentType};base64, ${enc}`;
+  //   } catch (_) {
+  //     return undefined;
+  //   }
+  // }
+
+  protected _tokenizeBuffer(body: ArrayBuffer | Buffer): string | undefined {
     if (typeof body === 'string') {
       return undefined;
     }
     try {
-      const arr = new Uint8Array(body);
-      const str = arr.reduce((data, byte) => data + String.fromCharCode(byte), '');
-      const enc = btoa(str);
-      return `data:${contentType};base64, ${enc}`;
+      const array = new Uint8Array(body).join(', ');
+      return `[${array}]`;
     } catch (_) {
       return undefined;
     }
+  }
+
+  protected _tokenizeFile(): string | undefined {
+    const { payload } = this;
+    if (!payload) {
+      return undefined;
+    }
+    const typed = payload as ISafePayload;
+    if (typed.type !== 'file' && typed.type !== 'blob') {
+      return undefined;
+    }
+    if (!Array.isArray(typed.data)) {
+      return undefined;
+    }
+    const array = (typed.data as number[]).join(', ');
+    return `[${array}]`;
   }
 
   protected _prismComplete(): void {
@@ -374,7 +422,7 @@ export default class LogBodyElement extends LitElement {
     if (view === ViewType.Pdf) {
       return this._pdfBodyView()
     }
-    if (type === BodyType.Blob) {
+    if (type === BodyType.Blob || type === BodyType.File) {
       return this._blobBodyView(body as Blob)
     }
     // only buffers left at this point
@@ -383,7 +431,7 @@ export default class LogBodyElement extends LitElement {
 
   protected _emptyBodyTemplate(): TemplateResult {
     return html`
-    <div class="content-info empty">
+    <div class="content-info empty padded-panel">
       <p>The response has no body object or the response is an empty string.</p>
     </div>
     `;
@@ -398,24 +446,36 @@ export default class LogBodyElement extends LitElement {
   }
 
   protected _blobBodyView(body: Blob): TemplateResult {
+    const { _tokens, raw } = this;
+    if (_tokens && raw) {
+      return html`
+      <div class="raw-panel padded-panel">${_tokens}</div>
+      `;
+    }
     return html`
-    <div class="raw-panel">
+    <div class="raw-panel padded-panel">
       File data of ${body.size} bytes.
     </div>
     `;
   }
 
   protected _bufferBodyView(body: ArrayBuffer | Buffer): TemplateResult {
+    const { _tokens, raw } = this;
+    if (_tokens && raw) {
+      return html`
+      <div class="raw-panel padded-panel">${_tokens}</div>
+      `;
+    }
     return html`
-    <div class="raw-panel">
-      Buffer data of ${body.byteLength} bytes.
+    <div class="raw-panel padded-panel">
+      Binary data of ${body.byteLength} bytes.
     </div>
     `;
   }
 
   protected _pdfBodyView(): TemplateResult {
     return html`
-    <div class="content-info pdf">
+    <div class="content-info pdf padded-panel">
       <p>The response is a <b>PDF</b> data.</p>
       <p>Save the file to preview its contents.</p>
     </div>
@@ -431,7 +491,7 @@ export default class LogBodyElement extends LitElement {
     div.innerHTML = String(_body);
     const svgEl = div.firstElementChild;
     if (!svgEl) {
-      return html`<p class="error">Invalid SVG response.</p>`;
+      return this._errorTemplate('Invalid SVG response.');
     }
     const all = Array.from(svgEl.querySelectorAll('*'));
     all.forEach((node) => {
@@ -453,7 +513,7 @@ export default class LogBodyElement extends LitElement {
   protected _imageBinaryBodyView(): TemplateResult {
     const { _tokens } = this;
     if (!_tokens) {
-      return html`<p class="no-info">No image data</p>`;
+      return this._noDataTemplate('No image data');
     }
     return html`
     <div class="image-container">
@@ -464,11 +524,19 @@ export default class LogBodyElement extends LitElement {
   protected _imageErrorView(): TemplateResult {
     const { _tokens } = this;
     if (!_tokens) {
-      return html`<p class="no-info">No image data</p>`;
+      return this._noDataTemplate('No image data');
     }
     return html`
-    <div class="error-container">
+    <div class="error-container padded-panel">
       <b>The image URL is invalid</b>: "${_tokens}"
     </div>`;
+  }
+
+  protected _noDataTemplate(label: string = 'Unsupported view.'): TemplateResult {
+    return html`<p class="no-info padded-panel">${label}</p>`;
+  }
+
+  protected _errorTemplate(message: string): TemplateResult {
+    return html`<p class="error padded-panel">${message}</p>`;
   }
 }

@@ -48,6 +48,10 @@ export default class RequestLogElement extends LitElement {
       .header-name {
         font-weight: 600;
       }
+
+      .padded-panel {
+        padding: 0 20px;
+      }
       `,
     ];
   }
@@ -103,6 +107,9 @@ export default class RequestLogElement extends LitElement {
     }
     const { request } = _log;
     if (!request) {
+      return false;
+    }
+    if (['get', 'head'].includes(request.method.toLowerCase())) {
       return false;
     }
     return !!request.payload;
@@ -201,12 +208,12 @@ export default class RequestLogElement extends LitElement {
       class="editor-tabs"
       attrForSelected="data-tab"
     >
-      <anypoint-tab data-tab="headers">Headers</anypoint-tab>
-      <anypoint-tab ?hidden="${!this.hasRequestPayload}" data-tab="payload">Payload</anypoint-tab>
-      <anypoint-tab ?hidden="${!this.hasResponsePayload}" data-tab="preview">Preview</anypoint-tab>
-      <anypoint-tab data-tab="response">Response</anypoint-tab>
-      <anypoint-tab data-tab="timings">Timings</anypoint-tab>
-      <anypoint-tab data-tab="redirects">Redirects</anypoint-tab>
+      <anypoint-tab data-tab="headers" id="headers-tab">Headers</anypoint-tab>
+      <anypoint-tab ?hidden="${!this.hasRequestPayload}" data-tab="payload" id="payload-tab">Payload</anypoint-tab>
+      <anypoint-tab ?hidden="${!this.hasResponsePayload}" data-tab="preview" id="preview-tab">Preview</anypoint-tab>
+      <anypoint-tab data-tab="response" id="response-tab">Response</anypoint-tab>
+      <anypoint-tab data-tab="timings" id="timings-tab">Timings</anypoint-tab>
+      <anypoint-tab data-tab="redirects" id="redirects-tab">Redirects</anypoint-tab>
     </anypoint-tabs>
     `;
   }
@@ -237,7 +244,7 @@ export default class RequestLogElement extends LitElement {
    */
   protected _headersTemplate(info: RequestLog): TemplateResult {
     return html`
-    <log-headers .httpLog="${info}" role="tabpanel"></log-headers>
+    <log-headers .httpLog="${info}" role="tabpanel" aria-labelledby="headers-tab" class="padded-panel"></log-headers>
     `;
   }
 
@@ -250,12 +257,13 @@ export default class RequestLogElement extends LitElement {
     }
     const { request } = info;
     if (!request) {
-      return html`<p>No request data</p>`;
+      return this._noDataTemplate('payload-tab');
+      // return html`<p aria-labelledby="payload-tab" class="padded-panel">No request data</p>`;
     }
     const parser = new Headers(request.headers);
     const mime = parser.get('content-type');
     return html`
-    <log-body .payload="${request.payload}" .contentType="${mime}" role="tabpanel"></log-body>
+    <log-body .payload="${request.payload}" .contentType="${mime}" role="tabpanel" aria-labelledby="payload-tab"></log-body>
     `;
   }
 
@@ -268,12 +276,12 @@ export default class RequestLogElement extends LitElement {
     }
     const { response } = info;
     if (!response) {
-      return html`<p>No response data</p>`;
+      return html`<p aria-labelledby="preview-tab" class="padded-panel">No response data</p>`;
     }
     const parser = new Headers(response.headers);
     const mime = parser.get('content-type');
     return html`
-    <log-body .payload="${response.payload}" .contentType="${mime}" role="tabpanel"></log-body>
+    <log-body aria-labelledby="preview-tab" .payload="${response.payload}" .contentType="${mime}" role="tabpanel"></log-body>
     `;
   }
 
@@ -283,30 +291,31 @@ export default class RequestLogElement extends LitElement {
     }
     const { response } = info;
     if (!response) {
-      return html`<p>No response data</p>`;
+      return this._noDataTemplate('response-tab');
+      // return html`<p aria-labelledby="response-tab" class="padded-panel">No response data</p>`;
     }
     const parser = new Headers(response.headers);
     const mime = parser.get('content-type');
     return html`
-    <log-body .payload="${response.payload}" .contentType="${mime}" raw role="tabpanel"></log-body>
+    <log-body aria-labelledby="response-tab" .payload="${response.payload}" .contentType="${mime}" raw role="tabpanel"></log-body>
     `;
   }
 
   protected _timingsTemplate(): TemplateResult {
     const { _timingsData } = this;
     if (!_timingsData || !_timingsData.length) {
-      return this._noDataTemplate();
+      return this._noDataTemplate('timings-tab');
     }
-    return html`<log-timings .timings="${_timingsData}" role="tabpanel"></log-timings>`;
+    return html`<log-timings class="padded-panel" aria-labelledby="timings-tab" .timings="${_timingsData}" role="tabpanel"></log-timings>`;
   }
 
   protected _redirectsTemplate(): TemplateResult {
     const { _redirectsData } = this;
     if (!_redirectsData || !_redirectsData.length) {
-      return this._noDataTemplate();
+      return this._noDataTemplate('redirects-tab');
     }
     return html`
-    <div role="tabpanel">
+    <div role="tabpanel"  class="padded-panel" aria-labelledby="redirects-tab">
       ${_redirectsData.map((item, index) => this._redirectTemplate(item, index))}
     </div>
     `;
@@ -361,9 +370,9 @@ export default class RequestLogElement extends LitElement {
     `;
   }
 
-  protected _noDataTemplate(): TemplateResult {
+  protected _noDataTemplate(arialLabelledBy: string): TemplateResult {
     return html`
-    <div class="no-data">No data to render in this view.</div>
+    <div class="no-data padded-panel" aria-labelledby="${arialLabelledBy}">No data to render in this view.</div>
     `;
   }
 }

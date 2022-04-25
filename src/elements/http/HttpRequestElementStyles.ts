@@ -3,6 +3,7 @@ import { css } from 'lit';
 export default css`
 :host {
   display: block;
+  overflow: hidden;
   --method-label-default-color: rgb(128, 128, 128);
 }
 

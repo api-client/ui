@@ -546,6 +546,10 @@ export default class ProjectNavigationElement extends LitElement {
     const folders = project.listFolders();
     const requests = project.listRequests();
     const environments = project.listEnvironments();
+    const hasItems = !!folders.length || !!requests.length || !!environments.length;
+    if (!hasItems) {
+      return this._emptyStateTemplate();
+    }
     return html`
     <ul 
       role="tree" 
@@ -558,6 +562,14 @@ export default class ProjectNavigationElement extends LitElement {
       ${environments.map(r => this.renderEnvironment(r))}
       ${requests.map(r => this.renderRequest(r))}
     </ul>
+    `;
+  }
+
+  protected _emptyStateTemplate(): TemplateResult {
+    return html`
+    <div class="empty-state">
+      This project has no items.
+    </div>
     `;
   }
 

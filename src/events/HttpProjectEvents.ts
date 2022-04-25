@@ -40,7 +40,6 @@ export const HttpProjectEvents = {
   Request: Object.freeze({
     /**
      * Requests the application to send a project request
-     * @param key Optional key of the request to send. By default it targets the editor request.
      * @param target Optional events target.
      */
     send: (target = document.body): void => {
@@ -48,6 +47,23 @@ export const HttpProjectEvents = {
         bubbles: true,
         composed: true,
         cancelable: true,
+      });
+      target.dispatchEvent(e);
+    },
+    /**
+     * Dispatches an event requesting to change a name of a request in a Project.
+     * @param key The request key.
+     * @param name The new name to set
+     * @param target Optional events target.
+     */
+    rename: (key: string, name: string, target = document.body): void => {
+      const e = new CustomEvent(EventTypes.HttpProject.Request.rename, {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+        detail: {
+          key, name,
+        },
       });
       target.dispatchEvent(e);
     },

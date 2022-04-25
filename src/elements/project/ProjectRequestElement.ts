@@ -1,9 +1,15 @@
 /* eslint-disable class-methods-use-this */
-import { PropertyValueMap } from 'lit';
+import { css, CSSResult, html, PropertyValueMap, TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents } from '@api-client/core/build/browser.js';
+import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents, IProjectRunnerOptions, EventUtils } from '@api-client/core/build/browser.js';
 import HttpRequestElement from '../http/HttpRequestElement.js';
 import { Events } from '../../events/Events.js';
+import '../../define/request-log.js';
+// eslint-disable-next-line import/no-duplicates
+import { ResizeEventDetail } from '../../lib/ResizableElements.js';
+// eslint-disable-next-line import/no-duplicates
+import '../../lib/ResizableElements.js';
+import { EventTypes } from '../../events/EventTypes.js';
 
 /**
  * An element that specializes in rendering an HTTP request that is defined on an HttpProject.
@@ -13,6 +19,41 @@ import { Events } from '../../events/Events.js';
  * The element will hook-up to the events to support project mutations.
  */
 export default class ProjectRequestElement extends HttpRequestElement {
+  static get styles(): CSSResult[] {
+    return [
+      ...HttpRequestElement.styles,
+      css`
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .request-editor,
+      .response-view {
+        /* height: 100%; */
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .request-editor {
+        border-bottom: 1px #e5e5e5 solid;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .request-editor.resized {
+        flex: unset;
+      }
+
+      request-log {
+        overflow: auto;
+        height: 100%;
+      }
+      `,
+    ];
+  }
+
   /**
    * The source project
    */
@@ -26,6 +67,13 @@ export default class ProjectRequestElement extends HttpRequestElement {
   @state() expects?: HttpRequest;
 
   protected request?: ProjectRequest;
+
+  constructor() {
+    super();
+    this.eventsTarget = this;
+    this.addEventListener(EventTypes.HttpProject.Request.State.urlChange, EventUtils.cancelEvent);
+    this.addEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, EventUtils.cancelEvent);
+  }
 
   protected updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(cp);
@@ -177,16 +225,68 @@ export default class ProjectRequestElement extends HttpRequestElement {
     super.notifyChanged(type, value);
   }
 
-  // protected _notifySend(): void {
-  //   const { project, key } = this;
-  //   if (!project || !key) {
-  //     throw new Error(`The project request is not initialized.`);
-  //   }
-  //   const opts: IProjectRunnerOptions = {
-  //     environment: this.environment,
-  //     request: [key],
-  //     recursive: true,
-  //   };
-  //   CoreEvents.Transport.Project.send(this, project.key, opts);
-  // }
+  protected _notifySend(): void {
+    this._execute();
+  }
+
+  protected async _execute(): Promise<void> {
+    const { project, key, request } = this;
+    if (!project || !key || !request) {
+      throw new Error(`The project request is not initialized.`);
+    }
+    const opts: IProjectRunnerOptions = {
+      environment: this.environment,
+      request: [key],
+      recursive: true,
+    };
+    this.loading = true;
+    try {
+      const result = await CoreEvents.Transport.Project.send(this, project.key, opts);
+      const report = result?.iterations[0]!.executed[0]!;
+      request.setLog(report);
+      this.notifyRequestChanged();
+      this.requestUpdate();
+    } catch (e) {
+      // 
+    }
+    this.loading = false;
+  }
+
+  protected _beforeResizeHandler(e: CustomEvent<ResizeEventDetail>): void {
+    const { height } = e.detail;
+    if (height && height < 120) {
+      e.preventDefault();
+      return;
+    }
+    const pane = e.target as HTMLElement;
+    if (!pane.classList.contains('resized')) {
+      pane.classList.add('resized');
+    }
+  }
+
+  protected render(): TemplateResult {
+    const resizeDirection = 'south';
+    return html`
+    <div class="container">
+      <div class="request-editor" .resize="${resizeDirection}" @beforeresize="${this._beforeResizeHandler}">
+        ${super.render()}
+      </div>
+      <div class="response-view">
+        ${this._responsePaneTemplate()}
+      </div>
+    </div>
+    `;
+  }
+
+  protected _responsePaneTemplate(): TemplateResult {
+    const { request } = this;
+    if (!request || !request.log) {
+      return html`
+      <p>Execute the request to see the response details.</p>
+      `;
+    }
+    return html`
+    <request-log .httpLog="${request.log}"></request-log>
+    `;
+  }
 }

@@ -622,7 +622,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     this[snippetsRequestSymbol] = serialized;
   }
 
-  render(): TemplateResult {
+  protected render(): TemplateResult {
     return html`
     ${this[urlMetaTemplate]()}
     ${this[tabsTemplate]()}

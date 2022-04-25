@@ -17,10 +17,16 @@ export class HttpProjectContextMenu extends ContextMenu {
     if (element.localName === 'project-navigation') {
       return this.readNavigationElement(e, element);
     }
+    if (element.localName === 'layout-panel') {
+      return this.readLayoutElement(e, element);
+    }
     return element;
   }
 
   readNavigationElement(e: Event, element: HTMLElement): HTMLElement|SVGElement|undefined {
+    if (element === this.workspace) {
+      return element;
+    }
     const path = e.composedPath();
     while (path.length) {
       const target = path.shift() as Node;
@@ -36,8 +42,23 @@ export class HttpProjectContextMenu extends ContextMenu {
         return elm;
       }
     }
+    return undefined;
+  }
+
+  readLayoutElement(e: Event, element: HTMLElement): HTMLElement|SVGElement|undefined {
     if (element === this.workspace) {
       return element;
+    }
+    const path = e.composedPath();
+    while (path.length) {
+      const target = path.shift() as Node;
+      if (target.nodeType !== Node.ELEMENT_NODE) {
+        continue;
+      }
+      const elm = target as HTMLElement;
+      if (elm.matches('.layout-tab')) {
+        return elm;
+      }
     }
     return undefined;
   }

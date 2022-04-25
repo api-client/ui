@@ -1,7 +1,9 @@
 import { ContextMenuCommand } from '@api-client/context-menu';
-import { HttpProject } from '@api-client/core/build/browser.js';
+import { HttpProject, ProjectRequestKind } from '@api-client/core/build/browser.js';
 import { folder, rename, deleteFile, environment, request } from '../../elements/icons/Icons.js';
 import ProjectNavigationElement from '../../elements/project/ProjectNavigationElement.js';
+import '../../define/rename-file-dialog.js';
+import { Events } from '../../events/Events.js';
 
 function findNavigation(element: HTMLElement): ProjectNavigationElement {
   const root = element.getRootNode() as ShadowRoot;
@@ -203,11 +205,45 @@ const commands: ContextMenuCommand[] = [
     },
   },
 
-  // {
-  //   target: 'li.project-tree-item.request-item',
-  //   label: 'Add folder',
-  //   id: 'add-sub-folder',
-  // },
+  // 
+  // Workspace tabs
+  // 
+  {
+    target: '.layout-tab',
+    label: 'Rename',
+    icon: rename,
+    visible: (ctx): boolean => {
+      const { kind, key } = ctx.target.dataset;
+      if (!kind || !key) {
+        return false;
+      }
+      if (kind !== ProjectRequestKind) {
+        return false;
+      }
+      return true;
+    },
+    execute: (ctx): void => {
+      const { kind, key } = ctx.target.dataset;
+      if (!kind || !key) {
+        return;
+      }
+      if (kind !== ProjectRequestKind) {
+        return;
+      }
+      const dialog = document.createElement('rename-file-dialog');
+      dialog.name = ctx.target.textContent?.trim();
+      dialog.opened = true;
+      document.body.appendChild(dialog);
+      dialog.addEventListener('closed', (ev: Event) => {
+        document.body.removeChild(dialog);
+        const event = ev as CustomEvent;
+        const { canceled, confirmed, value } = event.detail;
+        if (!canceled && confirmed && value) {
+          Events.HttpProject.Request.rename(key, value);
+        }
+      });
+    }
+  }
 ];
 
 export default commands;

@@ -14,41 +14,13 @@ the License.
 */
 import { LitElement, html, CSSResult, TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
-import { IMultipartBody, PayloadSerializer } from '@api-client/core/build/browser.js';
+import { IMultipartBody, ISafePayload, PayloadSerializer, IFileMeta, IBlobMeta } from '@api-client/core/build/browser.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-switch.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import { AnypointInputElement, AnypointSwitchElement } from '@anypoint-web-components/awc';
 import '../../define/api-icon.js';
 import elementStyles from './Multipart.styles.js';
-import {
-  valueValue,
-  modelValue,
-  valueChanged,
-  notifyChange,
-  modelToValue,
-  modelChanged,
-  addFile,
-  addText,
-  formTemplate,
-  addParamTemplate,
-  filePartTemplate,
-  textPartTemplate,
-  paramItemTemplate,
-  paramToggleTemplate,
-  paramRemoveTemplate,
-  removeParamHandler,
-  enabledHandler,
-  filePartNameHandler,
-  filePartValueHandler,
-  pickFileHandler,
-  textPartNameHandler,
-  textPartValueHandler,
-  internalModel,
-  internalFromModel,
-  setFormValue,
-} from './internals.js';
-
 
 let hasSupport: boolean;
 try {
@@ -61,40 +33,24 @@ try {
 }
 export const hasFormDataSupport = hasSupport;
 
-/**
- * The internal representation of the model that has the original File object.
- */
-interface IMultipartInternalBody extends IMultipartBody {
-  file?: File | Blob;
+function normalizePartValue(item: IMultipartBody): void {
+  if (typeof item.value === 'string') {
+    const oldValue = item.value;
+    // eslint-disable-next-line no-param-reassign
+    item.value = {
+      type: 'string',
+      data: oldValue,
+    };
+  }
 }
 
 /**
- * Converts blob data to base64 string.
+ * Multipart payload editor.
  *
- * @param blob File or blob object to be translated to string
- * @returns Promise resolved to a base64 string data from the file.
- */
-function blobToString(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = (): void => {
-      resolve(String(reader.result));
-    };
-    reader.onerror = (): void => {
-      reject(new Error('Unable to convert blob to string.'));
-    };
-    reader.readAsDataURL(blob);
-  });
-}
-
-/**
- * Multipart payload editor for ARC/API Console body editor.
- *
- * On supported browsers (full support for FormData, Iterator and ArrayBuffer) it will render a
- * UI controls to generate payload message preview.
- *
- * It produces a FormData object that can be used in XHR / Fetch or transformed to ArrayBuffer to be
- * used in socket connection.
+ * The element internally uses a generated from a FormData model. It is API Client's `IMultipartBody` array.
+ * The FormData is generated on-fly when accessing the `value` getter. It also regenerates the model when 
+ * the `value` property change. Because of that you should never set the value on the editor but only manipulate the 
+ * `model` property.
  */
 export default class BodyMultipartEditorElement extends LitElement {
   static get styles(): CSSResult {
@@ -118,44 +74,25 @@ export default class BodyMultipartEditorElement extends LitElement {
    */
   @property({ type: Boolean }) ignoreContentType = false;
 
-  protected [valueValue] = new FormData();
-
   /**
-   * The value of this form. It is a FormData object with the user entered values.
-   * Do not set the `value` when setting the `model`. When setting both 
-   * the element would compute the value from model or the other way around, depending
-   * which operation is the last.
-   * When a model is already generated, use only model.
+   * The value of this form. 
+   * When reading the `value` it generated the FormData from the model values.
+   * When setting this property is regenerates the `model` to the value in the FormData.
+   * When setting to anything other than the `FormData` it sets the `model` to an empty array.
    */
   @property({ type: Object })
   get value(): FormData {
-    return this[valueValue];
+    return this.toFormData();
   }
 
   set value(value: FormData) {
-    const old = this[valueValue];
-    if (old === value || !(value instanceof FormData)) {
-      return;
-    }
-    this[valueValue] = value;
-    this.requestUpdate('value', old);
-    this[valueChanged](value);
-    // Note, never set `value` property internally in the element
-    // as this will regenerate the entire view model which is 
-    // not very efficient. Instead set the private value and 
-    // request for the update.
+    this._updateModel(value);
   }
 
   /** 
    * The model used by the external application
    */
-  [modelValue]: IMultipartBody[] = [];
-
-  /** 
-   * Internal model that is in sync with the external model but keeps used input
-   * rather than transformed data..
-   */
-  [internalModel]: IMultipartInternalBody[] = [];
+  protected _modelValue: IMultipartBody[] = [];
 
   /**
    * Computed data model for the view.
@@ -164,24 +101,52 @@ export default class BodyMultipartEditorElement extends LitElement {
    */
   @property({ type: Array })
   get model(): IMultipartBody[] {
-    return this[modelValue];
+    return this._modelValue;
   }
 
   set model(value: IMultipartBody[]) {
-    const old = this[modelValue];
+    const old = this._modelValue;
     if (old === value) {
       return;
     }
     if (Array.isArray(value)) {
-      this[modelValue] = value;
+      this._modelValue = value;
     } else {
-      this[modelValue] = [];
+      this._modelValue = [];
     }
-    this[modelChanged](value);
-    // Note, never set `model` property internally in the element
-    // as this will regenerate the entire `value` which is 
-    // not very efficient. Instead set the private value and 
-    // request for the update.
+    this.requestUpdate('model', old);
+  }
+
+  /**
+   * @returns The FormData from the current model.
+   */
+  toFormData(): FormData {
+    const validItems = this._modelValue.filter((item) => {
+      const { name, value } = item;
+      if (!name) {
+        return false;
+      }
+      if (typeof value === 'string') {
+        return true;
+      }
+      if (value.type === 'string') {
+        return true;
+      }
+      if (value.type === 'blob' || value.type === 'file') {
+        return !!value.data && !!value.data.length;
+      }
+      return true;
+    });
+    return PayloadSerializer.deserializeFormData(validItems);
+  }
+
+  protected async _updateModel(value?: unknown): Promise<void> {
+    if (!value || !(value instanceof FormData)) {
+      this.model = [];
+      return;
+    }
+    const payload = await PayloadSerializer.stringifyFormData(value as FormData);
+    this.model = payload.data as IMultipartBody[];
   }
 
   /**
@@ -191,120 +156,35 @@ export default class BodyMultipartEditorElement extends LitElement {
     if (this.readOnly || this.disabled) {
       return;
     }
-    if (!this.model) {
-      this[modelValue] = [];
-    }
-    if (!this[internalModel]) {
-      this[internalModel] = [];
-    }
     const { model } = this;
     const entry = await PayloadSerializer.serializeFormDataEntry(file.name, file);
     model.push(entry);
-    this[internalModel].push({ ...entry, file });
-    const { value: form } = this;
-    if (form.has(entry.name)) {
-      form.delete(entry.name);
-    }
-    this[setFormValue](entry, file);
-    this[notifyChange]();
+    this._notifyChange();
     this.requestUpdate();
   }
 
-  [notifyChange](): void {
+  protected _notifyChange(): void {
     this.dispatchEvent(new Event('change'));
   }
 
   /**
-   * Updates properties when the model change externally
-   */
-  async [modelChanged](model: IMultipartBody[]): Promise<void> {
-    this[valueValue] = this[modelToValue](model);
-    if (Array.isArray(model)) {
-      this[internalModel] = await this[internalFromModel](model);
-    }
-    this.requestUpdate();
-  }
-
-  /**
-   * Transforms view model into the FormData object.
-   *
-   * @param model The view model
-   */
-  [modelToValue](model: IMultipartBody[]): FormData {
-    if (!Array.isArray(model) || !model.length) {
-      return new FormData();
-    }
-    return PayloadSerializer.deserializeFormData(model);
-  }
-
-  /**
-   * Called when the `value` property change. It generates the view model
-   * for the editor.
-   */
-  async [valueChanged](value?: FormData): Promise<void> {
-    if (!value) {
-      this[modelValue] = [];
-      this[internalModel] = [];
-      return;
-    }
-    const data = await PayloadSerializer.stringifyFormData((value as unknown) as Iterable<(string | File)[]>);
-    this[modelValue] = data.data as IMultipartBody[];
-    this[internalModel] = await this[internalFromModel](data.data as IMultipartBody[]);
-    this.requestUpdate();
-  }
-
-  /**
-   * Creates the core's multipart body model to our internal model.
-   */
-  async [internalFromModel](model: IMultipartBody[]): Promise<IMultipartInternalBody[]> {
-    const result: IMultipartInternalBody[] = [];
-    for (const item of model) {
-      const { isFile, value, type } = item;
-      const copy = { ...item } as IMultipartInternalBody;
-
-      if (isFile) {
-        try {
-          const blob = PayloadSerializer.deserializeBlob(value);
-          // @ts-ignore
-          blob.name = item.fileName;
-          copy.file = blob;
-          result.push(copy)
-        } catch (e) {
-          // ...
-        }
-      } else if (type) {
-        try {
-          const blob = PayloadSerializer.deserializeBlob(value);
-          // eslint-disable-next-line no-await-in-loop
-          copy.value = await blob!.text();
-          result.push(copy);
-        } catch (e) {
-          // ...
-        }
-      } else {
-        result.push(copy);
-      }
-    }
-    return result;
-  }
-
-  /**
    * Adds a new text part to the list.
    * It does not update the FormData as there's no value just yet.
    */
-  [addText](): void {
+  protected _addTextHandler(): void {
     if (this.readOnly || this.disabled) {
       return;
     }
     const { model } = this;
     const obj: IMultipartBody = {
       name: '',
-      value: '',
+      value: {
+        data: '',
+        type: 'string',
+      },
       enabled: true,
-      isFile: false,
     };
     model.push(obj);
-    this[internalModel].push({ ...obj });
     this.requestUpdate();
   }
 
@@ -312,73 +192,46 @@ export default class BodyMultipartEditorElement extends LitElement {
    * Adds a new text part to the list.
    * It does not update the FormData as there's no value just yet.
    */
-  [addFile](): void {
+  protected _addFileHandler(): void {
     if (this.readOnly || this.disabled) {
       return;
     }
     const { model } = this;
     const obj: IMultipartBody = {
       name: '',
-      value: '',
+      value: {
+        data: [],
+        type: 'file',
+      },
       enabled: true,
-      isFile: true,
     };
     model.push(obj);
-    this[internalModel].push({ ...obj });
     this.requestUpdate();
   }
 
   /**
    * Handler to the remove a parameter
    */
-  [removeParamHandler](e: Event): void {
+  protected _removeParamHandler(e: Event): void {
     const node = e.currentTarget as HTMLElement;
     const index = Number(node.dataset.index);
     const items = this.model;
-    const item = items[index];
     items.splice(index, 1);
-    this[internalModel].splice(index, 1);
-    this.value.delete(item.name);
     this.requestUpdate();
-    this[notifyChange]();
+    this._notifyChange();
   }
 
-  [enabledHandler](e: Event): void {
+  protected _enabledHandler(e: Event): void {
     const node = e.target as AnypointSwitchElement;
     const index = Number(node.dataset.index);
     const items = this.model;
     const item = items[index];
     const { checked } = node;
     item.enabled = checked;
-    this[internalModel][index].enabled = checked;
-    if (!item.enabled) {
-      this.value.delete(item.name);
-    } else if (item.enabled && item.name) {
-      const setValue = item.isFile ? this[internalModel][index].file! : item.value;
-      this[setFormValue](item, setValue);
-    }
-    this[notifyChange]();
+    this._notifyChange();
   }
 
-  /**
-   * @param item Item definition
-   * @param value The value to set. Value in the item is ignored
-   */
-  [setFormValue](item: IMultipartBody, value: File | Blob | string): void {
-    if (!value || !item.name) {
-      return;
-    }
-    if (item.isFile) {
-      this.value.set(item.name, value);
-    } else if (item.type) {
-      const blob = new Blob([value || ''], { type: item.type });
-      this.value.set(item.name, blob, 'blob');
-    } else {
-      this.value.set(item.name, value);
-    }
-  }
-
-  [filePartNameHandler](e: Event): void {
+  protected _filePartNameHandler(e: Event): void {
     const input = e.target as AnypointInputElement;
     const { value } = input;
     const index = Number(input.dataset.index);
@@ -387,44 +240,29 @@ export default class BodyMultipartEditorElement extends LitElement {
     if (old === value) {
       return;
     }
-    const { value: form } = this;
     item.name = value;
-    this[internalModel][index].name = value;
-    if (form.has(old)) {
-      const current = form.get(old)!;
-      form.delete(old);
-      form.set(value, current);
-    }
-    this[notifyChange]();
+    this._notifyChange();
   }
 
-  [pickFileHandler](e: Event): void {
+  protected _pickFileHandler(e: Event): void {
     const node = e.target as HTMLElement;
     const input = node.nextElementSibling as HTMLInputElement;
     input.click();
   }
 
-  async [filePartValueHandler](e: Event): Promise<void> {
+  protected async _filePartValueHandler(e: Event): Promise<void> {
     e.stopPropagation();
     const input = e.target as HTMLInputElement;
     const files = input.files as FileList;
     const file = files[0];
     const index = Number(input.dataset.index);
     const item = this.model[index];
-    const { value: form } = this;
-    const value = await blobToString(file);
-    item.value = value;
-    this[internalModel][index].file = file;
-    item.fileName = file.name;
-    if (form.has(item.name)) {
-      form.delete(item.name);
-    }
-    this[setFormValue](item, file);
-    this[notifyChange]();
+    item.value = await PayloadSerializer.stringifyFile(file);
+    this._notifyChange();
     this.requestUpdate();
   }
 
-  [textPartNameHandler](e: Event): void {
+  protected _textPartNameHandler(e: Event): void {
     const input = e.target as AnypointInputElement;
     const { value } = input;
     const index = Number(input.dataset.index);
@@ -433,50 +271,57 @@ export default class BodyMultipartEditorElement extends LitElement {
     if (old === value) {
       return;
     }
-    const { value: form } = this;
     item.name = value;
-    this[internalModel][index].name = value;
-    if (form.has(old)) {
-      const current = form.get(old)!;
-      form.delete(old);
-      form.set(value, current);
-    }
-    this[notifyChange]();
+    this._notifyChange();
   }
 
-  async [textPartValueHandler](e: Event): Promise<void> {
+  /**
+   * Updates the value of the text part.
+   * When the part is the text part it simply updates the value.
+   * For a blob part it regenerates the blob.
+   */
+  async _textPartValueHandler(e: Event): Promise<void> {
     e.stopPropagation();
     const input = e.target as AnypointInputElement;
-    const { value } = input;
     const index = Number(input.dataset.index);
-    const prop = input.dataset.property as 'value' | 'type';
-    const item = this.model[index];
-    const old = item[prop];
-    if (old === value) {
+    const item = this._modelValue[index];
+    if (!item) {
       return;
     }
-    if (prop === 'type') {
-      // when changing data type it needs to read the original value
-      // from the user input, not the already transformed one.
-      const textValue = this[internalModel][index].value;
-      item.value = textValue;
+    const { value } = input;
+    normalizePartValue(item);
+    const typedValue = item.value as ISafePayload;
+    if (typedValue.type === 'string') {
+      typedValue.data = value;
+    } else {
+      item.blobText = value;
+      const blob = new Blob([value], { type: typedValue.meta?.mime || 'text/plain' });
+      item.value = await PayloadSerializer.stringifyBlob(blob);
     }
-    item[prop] = value;
-    this[internalModel][index][prop] = value;
-    if (!item.name) {
+    this._notifyChange();
+  }
+
+  /**
+   * A handler for the part's mime type. This does not only change the value's 
+   * mime type but also resets the blob value.
+   */
+  protected async _handlePartMimeChange(e: Event): Promise<void> {
+    e.stopPropagation();
+    const input = e.target as AnypointInputElement;
+    const index = Number(input.dataset.index);
+    const item = this._modelValue[index];
+    if (!item) {
       return;
     }
-    const { value: form } = this;
-    if (form.has(item.name)) {
-      form.delete(item.name);
+    const { value } = input;
+    normalizePartValue(item);
+    // change the type from text to blob, if needed
+    const typedValue = item.value as ISafePayload;
+    if (typedValue.type === 'string') {
+      item.blobText = typedValue.data as string;
     }
-    this[setFormValue](item, item.value);
-    if (item.type) {
-      // transform only blob values
-      item.value = await blobToString(form.get(item.name) as Blob);
-    }
-    this[notifyChange]();
-    this.requestUpdate();
+    const blob = new Blob([item.blobText || ''], { type: value });
+    item.value = await PayloadSerializer.stringifyBlob(blob);
   }
 
   render(): TemplateResult {
@@ -485,8 +330,8 @@ export default class BodyMultipartEditorElement extends LitElement {
     }
     const { ignoreContentType } = this;
     return html`
-    ${this[formTemplate]()}
-    ${this[addParamTemplate]()}
+    ${this._formTemplate()}
+    ${this._addParamTemplate()}
     ${ignoreContentType ? '' : html`<p class="mime-info">
       <api-icon icon="info" class="info"></api-icon>
       The content-type header will be updated for this request when the HTTP message is generated.
@@ -494,13 +339,13 @@ export default class BodyMultipartEditorElement extends LitElement {
     `;
   }
 
-  [addParamTemplate](): TemplateResult {
+  _addParamTemplate(): TemplateResult {
     const { readOnly, disabled } = this;
     return html`
     <div class="form-actions">
       <anypoint-button
         emphasis="medium"
-        @click="${this[addFile]}"
+        @click="${this._addFileHandler}"
         class="add-param file-part"
         ?disabled="${readOnly || disabled}"
       >
@@ -508,7 +353,7 @@ export default class BodyMultipartEditorElement extends LitElement {
       </anypoint-button>
       <anypoint-button
         emphasis="medium"
-        @click="${this[addText]}"
+        @click="${this._addTextHandler}"
         class="add-param text-part"
         ?disabled="${readOnly || disabled}"
       >
@@ -517,8 +362,8 @@ export default class BodyMultipartEditorElement extends LitElement {
     </div>`
   }
 
-  [formTemplate](): TemplateResult {
-    const items = this[internalModel];
+  _formTemplate(): TemplateResult {
+    const items = this.model;
     if (!items.length) {
       return html`<p class="empty-list">Add a part to the list</p>`;
     }
@@ -528,7 +373,7 @@ export default class BodyMultipartEditorElement extends LitElement {
       <span class="param-value-label">Value</span>
     </div>
     <div class="params-list">
-      ${items.map((item, index) => this[paramItemTemplate](item, index))}
+      ${items.map((item, index) => this._paramItemTemplate(item, index))}
     </div>
     `;
   }
@@ -537,18 +382,26 @@ export default class BodyMultipartEditorElement extends LitElement {
    * @param part The form part
    * @param index The index on the list
    */
-  [paramItemTemplate](part: IMultipartInternalBody, index: number): TemplateResult {
+  protected _paramItemTemplate(part: IMultipartBody, index: number): TemplateResult | string {
+    if (typeof part.isFile === 'boolean') {
+      // TODO: This is a legacy type.
+      return '';
+    }
+    normalizePartValue(part);
+    const value = part.value as ISafePayload;
     let tpl;
-    if (part.isFile) {
-      tpl = this[filePartTemplate](part, index);
+    if (value.type === 'string') {
+      tpl = this._textPartTemplate(part, index);
+    } else if (value.type === 'blob') {
+      tpl = this._blobPartTemplate(part, index);
     } else {
-      tpl = this[textPartTemplate](part, index);
+      tpl = this._filePartTemplate(part, index);
     }
     return html`
     <div class="form-row">
-      ${this[paramToggleTemplate](part, index)}
+      ${this._paramToggleTemplate(part, index)}
       ${tpl}
-      ${this[paramRemoveTemplate](index)}
+      ${this._paramRemoveTemplate(index)}
     </div>
     `;
   }
@@ -558,9 +411,10 @@ export default class BodyMultipartEditorElement extends LitElement {
    * @param index The index on the list
    * @returns A template for the file part
    */
-  [filePartTemplate](part: IMultipartInternalBody, index: number): TemplateResult {
+  protected _filePartTemplate(part: IMultipartBody, index: number): TemplateResult {
     const { readOnly } = this;
-    const typedValue = part.file as File;
+    const item = part.value as ISafePayload;
+    const meta = item && item.meta as IFileMeta | undefined;
     return html`
     <anypoint-input
       autoValidate
@@ -571,61 +425,86 @@ export default class BodyMultipartEditorElement extends LitElement {
       class="param-name"
       ?readOnly="${readOnly}"
       noLabelFloat
-      @change="${this[filePartNameHandler]}"
+      @change="${this._filePartNameHandler}"
     >
       <label slot="label">Part name</label>
     </anypoint-input>
     <div class="param-value">
-      <anypoint-button @click="${this[pickFileHandler]}">Choose file</anypoint-button>
-      <input type="file" hidden data-index="${index}" @change="${this[filePartValueHandler]}"/>
-      ${typedValue ? html`<span class="file-info">${typedValue.name} (${typedValue.type}), ${typedValue.size} bytes</span>` : ''}
+      <anypoint-button @click="${this._pickFileHandler}">Choose file</anypoint-button>
+      <input type="file" hidden data-index="${index}" @change="${this._filePartValueHandler}"/>
+      ${meta ? html`<span class="file-info">${meta.name} (${meta.mime}), ${item.data.length} bytes</span>` : ''}
     </div>
     `;
   }
 
-  /**
-   * @param part The form part
-   * @param index The index on the list
-   * @returns A template for the text part
-   */
-  [textPartTemplate](part: IMultipartInternalBody, index: number): TemplateResult {
+  protected _blobPartTemplate(part: IMultipartBody, index: number): TemplateResult {
+    const { name, blobText } = part;
+    const item = part.value as ISafePayload;
+    const meta = item.meta as IBlobMeta | undefined;
+    return html`
+    ${this._partNameTemplate(index, name)}
+    ${this._partValueTemplate(index, blobText)}
+    ${this._partMimeTemplate(index, meta && meta.mime || '')}
+    `;
+  }
+
+  protected _textPartTemplate(part: IMultipartBody, index: number): TemplateResult {
+    const { name } = part;
+    const value = (part.value as ISafePayload).data as string | undefined;
+    return html`
+    ${this._partNameTemplate(index, name)}
+    ${this._partValueTemplate(index, value)}
+    ${this._partMimeTemplate(index)}
+    `;
+  }
+
+  protected _partNameTemplate(index: number, name?: string): TemplateResult {
     const { readOnly } = this;
     return html`
     <anypoint-input
       autoValidate
       required
-      .value="${part.name}"
+      .value="${name}"
       data-property="name"
       data-index="${index}"
       class="param-name"
       ?readOnly="${readOnly}"
       noLabelFloat
-      @change="${this[textPartNameHandler]}"
+      @change="${this._textPartNameHandler}"
     >
       <label slot="label">Part name</label>
     </anypoint-input>
+    `;
+  }
 
+  protected _partValueTemplate(index: number, value?: string): TemplateResult {
+    const { readOnly } = this;
+    return html`
     <anypoint-input
       autoValidate
       required
-      .value="${part.value}"
-      data-property="value"
+      .value="${value}"
       data-index="${index}"
       class="param-value"
       ?readOnly="${readOnly}"
       noLabelFloat
-      @change="${this[textPartValueHandler]}"
+      @change="${this._textPartValueHandler}"
     >
       <label slot="label">Part value</label>
     </anypoint-input>
+    `;
+  }
+
+  protected _partMimeTemplate(index: number, value?: string): TemplateResult {
+    const { readOnly } = this;
+    return html`
     <anypoint-input
-      .value="${part.type}"
-      data-property="type"
+      .value="${value}"
       data-index="${index}"
       class="param-type"
       ?readOnly="${readOnly}"
       noLabelFloat
-      @change="${this[textPartValueHandler]}"
+      @change="${this._handlePartMimeChange}"
     >
       <label slot="label">Part mime (optional)</label>
     </anypoint-input>
@@ -635,12 +514,12 @@ export default class BodyMultipartEditorElement extends LitElement {
   /**
    * @returns Template for the parameter name input
    */
-  [paramRemoveTemplate](index: number): TemplateResult {
+  protected _paramRemoveTemplate(index: number): TemplateResult {
     const { readOnly } = this;
     return html`
     <anypoint-icon-button
       data-index="${index}"
-      @click="${this[removeParamHandler]}"
+      @click="${this._removeParamHandler}"
       title="Remove this parameter"
       aria-label="Activate to remove this item"
       ?disabled="${readOnly}"
@@ -654,13 +533,13 @@ export default class BodyMultipartEditorElement extends LitElement {
   /**
    * @returns Template for the parameter name input
    */
-  [paramToggleTemplate](item: IMultipartBody, index: number): TemplateResult {
+  protected _paramToggleTemplate(item: IMultipartBody, index: number): TemplateResult {
     const { readOnly } = this;
     return html`
     <anypoint-switch
       data-index="${index}"
       .checked="${item.enabled}"
-      @checkedchange="${this[enabledHandler]}"
+      @checkedchange="${this._enabledHandler}"
       title="Enable / disable parameter"
       aria-label="Activate to toggle enabled state of this item"
       class="param-switch"

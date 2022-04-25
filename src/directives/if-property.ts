@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-param-reassign */
-import { nothing, PropertyPart, } from 'lit';
+import { noChange, nothing, PropertyPart, } from 'lit';
 import { directive, Directive, PartInfo, PartType } from 'lit/directive.js';
 
 class IfPropertyDirective extends Directive {
@@ -11,13 +11,11 @@ class IfPropertyDirective extends Directive {
     }
   }
 
-  override update(part: PropertyPart, [props]: any[]): void {
+  override update(part: PropertyPart, [props]: any[]): any {
     if (props === undefined) {
-      return;
+      return noChange;
     }
-    // @ts-ignore
-    part.element[part.name] = props;
-    
+    return props;
   }
 
   render(_value: unknown): typeof nothing {

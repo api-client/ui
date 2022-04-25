@@ -20,7 +20,7 @@ import '@anypoint-web-components/awc/dist/define/anypoint-listbox.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-item.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
-import { EventUtils, IBodyMetaModel, IMultipartBody, IProperty, IRawBody, PayloadSerializer, Property } from '@api-client/core/build/browser.js';
+import { EventUtils, IBodyMetaModel, IMultipartBody, IProperty, IRawBody, ISafePayload, PayloadSerializer } from '@api-client/core/build/browser.js';
 import { ResizableMixin } from '@anypoint-web-components/awc';
 import '../../define/api-icon.js';
 import elementStyles from './BodyEditor.styles.js';
@@ -309,17 +309,18 @@ export default class BodyEditorElement extends ResizableMixin(LitElement) {
    * Restores file value from the model, if exists
    */
   [restoreFileModel](): void {
-    const fileModel = this[readMetaModel]('file') as IProperty[];
+    const fileModel = this[readMetaModel]('file') as ISafePayload[] | undefined;
     if (!Array.isArray(fileModel) || !fileModel.length) {
       this[valueValue] = '';
       return;
     }
     const [item] = fileModel;
-    const { name, value } = item;
-    const blob = PayloadSerializer.deserializeBlob(value as string);
-    // @ts-ignore
-    blob.name = name;
-    this[valueValue] = blob;
+    if (!item || !item.data) {
+      this[valueValue] = '';
+      return;
+    }
+    const file = PayloadSerializer.deserializeFile(item);
+    this[valueValue] = file;
   }
 
   /**
@@ -387,9 +388,8 @@ export default class BodyEditorElement extends ResizableMixin(LitElement) {
       return;
     }
     this[valueValue] = file;
-    const b = await PayloadSerializer.stringifyBlob(file);
-    const p = Property.String(file.name, b.data as string, true);
-    const model = [ p.toJSON() ];
+    const payload = await PayloadSerializer.stringifyFile(file);
+    const model = [ payload ];
     this[setMetaModel]('file', model);
     this[notifyInput]();
     this.requestUpdate();
@@ -410,7 +410,7 @@ export default class BodyEditorElement extends ResizableMixin(LitElement) {
    * @param editor The editor id
    * @returns The view model
    */
-  [readMetaModel](editor: string): (IProperty | IMultipartBody | IRawBody)[] | undefined {
+  [readMetaModel](editor: string): (ISafePayload | IProperty | IMultipartBody | IRawBody)[] | undefined {
     const meta = this.model;
     if (!meta || !Array.isArray(meta)) {
       return undefined;
@@ -430,7 +430,7 @@ export default class BodyEditorElement extends ResizableMixin(LitElement) {
    * @param editor The editor id
    * @param model The view model
    */
-  [setMetaModel](editor: AllowedEditor, model: (IProperty | IMultipartBody | IRawBody)[]): void {
+  [setMetaModel](editor: AllowedEditor, model: (ISafePayload | IProperty | IMultipartBody | IRawBody)[]): void {
     if (!Array.isArray(this[modelValue])) {
       this[modelValue] = [];
     }
@@ -751,7 +751,7 @@ export default class BodyEditorElement extends ResizableMixin(LitElement) {
    */
   [multipartEditorTemplate](): TemplateResult {
     const { value, ignoreContentType } = this;
-    const model = /** @type MultipartBody[] */ (this[readMetaModel]('multipart'));
+    const model = this[readMetaModel]('multipart') as IMultipartBody[];
     // when the model is generated for the view then the value should not be set
     // as it would override the previously generated model.
     const effectiveValue = model ? undefined : value;

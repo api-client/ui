@@ -66,4 +66,12 @@ li[data-parent] {
   background-color: transparent;
   outline: none;
 }
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-style: italic;
+}
 `;

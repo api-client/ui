@@ -36,4 +36,8 @@ main layout-panel {
   margin-top: 40px;
   font-style: italic;
 }
+
+.toolbar-action {
+  margin: 0 8px;
+}
 `;

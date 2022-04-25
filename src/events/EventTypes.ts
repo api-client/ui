@@ -97,6 +97,7 @@ export const EventTypes = Object.freeze({
     }),
     Request: Object.freeze({
       send: 'requestsend',
+      rename: 'projectrequestrename',
       State: Object.freeze({
         urlChange: 'requeststateurlchange',
         contentTypeChange: 'requeststatecontenttypechange',
