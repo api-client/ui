@@ -168,10 +168,9 @@ export default class BodyMultipartEditorElement extends LitElement {
   }
 
   /**
-   * Adds a new text part to the list.
-   * It does not update the FormData as there's no value just yet.
+   * Adds an empty text part item to the form.
    */
-  protected _addTextHandler(): void {
+  addEmptyText(): void {
     if (this.readOnly || this.disabled) {
       return;
     }
@@ -189,10 +188,9 @@ export default class BodyMultipartEditorElement extends LitElement {
   }
 
   /**
-   * Adds a new text part to the list.
-   * It does not update the FormData as there's no value just yet.
+   * Adds an empty file part item to the form.
    */
-  protected _addFileHandler(): void {
+  addEmptyFile(): void {
     if (this.readOnly || this.disabled) {
       return;
     }
@@ -207,6 +205,22 @@ export default class BodyMultipartEditorElement extends LitElement {
     };
     model.push(obj);
     this.requestUpdate();
+  }
+
+  /**
+   * Adds a new text part to the list.
+   * It does not update the FormData as there's no value just yet.
+   */
+  protected _addTextHandler(): void {
+    this.addEmptyText();
+  }
+
+  /**
+   * Adds a new text part to the list.
+   * It does not update the FormData as there's no value just yet.
+   */
+  protected _addFileHandler(): void {
+    this.addEmptyFile();
   }
 
   /**
@@ -253,10 +267,15 @@ export default class BodyMultipartEditorElement extends LitElement {
   protected async _filePartValueHandler(e: Event): Promise<void> {
     e.stopPropagation();
     const input = e.target as HTMLInputElement;
-    const files = input.files as FileList;
-    const file = files[0];
     const index = Number(input.dataset.index);
+    this._updateFilePartValue(index, input.files![0]);
+  }
+
+  async _updateFilePartValue(index: number, file: File): Promise<void> {
     const item = this.model[index];
+    if (!item || !file) {
+      return;
+    }
     item.value = await PayloadSerializer.stringifyFile(file);
     this._notifyChange();
     this.requestUpdate();
@@ -317,11 +336,16 @@ export default class BodyMultipartEditorElement extends LitElement {
     normalizePartValue(item);
     // change the type from text to blob, if needed
     const typedValue = item.value as ISafePayload;
+    
     if (typedValue.type === 'string') {
       item.blobText = typedValue.data as string;
+    } else if (!item.blobText && typedValue.data) {
+      const restored = PayloadSerializer.deserializeBlob(typedValue);
+      item.blobText = await restored!.text();
     }
     const blob = new Blob([item.blobText || ''], { type: value });
     item.value = await PayloadSerializer.stringifyBlob(blob);
+    this._notifyChange();
   }
 
   render(): TemplateResult {

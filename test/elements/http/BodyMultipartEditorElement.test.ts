@@ -1,17 +1,7 @@
-import { assert, fixture, nextFrame, html } from '@open-wc/testing';
+import { assert, fixture, nextFrame, html, aTimeout } from '@open-wc/testing';
 import sinon from 'sinon';
 import { loadMonaco } from '../MonacoSetup.js';
 import '../../../src/define/body-multipart-editor.js'
-import {
-  addText,
-  addFile,
-  internalModel,
-  valueChanged,
-  modelChanged,
-  valueValue,
-  filePartValueHandler,
-  textPartValueHandler,
-} from '../../../src/elements/http/internals.js';
 import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/elements/http/BodyMultipartEditorElement.js';
 
 (hasFormDataSupport ? describe : describe.skip)('BodyMultipartEditorElement', () => {
@@ -25,14 +15,11 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
     const element = await basicFixture();
     const form = new FormData();
     form.append('text', 'text-value');
-    form.append('blob', new Blob(['blob-value'], {type: 'text/plain'}), 'blob');
-    const file = new Blob(['blob-value'], {type: 'text/plain'});
-    // @ts-ignore
-    file.name = 'file.txt';
+    form.append('blob', new Blob(['blob-value'], { type: 'text/plain' }), 'blob');
+    const file = new File(['blob-value'], 'file.txt', { type: 'text/plain' });
     form.append('file', file, 'file.txt');
-    element[valueValue] = form;
-    await element[valueChanged](form);
-    await nextFrame();
+    element.value = form;
+    await aTimeout(20);
     return element;
   }
 
@@ -70,7 +57,7 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
     beforeEach(async () => { element = await basicFixture(); })
 
     it('adds a model item on add button click', () => {
-      const node = /** @type  */ (element.shadowRoot.querySelector('.add-param.text-part') as HTMLElement);
+      const node = element.shadowRoot.querySelector('.add-param.text-part') as HTMLElement;
       node.click();
       assert.lengthOf(element.model, 1);
     });
@@ -94,20 +81,11 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       node.click();
       assert.deepEqual(element.model[0], {
         name: '',
-        value: '',
         enabled: true,
-        isFile: false,
-      });
-    });
-
-    it('has the [internalModel] property', () => {
-      const node = (element.shadowRoot.querySelector('.add-param.text-part') as HTMLElement);
-      node.click();
-      assert.deepEqual(element[internalModel][0], {
-        name: '',
-        value: '',
-        enabled: true,
-        isFile: false,
+        value: {
+          data: '',
+          type: 'string',
+        }
       });
     });
 
@@ -123,7 +101,7 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       // any editor value
       const spy = sinon.spy();
       element.addEventListener('change', spy);
-      await element[addText]();
+      element.addEmptyText();
       assert.isFalse(spy.called);
     });
   });
@@ -157,20 +135,11 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       node.click();
       assert.deepEqual(element.model[0], {
         name: '',
-        value: '',
         enabled: true,
-        isFile: true,
-      });
-    });
-    
-    it('has the [internalModel] property', () => {
-      const node = (element.shadowRoot.querySelector('.add-param.file-part') as HTMLElement);
-      node.click();
-      assert.deepEqual(element[internalModel][0], {
-        name: '',
-        value: '',
-        enabled: true,
-        isFile: true,
+        value: {
+          data: [],
+          type: 'file',
+        },
       });
     });
 
@@ -186,138 +155,91 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       // any editor value
       const spy = sinon.spy();
       element.addEventListener('change', spy);
-      await element[addFile]();
+      await element.addEmptyFile();
       assert.isFalse(spy.called);
     });
   });
 
   describe('#value', () => {
     let element: BodyMultipartEditorElement;
-    let form = /** @type FormData */ (null);
-    beforeEach(async () => { 
-      element = await basicFixture(); 
+    let form: FormData;
+    beforeEach(async () => {
+      element = await basicFixture();
       form = new FormData();
       form.append('text', 'text-value');
-      form.append('blob', new Blob(['blob-value'], {type: 'text/plain'}), 'blob');
-      const file = new Blob(['blob-value'], {type: 'text/plain'});
-      // @ts-ignore
-      file.name = 'file.txt';
+      form.append('blob', new Blob(['*****'], { type: 'text/plain' }), 'blob');
+      const file = new File(['***'], 'file.txt', { type: 'text/plain' });
       form.append('file', file, 'file.txt');
     })
 
-    it('reads set value', () => {
-      element.value = form;
-      assert.isTrue(element.value === form);
-    });
-
-    it('calls the [valueChanged] function', () => {
-      const spy = sinon.spy(element, valueChanged);
-      element.value = form;
-      assert.isTrue(spy.calledOnce);
-    });
-
-    it('it does not set invalid value', () => {
-      const spy = sinon.spy(element, valueChanged);
-      // @ts-ignore
-      element.value = 'form';
-      assert.isFalse(spy.calledOnce);
-    });
-
-    // from here all tests are related to the value processing which is 
-    // an async operation so the tests focus on the function call.
+    // maybe it should return the same value when the model never changed?
+    // it('reads set value', () => {
+    //   element.value = form;
+    //   assert.isTrue(element.value === form);
+    // });
 
     it('clears the current model when value is not set', async () => {
-      element.model = [{ name: 'a', value: 'b', isFile: false }];
-      await element[valueChanged](undefined);
+      element.model = [{ name: 'a', value: 'b', enabled: true, }];
+      element.value = undefined;
+      await aTimeout(20);
       assert.deepEqual(element.model, []);
     });
 
-    it('generates a view model', async () => {
-      await element[valueChanged](form);
+    it('generates the view model', async () => {
+      element.value = form;
+      await aTimeout(20);
       assert.lengthOf(element.model, 3);
     });
 
     it('generated model has restored text part property', async () => {
-      await element[valueChanged](form);
+      element.value = form;
+      await aTimeout(20);
       const [item] = element.model;
-      // the PayloadProcessor does not set this property but this will probably change
-      // In any case it is not as important as `enabled = true` is the default value
-      delete item.enabled;
+
       assert.deepEqual(item, {
+        enabled: true,
         name: 'text',
-        value: 'text-value',
-        isFile: false,
+        value: {
+          data: 'text-value',
+          type: 'string',
+        },
       });
     });
 
     it('generated model has restored text blob part property', async () => {
-      await element[valueChanged](form);
+      element.value = form;
+      await aTimeout(20);
       const item = element.model[1];
-      delete item.enabled;
       assert.deepEqual(item, {
-        isFile: false, 
-        name: 'blob', 
-        value: 'data:text/plain;base64,YmxvYi12YWx1ZQ==', 
-        type: 'text/plain',
+        enabled: true,
+        name: 'blob',
+        value: {
+          data: [42, 42, 42, 42, 42],
+          type: 'blob',
+          meta: { mime: 'text/plain' },
+        },
       });
     });
 
     it('generated model has restored file part property', async () => {
-      await element[valueChanged](form);
+      element.value = form;
+      await aTimeout(20);
       const item = element.model[2];
-      delete item.enabled;
       assert.deepEqual(item, {
-        isFile: true, 
-        name: 'file', 
-        fileName: 'file.txt',
-        value: 'data:text/plain;base64,YmxvYi12YWx1ZQ==', 
+        enabled: true,
+        name: 'file',
+        value: {
+          data: [42, 42, 42],
+          type: 'file',
+          meta: { mime: 'text/plain', name: 'file.txt' },
+        },
       });
-    });
-
-    it('generated [internalModel] has restored text part property', async () => {
-      await element[valueChanged](form);
-      const [item] = element[internalModel];
-      // the PayloadProcessor does not set this property but this will probably change
-      // In any case it is not as important as `enabled = true` is the default value
-      delete item.enabled;
-      assert.deepEqual(item, {
-        name: 'text',
-        value: 'text-value',
-        isFile: false,
-      });
-    });
-
-    it('generated [internalModel] has restored text blob part property', async () => {
-      await element[valueChanged](form);
-      const item = element[internalModel][1];
-      delete item.enabled;
-      assert.deepEqual(item, {
-        isFile: false, 
-        name: 'blob', 
-        value: 'blob-value', 
-        type: 'text/plain',
-      });
-    });
-
-    it('generated [internalModel] has restored file part property', async () => {
-      await element[valueChanged](form);
-      const item = element[internalModel][2];
-      delete item.enabled;
-      assert.typeOf(item.file, 'blob', 'has the file object');
-      assert.equal(item.value, 'data:text/plain;base64,YmxvYi12YWx1ZQ==', 'has the file as string as the value');
-      assert.equal(item.name, 'file');
-      assert.equal(item.fileName, 'file.txt');
-      assert.isTrue(item.isFile);
-      // assert.deepEqual(item, {
-      //   isFile: true, 
-      //   name: 'file', 
-      //   fileName: 'file.txt',
-      // });
     });
 
     it('updates an existing model', async () => {
-      element.model = [{ name: 'test', value: 'true', enabled: true, isFile: false, }];
-      await element[valueChanged](form);
+      element.model = [{ name: 'test', value: 'true', enabled: true }];
+      element.value = form;
+      await aTimeout(20);
       assert.equal(element.model[0].name, 'text');
     });
 
@@ -325,7 +247,8 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       // value/model setters should not dispatch change events
       const spy = sinon.spy();
       element.addEventListener('change', spy);
-      await element[valueChanged](form);
+      element.value = form;
+      await aTimeout(20);
       assert.isFalse(spy.called);
     });
   });
@@ -335,35 +258,43 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
     beforeEach(async () => { element = await basicFixture(); })
 
     it('reads set value', () => {
-      const value = [{ name: 'test', value: 'true', enabled: true, isFile: false }];
+      const value = [{ name: 'test', value: 'true', enabled: true }];
       element.model = value;
       assert.deepEqual(element.model, value);
+    });
+
+    it('sets an empty array when no value', () => {
+      element.model = [{ name: 'test', value: 'true', enabled: true }];
+      // @ts-ignore
+      element.model = undefined;
+      assert.deepEqual(element.model, []);
     });
 
     // from here all tests are related to the model processing which is 
     // an async operation so the tests focus on the function call.
 
     it('generates a value', async () => {
-      const value = [{ name: 'test', value: 'true', enabled: true, isFile: false }];
-      await element[modelChanged](value);
+      const value = [{ name: 'test', value: 'true', enabled: true }];
+      element.model = value;
       assert.typeOf(element.value, 'FormData');
+      const result = element.value.get('test');
+      assert.equal(result, 'true');
     });
 
     it('clears the previously set value', async () => {
       const form = new FormData();
       form.append('a', 'b');
-      await element[valueChanged](form);
-      await element[modelChanged](undefined);
+      element.value = form;
+      await aTimeout(20);
       // @ts-ignore
+      element.model = undefined;
       const it = element.value.entries().next();
       assert.isTrue(it.done);
     });
 
     it('updates existing value', async () => {
       element.value = new FormData();
-      const value = [{ name: 'test', value: 'true', enabled: true, isFile: false }];
-      await element[modelChanged](value);
-      // @ts-ignore
+      element.model = [{ name: 'test', value: 'true', enabled: true }];
       const it = element.value.entries().next();
       assert.isFalse(it.done);
     });
@@ -372,16 +303,15 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       // value/model setters should not dispatch change events
       const spy = sinon.spy();
       element.addEventListener('change', spy);
-      const value = [{ name: 'test', value: 'true', enabled: true, isFile: false }];
-      await element[modelChanged](value);
+      element.model = [{ name: 'test', value: 'true', enabled: true }];
       assert.isFalse(spy.called);
     });
   });
 
   describe('values rendering', () => {
     let element: BodyMultipartEditorElement;
-    beforeEach(async () => { 
-      element = await valueFixture(); 
+    beforeEach(async () => {
+      element = await valueFixture();
     });
 
     it('renders form rows for each model entry', () => {
@@ -452,12 +382,6 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       const item = (element.shadowRoot.querySelector('.form-row:nth-child(1) anypoint-switch'));
       (item as HTMLElement).click();
       assert.isFalse(element.model[0].enabled);
-    });
-
-    it('disables the form item in the [internalModel]', () => {
-      const item = (element.shadowRoot.querySelector('.form-row:nth-child(1) anypoint-switch'));
-      (item as HTMLElement).click();
-      assert.isFalse(element[internalModel][0].enabled);
     });
 
     it('updates the value', () => {
@@ -555,15 +479,6 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       assert.equal(element.model[2].name, 'new-value-test');
     });
 
-    it('changes the file part name in the [internalModel]', () => {
-      const item = { ...element[internalModel][2] };
-      const input = (element.shadowRoot.querySelector('.form-row:nth-child(3) .param-name'));
-      (input as HTMLInputElement).value = 'new-value-test';
-      input.dispatchEvent(new CustomEvent('change'))
-      assert.notEqual(element[internalModel][2].name, item.name);
-      assert.equal(element[internalModel][2].name, 'new-value-test');
-    });
-
     it('updates the value for file part', () => {
       const old = element.model[2].name;
       const input = (element.shadowRoot.querySelector('.form-row:nth-child(3) .param-name'));
@@ -580,15 +495,6 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       input.dispatchEvent(new CustomEvent('change'))
       assert.notEqual(element.model[0].name, item.name);
       assert.equal(element.model[0].name, 'new-value-test');
-    });
-
-    it('changes the text part name in the [internalModel]', () => {
-      const item = { ...element[internalModel][0] };
-      const input = (element.shadowRoot.querySelector('.form-row:nth-child(1) .param-name'));
-      (input as HTMLInputElement).value = 'new-value-test';
-      input.dispatchEvent(new CustomEvent('change'))
-      assert.notEqual(element[internalModel][0].name, item.name);
-      assert.equal(element[internalModel][0].name, 'new-value-test');
     });
 
     it('updates the value for text part', () => {
@@ -616,51 +522,25 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       element = await valueFixture();
     });
 
-    
-    function generateChangeEvent(): Event {
-      const file = new Blob(['other-value'], {type: 'text/plain'});
-      // @ts-ignore
-      file.name = 'other.txt';
-      const e = {
-        type: 'change',
-        target: {
-          files: [file],
-          dataset: {
-            index: 2,
-          },
-        },
-        stopPropagation: (): void => {},
-      };
-      // @ts-ignore
-      return e;
-    }
-
     it('changes the value in the model', async () => {
-      const e = generateChangeEvent();
-      await element[filePartValueHandler](e);
-      assert.equal(element.model[2].value, 'data:text/plain;base64,b3RoZXItdmFsdWU=', 'the value is updated');
-      assert.equal(element.model[2].fileName, 'other.txt', 'the fileName is updated');
-    });
-
-    it('changes the value in the [internalModel]', async () => {
-      const e = generateChangeEvent();
-      await element[filePartValueHandler](e);
-      const f = element[internalModel][2].file as File;
-      assert.equal(f.name, 'other.txt', 'the value is updated');
-    });
-
-    it('updated the value', async () => {
-      const e = generateChangeEvent();
-      await element[filePartValueHandler](e);
-      const value = element.value.get(element.model[2].name);
-      assert.ok(value);
+      const file = new File(['***'], 'other.txt', { type: 'text/plain' });
+      await element._updateFilePartValue(2, file);
+      assert.deepEqual(element.model[2], {
+        enabled: true,
+        name: 'file',
+        value: {
+          type: 'file',
+          data: [42, 42, 42],
+          meta: { mime: 'text/plain', name: 'other.txt' }
+        }
+      });
     });
 
     it('dispatches the change event', async () => {
       const spy = sinon.spy();
       element.addEventListener('change', spy);
-      const e = generateChangeEvent();
-      await element[filePartValueHandler](e);
+      const file = new File(['***'], 'other.txt', { type: 'text/plain' });
+      await element._updateFilePartValue(2, file);
       assert.isTrue(spy.calledOnce);
     });
   });
@@ -671,47 +551,19 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       element = await valueFixture();
     });
 
-    function generateChangeEvent(): Event {
-      const e = {
-        type: 'change',
-        target: {
-          value: 'other-value',
-          dataset: {
-            index: 0,
-            property: 'value',
-          },
-        },
-        stopPropagation: (): void => {},
-      };
-      // @ts-ignore
-      return e;
-    }
-
     it('changes the value in the model', async () => {
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
-      assert.equal(element.model[0].value, 'other-value', 'the value is updated');
-      assert.isUndefined(element.model[0].fileName, 'the fileName is not set');
-    });
-
-    it('changes the value in the [internalModel]', async () => {
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
-      assert.equal(element[internalModel][0].value, 'other-value', 'the value is updated');
-    });
-
-    it('updated the value', async () => {
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
-      const value = element.value.get(element.model[0].name) as string;
-      assert.equal(value, 'other-value');
+      const input = element.shadowRoot!.querySelector('.param-value[data-index="0"]') as HTMLInputElement;
+      input.value = 'other-value';
+      input.dispatchEvent(new Event('change'));
+      assert.deepEqual(element.model[0].value, { type: 'string', data: 'other-value' }, 'the value is updated');
     });
 
     it('dispatches the change event', async () => {
       const spy = sinon.spy();
       element.addEventListener('change', spy);
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
+      const input = element.shadowRoot!.querySelector('.param-value[data-index="0"]') as HTMLInputElement;
+      input.value = 'other-value';
+      input.dispatchEvent(new Event('change'));
       assert.isTrue(spy.calledOnce);
     });
   });
@@ -722,48 +574,29 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       element = await valueFixture();
     });
 
-    function generateChangeEvent(): Event {
-      const e = {
-        type: 'change',
-        target: {
-          value: 'other-value',
-          dataset: {
-            index: 1,
-            property: 'value',
-          },
-        },
-        stopPropagation: (): void => {},
-      };
-      // @ts-ignore
-      return e;
-    }
-
     it('changes the value in the model', async () => {
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
-      assert.equal(element.model[1].value, 'data:text/plain;base64,b3RoZXItdmFsdWU=', 'the value is updated');
-      assert.isUndefined(element.model[1].fileName, 'the fileName is not set');
-      assert.equal(element.model[1].type, 'text/plain' , 'the type is set');
-    });
+      const input = element.shadowRoot!.querySelector('.param-value[data-index="1"]') as HTMLInputElement;
+      input.value = '* *';
+      input.dispatchEvent(new Event('change'));
+      await aTimeout(20);
+      
+      const item = element.model[1];
 
-    it('changes the value in the [internalModel]', async () => {
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
-      assert.equal(element[internalModel][1].value, 'other-value', 'the value is updated');
-    });
-
-    it('updated the value', async () => {
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
-      const value = /** @type File */ (element.value.get(element.model[1].name));
-      assert.typeOf(value, 'File');
+      assert.deepEqual(item, {
+        name: 'blob',
+        value: { type: 'blob', data: [ 42, 32, 42 ], meta: { mime: 'text/plain' } },
+        enabled: true,
+        blobText: '* *'
+      });
     });
 
     it('dispatches the change event', async () => {
       const spy = sinon.spy();
       element.addEventListener('change', spy);
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
+      const input = element.shadowRoot!.querySelector('.param-value[data-index="1"]') as HTMLInputElement;
+      input.value = '* *';
+      input.dispatchEvent(new Event('change'));
+      await aTimeout(10);
       assert.isTrue(spy.calledOnce);
     });
   });
@@ -774,57 +607,48 @@ import BodyMultipartEditorElement, { hasFormDataSupport } from '../../../src/ele
       element = await valueFixture();
     });
 
-    function generateChangeEvent(index=1): Event {
-      const e = {
-        type: 'change',
-        target: {
-          value: 'text/other',
-          dataset: {
-            index,
-            property: 'type',
-          },
-        },
-        stopPropagation: (): void => {},
-      };
-      // @ts-ignore
-      return e;
-    }
+    it('changes the existing blob value', async () => {
+      const input = element.shadowRoot!.querySelector('.param-type[data-index="1"]') as HTMLInputElement;
+      input.value = 'text/other';
+      input.dispatchEvent(new Event('change'));
 
-    it('changes the value in the model', async () => {
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
-      assert.equal(element.model[1].value, 'data:text/other;base64,YmxvYi12YWx1ZQ==', 'the value is updated');
-      assert.isUndefined(element.model[1].fileName, 'the fileName is not set');
-      assert.equal(element.model[1].type, 'text/other' , 'the type is set');
+      await aTimeout(20);
+      const item = element.model[1];
+
+      assert.deepEqual(item, {
+        blobText: 'blob-value',
+        name: 'blob',
+        value: { type: 'blob', data: [ 98, 108, 111,  98, 45, 118,  97, 108, 117, 101], meta: { mime: 'text/other' } },
+        enabled: true,
+      });
     });
 
-    it('changes the value in the [internalModel]', async () => {
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
-      assert.equal(element[internalModel][1].type, 'text/other', 'the type is updated');
-    });
+    it('changes the existing text value to a blob', async () => {
+      const input = element.shadowRoot!.querySelector('.param-type[data-index="0"]') as HTMLInputElement;
+      input.value = 'text/x';
+      input.dispatchEvent(new Event('change'));
 
-    it('updated the value', async () => {
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
-      const value = element.value.get(element.model[1].name) as File;
-      assert.equal(value.type, 'text/other');
-    });
-
-    it('updates value from text to blob', async () => {
-      const e = generateChangeEvent(0);
-      await element[textPartValueHandler](e);
-      assert.equal(element.model[0].value, 'data:text/other;base64,dGV4dC12YWx1ZQ==', 'the value is updated');
-      assert.isUndefined(element.model[0].fileName, 'the fileName is not set');
-      assert.equal(element.model[0].type, 'text/other' , 'the type is set');
+      await aTimeout(20);
+      const item = element.model[0];
+      
+      assert.deepEqual(item, {
+        blobText: 'text-value',
+        name: 'text',
+        value: { type: 'blob', data: [ 116, 101, 120, 116, 45, 118,  97, 108, 117, 101], meta: { mime: 'text/x' } },
+        enabled: true,
+      });
     });
 
     it('dispatches the change event', async () => {
       const spy = sinon.spy();
       element.addEventListener('change', spy);
-      const e = generateChangeEvent();
-      await element[textPartValueHandler](e);
-      assert.isTrue(spy.calledOnce);
+
+      const input = element.shadowRoot!.querySelector('.param-type[data-index="0"]') as HTMLInputElement;
+      input.value = 'text/x';
+      input.dispatchEvent(new Event('change'));
+
+      await aTimeout(20);
+      assert.isTrue(spy.called);
     });
   });
 });
