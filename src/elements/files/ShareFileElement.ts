@@ -4,7 +4,7 @@ import { property, state } from 'lit/decorators.js';
 import { AnypointDialogElement, AnypointListboxElement, AnypointDropdownElement } from '@anypoint-web-components/awc';
 import { 
   IFile, Events as CoreEvents, IUser, AccessOperation, IAccessAddOperation, PermissionRole, IPermission,
-  IBackendEvent, ProjectKind, WorkspaceKind,
+  IBackendEvent, ProjectKind, WorkspaceKind, IApplication,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import dialogStyles from '@anypoint-web-components/awc/dist/styles/AnypointDialogInternalStyles.js';
@@ -39,6 +39,7 @@ function cancel(e: Event): void {
  * dialog.key = 'file key';
  * // or
  * dialog.file = file;
+ * dialog.appInfo="${AppInfo}"
  * dialog.opened = true;
  * document.body.appendChild(dialog);
  * dialog.addEventListener('closed', (ev: Event) => {
@@ -271,6 +272,14 @@ export default class ShareFileElement extends AnypointDialogElement {
    * The current user to filter out the user from the suggestions and the shared list.
    */
   @property({ type: Object }) user?: IUser;
+
+  /**
+   * This property is required for the API access to work.
+   * Set it to the current application information.
+   * 
+   * It will throw an error when trying to patch access without setting this property.
+   */
+  @property({ type: Object }) appInfo?: IApplication;
 
   /**
    * A flag set when requesting the the file meta
@@ -639,6 +648,10 @@ export default class ShareFileElement extends AnypointDialogElement {
       this._cancelShareUser();
       return;
     }
+    const { appInfo } = this;
+    if (!appInfo) {
+      throw new Error(`The appInfo is not set on the <share-file> element.`);
+    }
     const id = key || file!.key;
     const ops: AccessOperation[] = selectedUsers.map(user => {
       const op: AccessOperation = {
@@ -650,7 +663,7 @@ export default class ShareFileElement extends AnypointDialogElement {
       return op;
     });
     try {
-      await Events.Store.File.patchUsers(id, randomString(), ops);
+      await Events.Store.File.patchUsers(id, randomString(), ops, appInfo);
       this._cancelShareUser();
     } catch (e) {
       const cause = e as Error;
@@ -722,9 +735,13 @@ export default class ShareFileElement extends AnypointDialogElement {
     if (!pendingPermissions) {
       return;
     }
+    const { appInfo } = this;
+    if (!appInfo) {
+      throw new Error(`The appInfo is not set on the <share-file> element.`);
+    }
     const id = key || file!.key;
     try {
-      await Events.Store.File.patchUsers(id, randomString(), pendingPermissions);
+      await Events.Store.File.patchUsers(id, randomString(), pendingPermissions, appInfo);
       this.pendingPermissions = undefined;
     } catch (e) {
       const cause = e as Error;

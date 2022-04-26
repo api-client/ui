@@ -12,6 +12,7 @@ import ApiFilesElement from '../../elements/files/ApiFilesElement.js'
 import '../../define/app-settings-menu.js';
 import '../../define/api-icon.js';
 import '../../define/api-files.js';
+import AppInfo from './AppInfo.js';
 
 type NavigationPage = 'files' | 'recent' | 'shared';
 
@@ -130,8 +131,8 @@ export default class StartScreen extends ApplicationScreen {
     const file = e.detail as IFile;
     if (file.kind === WorkspaceKind) {
       navigate(this.page || 'files', file.key);
-    } else {
-      Events.Navigation.HttpProject.open(file.key);
+    } else if (file.kind === ProjectKind) {
+      Events.Navigation.App.runHttpProject({ key: file.key });
     }
   }
 
@@ -202,6 +203,7 @@ export default class StartScreen extends ApplicationScreen {
     return html`
     <api-files 
       .parent="${parent}" 
+      .appInfo="${AppInfo}"
       allowAdd 
       .kinds="${kinds}"
       .viewType="${viewType || 'list'}"
@@ -223,6 +225,7 @@ export default class StartScreen extends ApplicationScreen {
     return html`
     <api-files 
       .parent="${parent}" 
+      .appInfo="${AppInfo}"
       .kinds="${kinds}"
       .viewType="${viewType || 'list'}"
       .scrollTarget="${this.main}"

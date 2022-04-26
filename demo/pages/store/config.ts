@@ -1,5 +1,5 @@
-import { DemoBindings } from '../lib/DemoBindings.js';
-import { StoreConfigScreen } from '../../src/index.js';
+import { DemoBindings } from '../../lib/DemoBindings.js';
+import { StoreConfigScreen } from '../../../src/index.js';
 
 (async (): Promise<void> => {
   const bindings = new DemoBindings();

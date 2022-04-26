@@ -25,7 +25,7 @@ export class DemoBindings {
     this.io = new IoProcess();
     // const base = new URL(window.location.href);
     this.config = new WebConfigurationBindings('/demo/lib/io/AppConfig.ts');
-    this.store = new WebStoreBindings('x-demo', '0.1.0', `http://localhost:${8550}/v1`);
+    this.store = new WebStoreBindings(`http://localhost:${8550}/v1`);
     this.nav = new WebNavigationBindings();
     this.appData = new WebAppDataBindings('/demo/lib/io/AppData.ts');
     this.http = new WebHttpBindings(`http://192.168.86.249:8553/v1`);

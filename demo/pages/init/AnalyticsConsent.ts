@@ -1,5 +1,5 @@
-import { DemoBindings } from '../lib/DemoBindings.js';
-import { AnalyticsConsentScreen, EventTypes, Router } from '../../src/index.js';
+import { DemoBindings } from '../../lib/DemoBindings.js';
+import { AnalyticsConsentScreen, EventTypes, Router } from '../../../src/index.js';
 
 (async (): Promise<void> => {
   const bindings = new DemoBindings();
@@ -11,6 +11,7 @@ import { AnalyticsConsentScreen, EventTypes, Router } from '../../src/index.js';
   window.addEventListener(EventTypes.Config.Telemetry.State.set, () => {
     // We mimic application behavior. This is in the first run flow.
     // When this event is handled we continue to the application main page.
-    Router.navigatePage('HttpProjectHome.html');
+    const url = new URL('/demo/pages/start/main.html', window.location.href).toString();
+    Router.navigatePage(url);
   });
 })();

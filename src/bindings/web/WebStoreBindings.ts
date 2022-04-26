@@ -3,7 +3,6 @@ import { Events } from '../../events/Events.js';
 import { HttpStore } from '../../store/HttpStore.js';
 import { StoreBindings } from '../base/StoreBindings.js';
 import { IConfigEnvironment, IConfigInit } from '../../lib/config/Config.js';
-import { navigatePage } from '../../lib/route.js';
 import { EnvironmentsKey } from '../base/ConfigurationBindings.js';
 
 /**
@@ -19,13 +18,11 @@ export class WebStoreBindings extends StoreBindings {
   channel: BroadcastChannel;
 
   /**
-   * @param appId The current application suite id.
-   * @param appVersion The current application version
    * @param storeBaseUri The base URI of the "local" store to be used when the user chooses 
    * the local store over the 
    */
-  constructor(appId: string, appVersion: string, storeBaseUri: string) {
-    super(appId, appVersion);
+  constructor(storeBaseUri: string) {
+    super();
     this.storeBaseUri = storeBaseUri;
     this.channel = new BroadcastChannel('api-store');
   }
@@ -57,7 +54,7 @@ export class WebStoreBindings extends StoreBindings {
       // the store needs authentication. We redirect the user to the 
       // authentication screen.
       await Events.Config.Session.set(`${EnvironmentsKey}.creating`, env);
-      navigatePage('ConfigAuthenticate.html');
+      Events.Navigation.Store.authenticate({ sameWindow: true })
     } else if (init.reason === 'add') {
       // this is adding an environment from the configuration screen.
       // We save the configuration in the store.

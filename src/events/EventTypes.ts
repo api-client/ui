@@ -83,11 +83,15 @@ export const EventTypes = Object.freeze({
     }),
   }),
   Navigation: Object.freeze({
-    HttpProject: Object.freeze({
-      open: 'navigationprojectopen',
+    // inter-app navigation
+    App: Object.freeze({
+      runProjectRunner: 'navapprunprojectrunner',
+      runHttpProject: 'navapprunhttpproject',
+      runStart: 'navapprunstart',
     }),
     Store: Object.freeze({
       config: 'navigationstoreconfig',
+      authenticate: 'navigationstoreauthenticate',
     }),
   }),
   HttpProject: Object.freeze({

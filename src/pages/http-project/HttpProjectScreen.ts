@@ -22,7 +22,8 @@ import { LayoutManager, ILayoutItem } from '../../elements/layout/LayoutManager.
 import { IRoute } from '../../mixins/RouteMixin.js';
 import NavElement from '../../elements/project/ProjectNavigationElement.js';
 import { randomString } from '../../lib/Random.js';
-import { navigate, navigatePage } from '../../lib/route.js';
+import { navigate } from '../../lib/route.js';
+import AppInfo from './AppInfo.js';
 
 export default class HttpProjectScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
@@ -204,7 +205,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     const id = randomString(16);
     this.pendingPatches.set(id, diff);
     try {
-      await Events.Store.File.patch(project.key, id, diff, true);
+      await Events.Store.File.patch(project.key, id, diff, AppInfo, true);
       this.schema = JSON.stringify(newSchema);
     } catch (e) {
       const cause = e as Error;
@@ -388,12 +389,17 @@ export default class HttpProjectScreen extends ApplicationScreen {
     const dialog = document.createElement('share-file');
     dialog.key = this.key!;
     dialog.user = this.user;
+    dialog.appInfo = AppInfo;
     dialog.opened = true;
     dialog.withBackdrop = true;
     document.body.appendChild(dialog);
     dialog.addEventListener('closed', () => {
       document.body.removeChild(dialog);
     });
+  }
+
+  protected openStart(): void {
+    Events.Navigation.App.runStart();
   }
 
   pageTemplate(): TemplateResult {
@@ -449,7 +455,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
           The project you are trying to open does not exist, was removed,
           or you lost access to it.
         </p>
-        <anypoint-button emphasis="high" @click="${(): void => { navigatePage('HttpProjectHome.html') }}">Back to start</anypoint-button>
+        <anypoint-button emphasis="high" @click="${this.openStart}">Back to start</anypoint-button>
       </div>
     </main>`;
   }

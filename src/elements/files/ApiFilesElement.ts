@@ -9,6 +9,7 @@ import { property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import {
   IListOptions, IBackendEvent, ProjectKind, IFile, WorkspaceKind, IFileCreateOptions, IUser,
+  IApplication,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { AnypointListboxElement } from '@anypoint-web-components/awc';
@@ -44,7 +45,7 @@ const pageLimit = 100;
  * Regardless of the list, spaces are always returned by the store.
  * 
  * ```html
- * <api-files .kinds="${["Core#Project"]}"></api-files>
+ * <api-files .kinds="${["Core#Project"]}" .appInfo="${AppInfo}"></api-files>
  * ```
  * 
  * Additionally, the element does not initialize observing for files change. The hosting screen
@@ -61,6 +62,14 @@ export default class ApiFilesElement extends LitElement {
   static get styles(): CSSResult[] {
     return [styles, layout];
   }
+
+  /**
+   * This property is required for the API access to work.
+   * Set it to the current application information.
+   * 
+   * It will throw an error when trying to patch access without setting this property.
+   */
+  @property({ type: Object }) appInfo?: IApplication;
 
   /**
    * The list of file kinds to render in the view.
@@ -667,6 +676,7 @@ export default class ApiFilesElement extends LitElement {
     const dialog = document.createElement('share-file');
     dialog.file = file;
     dialog.user = this.user;
+    dialog.appInfo = this.appInfo;
     dialog.opened = true;
     dialog.withBackdrop = true;
     document.body.appendChild(dialog);
