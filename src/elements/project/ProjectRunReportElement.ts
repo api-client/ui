@@ -3,7 +3,8 @@
 import { PropertyValueMap, LitElement, TemplateResult, html, css, CSSResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
-import { IProjectExecutionIteration, IProjectExecutionLog, IRequestLog } from '@api-client/core/build/browser.js';
+import { ErrorResponse, IProjectExecutionIteration, IProjectExecutionLog, IRequestLog, IResponse } from '@api-client/core/build/browser.js';
+import { statusTemplate, StatusStyles } from '../http/HttpStatus.js';
 import '../../define/request-log.js';
 
 /**
@@ -12,6 +13,7 @@ import '../../define/request-log.js';
 export default class ProjectRunReportElement extends LitElement {
   static get styles(): CSSResult[] {
     return [
+      StatusStyles,
       css`
       :host {
         display: block;
@@ -53,6 +55,10 @@ export default class ProjectRunReportElement extends LitElement {
         padding: 0 20px;
       }
 
+      .list-item.double {
+        min-height: 72px;
+      }
+
       .active {
         background: var(--project-run-report-active-background, #e3f2fd);
       }
@@ -63,6 +69,26 @@ export default class ProjectRunReportElement extends LitElement {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+
+      .list-contents {
+        overflow: hidden;
+      }
+
+      .secondary {
+        font-size: .875rem;
+        color: var(--secondary-text-color);
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      .status-code {
+        margin-right: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       `
     ];
@@ -342,7 +368,7 @@ export default class ProjectRunReportElement extends LitElement {
     };
     return html`
     <li class="${classMap(classes)}" data-index="${index}" data-type="interaction" tabindex="${active ? '0' : '-1'}">
-      <span class="list-content">Iteration #${item.index}</span>
+      <span class="list-content">Iteration #${index + 1}</span>
     </li>
     `;
   }
@@ -368,13 +394,33 @@ export default class ProjectRunReportElement extends LitElement {
   protected _requestsListItemTemplate(item: IRequestLog, index: number): TemplateResult {
     const title = item.request && item.request.url || `Request #${index}`;
     const active = index === this._selectedRequest;
+    const error = !item.response || ErrorResponse.isErrorResponse(item.response);
     const classes = {
       'list-item': true,
+      double: true,
+      error,
       active,
     };
+
+    let status = 0;
+    let statusText: string | undefined;
+    let duration = 0;
+    if (!error) {
+      const typed = item.response as IResponse;
+      status = typed.status;
+      statusText = typed.statusText;
+      duration = typed.loadingTime;
+    }
+    
     return html`
     <li class="${classMap(classes)}" data-index="${index}" data-type="request" tabindex="${active ? '0' : '-1'}">
-      <span class="list-content">${title}</span>
+      <div class="list-contents">
+        <div class="list-content">${title}</div>
+        <div class="secondary">
+          ${statusTemplate(status, statusText)}
+          ${duration}ms
+        </div>
+      </div>
     </li>`;
   }
 

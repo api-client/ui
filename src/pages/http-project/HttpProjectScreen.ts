@@ -33,7 +33,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
   static get routes(): IRoute[] {
     return [
       { pattern: '/default', method: 'defaultRoute', fallback: true, name: 'HTTP Project home', title: 'HTTP Project home' },
-      { pattern: '/404', method: 'e404Route', fallback: true, name: 'Not found', title: 'Not found' }
+      { pattern: '/404', method: 'e404Route', name: 'Not found', title: 'Not found' }
     ];
   }
 
@@ -97,6 +97,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     this.menu.addEventListener('execute', this._contextCommandHandler.bind(this)); 
     this._contextMenuMutationCallback = this._contextMenuMutationCallback.bind(this);
     this.menu.store.set('callback', this._contextMenuMutationCallback);
+    this.menu.store.set('layout', this.layout);
   }
 
   async initialize(): Promise<void> {
@@ -260,13 +261,13 @@ export default class HttpProjectScreen extends ApplicationScreen {
     const e = event as CustomEvent;
     const key = e.detail.key as string;
     const kind = e.detail.kind as string;
-    if (!key || !kind) {
+    if (!key || !kind || kind === ProjectFolderKind) {
       return;
     }
     this.layout.addItem({
       key,
       kind,
-      label: 'Test'
+      label: 'New panel'
     });
   }
 
@@ -398,8 +399,12 @@ export default class HttpProjectScreen extends ApplicationScreen {
     });
   }
 
-  protected openStart(): void {
-    Events.Navigation.App.runStart();
+  protected _runHandler(): void {
+    const { key } = this;
+    if (!key) {
+      return;
+    }
+    Events.Navigation.App.runProjectRunner({ key });
   }
 
   pageTemplate(): TemplateResult {
@@ -422,7 +427,10 @@ export default class HttpProjectScreen extends ApplicationScreen {
     return html`
     <header class="start-page-header">
       <h1 class="start-page-header-title">${title}</h1>
-      <anypoint-button emphasis="high" @click="${this._shareHandler}" class="toolbar-action">
+      <anypoint-button emphasis="low" @click="${this._runHandler}" class="toolbar-action">
+        <api-icon icon="playArrow"></api-icon> Run
+      </anypoint-button>
+      <anypoint-button emphasis="high" flat @click="${this._shareHandler}" class="toolbar-action">
         <api-icon icon="personAdd"></api-icon> Share
       </anypoint-button>
       <app-settings-menu .user="${this.user}" class="toolbar-action"></app-settings-menu>
@@ -469,7 +477,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     switch (item.kind) {
       case EnvironmentKind: return this.renderEnvironment(item, visible);
       case ProjectRequestKind: return this.renderProjectRequest(item, visible);
-      default: return html`<p>Unsupported object: ${item.kind}</p>`;
+      default: return html`<p ?hidden="${!visible}" data-key="${item.key}" >Unsupported object: ${item.kind}</p>`;
     }
   }
 

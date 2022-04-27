@@ -199,7 +199,7 @@ export default class LogTimings extends LitElement {
     return html`
     <section class="redirects">
       <h3 class="sub-title">Redirects</h3>
-      ${_data.map((item, index) => this._redirectItemTemplate(item, index))}
+      ${items.map((item, index) => this._redirectItemTemplate(item, index))}
       <h3 class="sub-title">Final request</h3>
       <div class="timings-row">
         <div class="redirect-value">

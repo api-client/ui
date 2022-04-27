@@ -8,7 +8,7 @@ import {
   HttpProject, ProjectFolder, ProjectRequest, ProjectFolderKind, ProjectRequestKind, 
   Environment, EnvironmentKind,
 } from '@api-client/core/build/browser.js';
-import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js'
+import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import { Events } from '../../events/Events.js';
 import '../../define/api-icon.js'
 import styles from './ProjectNavigationStyles.js';
@@ -59,6 +59,21 @@ export default class ProjectNavigationElement extends LitElement {
   @query('.name-change input')
   protected nameInput?: HTMLInputElement | null;
 
+  /**
+   * Computed value. Returns true when the project has any items to render in the view.
+   */
+  get hasItems(): boolean {
+    const { project } = this;
+    if (!project) {
+      return false;
+    }
+    // the HttpProject doesn't do any computations when folder is not set. It's just a copy of the source array.
+    const folders = project.listFolders();
+    const requests = project.listRequests();
+    const environments = project.listEnvironments();
+    return !!folders.length || !!requests.length || !!environments.length;
+  }
+
   connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('role', 'navigation');
@@ -89,15 +104,15 @@ export default class ProjectNavigationElement extends LitElement {
       return;
     }
     const kind = node.dataset.kind as string;
+    const key = node.dataset.key as string;
     if (kind === ProjectFolderKind) {
       const target = e.target as HTMLElement;
       if (target.localName === 'api-icon' && target.classList.contains('open-icon')) {
-        this._itemEnterAction(node);
+        this.toggleFolder(key);
         return;
       }
     }
     const { secondarySelected } = this;
-    const key = node.dataset.key as string;
     this.focusListItem(node);
     if (!secondarySelected.includes(key)) {
       secondarySelected.push(key);
@@ -133,6 +148,9 @@ export default class ProjectNavigationElement extends LitElement {
         continue;
       }
       const elm = target as HTMLElement;
+      if (elm.hasAttribute('data-disabled')) {
+        return undefined;
+      }
       if (elm.classList.contains('project-tree-item')) {
         return elm;
       }
@@ -151,6 +169,7 @@ export default class ProjectNavigationElement extends LitElement {
     const isFolder = node.classList.contains('folder-item');
     if (isFolder) {
       this.toggleFolder(key);
+      this._notifySelection(key, node.dataset.kind as string);
     } else {
       this.selected = key;
       this._notifySelection(key, node.dataset.kind as string);
@@ -282,6 +301,10 @@ export default class ProjectNavigationElement extends LitElement {
     this.requestUpdate();
   }
 
+  protected _isValidListItem(node: Element): boolean {
+    return node.localName === 'li' && !node.hasAttribute('data-disabled');
+  }
+
   /**
    * Focuses on the next node relative to the passed node.
    * 
@@ -294,7 +317,7 @@ export default class ProjectNavigationElement extends LitElement {
     }
     let current = node.nextElementSibling as HTMLElement;
     while (current) {
-      if (current.localName !== 'li' || current.hasAttribute('disabled')) {
+      if (!this._isValidListItem(current)) {
         current = node.nextElementSibling as HTMLElement;
         continue;
       }
@@ -318,7 +341,7 @@ export default class ProjectNavigationElement extends LitElement {
     }
     let current = node.previousElementSibling as HTMLElement;
     while (current) {
-      if (current.localName !== 'li' || current.hasAttribute('disabled')) {
+      if (!this._isValidListItem(current)) {
         current = node.previousElementSibling as HTMLElement;
         continue;
       }
@@ -354,7 +377,7 @@ export default class ProjectNavigationElement extends LitElement {
     }
     const children = Array.from(list.children);
     for (const child of children) {
-      if (child.localName !== 'li' || child.hasAttribute('disabled')) {
+      if (!this._isValidListItem(child)) {
         continue;
       }
       const typed = child as HTMLLIElement;
@@ -405,7 +428,7 @@ export default class ProjectNavigationElement extends LitElement {
       if (parent === this) {
         break;
       }
-      if (parent.localName === 'li' && !parent.hasAttribute('disabled')) {
+      if (this._isValidListItem(parent)) {
         return parent;
       }
       parent = parent.parentElement as HTMLElement;
@@ -418,7 +441,7 @@ export default class ProjectNavigationElement extends LitElement {
     if (!list || list.hasAttribute('hidden')) {
       return undefined;
     }
-    const li = Array.from(list.children).reverse().find(i => i.localName === 'li') as HTMLElement | undefined;
+    const li = Array.from(list.children).reverse().find(i => this._isValidListItem(i)) as HTMLElement | undefined;
     if (!li) {
       return undefined;
     }
@@ -442,10 +465,12 @@ export default class ProjectNavigationElement extends LitElement {
     if (!dt || !node) {
       return;
     }
-    dt.setData('text/kind', node.dataset.kind as string);
+    const kind = node.dataset.kind as string;
+    dt.setData('text/kind', kind);
+    dt.setData(kind, '');
     dt.setData('text/key', node.dataset.key as string);
     dt.setData('text/source', this.localName);
-    // dt.setData('text/httpproject', this.project!.key);
+    dt.setData('text/httpproject', this.project!.key);
     dt.effectAllowed = 'copyMove';
   }
 
@@ -538,16 +563,12 @@ export default class ProjectNavigationElement extends LitElement {
     }
   }
 
-  render(): TemplateResult {
+  render(): TemplateResult | string {
     const { project } = this;
     if (!project) {
       return html``;
     }
-    const folders = project.listFolders();
-    const requests = project.listRequests();
-    const environments = project.listEnvironments();
-    const hasItems = !!folders.length || !!requests.length || !!environments.length;
-    if (!hasItems) {
+    if (!this.hasItems) {
       return this._emptyStateTemplate();
     }
     return html`
@@ -558,14 +579,25 @@ export default class ProjectNavigationElement extends LitElement {
       @click="${this._clickHandler}"
       @keydown="${this._keydownHandler}"
     >
-      ${folders.map(f => this.renderFolder(f))}
-      ${environments.map(r => this.renderEnvironment(r))}
-      ${requests.map(r => this.renderRequest(r))}
+      ${this._renderParentChildrenTemplate(project)}
     </ul>
     `;
   }
 
-  protected _emptyStateTemplate(): TemplateResult {
+  protected _renderParentChildrenTemplate(parent: HttpProject | ProjectFolder): TemplateResult | string {
+    const { key } = parent;
+    const folders = parent.listFolders();
+    const requests = parent.listRequests();
+    const environments = parent.listEnvironments();
+    const isProject = parent.getProject() === undefined;
+    return html`
+    ${folders.map(f => this.renderFolder(f, isProject ? undefined : key))}
+    ${environments.map(r => this.renderEnvironment(r, isProject ? undefined : key))}
+    ${requests.map(r => this.renderRequest(r, isProject ? undefined : key))}
+    `;
+  }
+
+  protected _emptyStateTemplate(): TemplateResult | string {
     return html`
     <div class="empty-state">
       This project has no items.
@@ -573,7 +605,7 @@ export default class ProjectNavigationElement extends LitElement {
     `;
   }
 
-  protected renderFolder(folder: ProjectFolder, parentKey?: string): TemplateResult {
+  protected renderFolder(folder: ProjectFolder, parentKey?: string): TemplateResult | string {
     const { selected, focused, openedFolders, edited } = this;
     const { key } = folder;
     if (edited === key) {
@@ -583,7 +615,6 @@ export default class ProjectNavigationElement extends LitElement {
     const name = folder.info.name || 'Unnamed folder';
     const folders = project.listFolders({ folder: key });
     const requests = project.listRequests(key);
-    const environments = folder.listEnvironments();
     const opened = openedFolders.includes(key);
     const classes = {
       'tree-parent': true,
@@ -603,10 +634,12 @@ export default class ProjectNavigationElement extends LitElement {
       data-key="${key}"
       data-kind="${ProjectFolderKind}"
       data-size="${requests.length + folders.length}"
+      draggable="true"
+      @dragstart="${this._itemDragStartHandler}"
     >
       <div class="list-item-content">
         <api-icon icon="chevronRight" class="object-icon open-icon"></api-icon>
-        <span class="item-label">${name}</span>
+        <span class="item-label" title="${name}">${name}</span>
       </div>
       <ul 
         role="group" 
@@ -615,15 +648,13 @@ export default class ProjectNavigationElement extends LitElement {
         ?hidden="${!opened}" 
         aria-hidden="${opened ? 'false' : 'true'}"
       >
-        ${folders.map(f => this.renderFolder(f, key))}
-        ${environments.map(r => this.renderEnvironment(r, key))}
-        ${requests.map(r => this.renderRequest(r, key))}
+        ${this._renderParentChildrenTemplate(folder)}
       </ul>
     </li>
     `;
   }
 
-  protected renderRequest(request: ProjectRequest, parentKey?: string): TemplateResult {
+  protected renderRequest(request: ProjectRequest, parentKey?: string): TemplateResult | string {
     const { selected, focused, edited } = this;
     const { key } = request;
     if (edited === key) {
@@ -649,13 +680,13 @@ export default class ProjectNavigationElement extends LitElement {
     >
       <div class="list-item-content">
         <api-icon icon="request" class="object-icon"></api-icon>
-        <span class="item-label">${name}</span>
+        <span class="item-label" title="${name}">${name}</span>
       </div>
     </li>
     `;
   }
 
-  protected renderEnvironment(environment: Environment, parentKey?: string): TemplateResult {
+  protected renderEnvironment(environment: Environment, parentKey?: string): TemplateResult | string {
     const { selected, focused, edited } = this;
     const { key } = environment;
     if (edited === key) {
@@ -681,13 +712,13 @@ export default class ProjectNavigationElement extends LitElement {
     >
       <div class="list-item-content">
         <api-icon icon="environment" class="object-icon"></api-icon>
-        <span class="item-label">${name}</span>
+        <span class="item-label" title="${name}">${name}</span>
       </div>
     </li>
     `;
   }
 
-  protected renderNameInput(key: string, kind: string, oldName?: string): TemplateResult {
+  protected renderNameInput(key: string, kind: string, oldName?: string): TemplateResult | string {
     return html`
     <div class="name-change">
       <input type="text" .value=${oldName || ''} @keydown="${this._nameInputKeydown}" data-key="${key}" data-kind="${kind}"/>

@@ -120,6 +120,10 @@ export abstract class ApplicationScreen extends RouteMixin(RenderableMixin(Event
     // .
   }
 
+  protected openStart(): void {
+    Events.Navigation.App.runStart();
+  }
+
   /**
    * Creates a modal dialog with the error details.
    * @param message The message to render

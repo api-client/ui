@@ -1,4 +1,5 @@
 import { html, css, TemplateResult } from "lit";
+import { ClassInfo, classMap } from "lit/directives/class-map.js";
 
 export const StatusStyles = css`
 .status-code {
@@ -13,6 +14,7 @@ export const StatusStyles = css`
 .status-server-error::before {
   content: " ";
   width: 12px;
+  min-width: 12px;
   height: 12px;
   border-radius: 20px;
   background-color: gray;
@@ -39,6 +41,22 @@ export const StatusStyles = css`
 `;
 
 /**
+ * @param code The status code
+ * @returns The list of CSS classes defined in the `HttpStatus` library to apply to the status line.
+ */
+export function statusClasses(code: number): ClassInfo {
+  const result: ClassInfo = {
+    'status-code': true,
+    'status-info': code >= 100 && code < 200,
+    'status-ok': code >= 200 && code < 300,
+    'status-redirect': code >= 300 && code < 400,
+    'status-client-error': code >= 400 && code < 500,
+    'status-server-error': code === 0 || code >= 500,
+  }
+  return result;
+}
+
+/**
  * The template for the status code UI region.
  * Include `StatusStyles` exported by this library into your styles.
  * 
@@ -47,17 +65,6 @@ export const StatusStyles = css`
  * @returns The template for the status code.
  */
 export function statusTemplate(code: number, text?: string): TemplateResult {
-  let codeClass = '';
-  if (code >= 100 && code < 200) {
-    codeClass = 'status-info';
-  } else if (code >= 200 && code < 300) {
-    codeClass = 'status-ok';
-  } else if (code >= 300 && code < 400) {
-    codeClass = 'status-redirect';
-  } else if (code >= 400 && code < 500) {
-    codeClass = 'status-client-error';
-  } else {
-    codeClass = 'status-server-error';
-  }
-  return html`<span class="status-code ${codeClass}">${code} ${text || ''}</span>`;
+  const classes = statusClasses(code);
+  return html`<span class="${classMap(classes)}">${code} ${text || ''}</span>`;
 }

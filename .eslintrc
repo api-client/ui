@@ -40,6 +40,14 @@
       }
     },
     {
+      "files": [
+        "src/elements/**/*.ts"
+      ],
+      "rules": {
+        "class-methods-use-this": "off"
+      }
+    },
+    {
       "files": [ "src/**/*.ts" ],
       "rules": {
         "no-useless-constructor": "off",

@@ -316,7 +316,7 @@ export default class LogBodyElement extends LitElement {
         templates.push(`{…file content…}${lineBreak}`);
       }
     });
-    templates.push(`--${boundary}${lineBreak}--`);
+    templates.push(`--${boundary}--${lineBreak}`);
     const code = templates.join('');
     if (raw) {
       return code;

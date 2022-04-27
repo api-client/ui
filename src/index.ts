@@ -11,6 +11,7 @@ export { default as AnalyticsConsentScreen } from "./pages/init/AnalyticsConsent
 export { default as StartScreen } from "./pages/start/StartScreen.js";
 export { default as HttpProjectScreen } from "./pages/http-project/HttpProjectScreen.js";
 export { default as StoreConfigScreen } from "./pages/store/StoreConfigScreen.js";
+export { default as ProjectRunnerScreen } from "./pages/project-runner/ProjectRunnerScreen.js";
 
 // Bindings
 

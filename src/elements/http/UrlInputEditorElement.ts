@@ -323,7 +323,8 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
    */
   async [readAutocomplete](q: string): Promise<void> {
     try {
-      this[suggestionsValue] = await Events.AppData.Http.UrlHistory.query(q, this);
+      const value = await Events.AppData.Http.UrlHistory.query(q, this);
+      this[suggestionsValue] = value && value.filter(i => !!i);
     } catch (e) {
       this[suggestionsValue] = undefined;
     }

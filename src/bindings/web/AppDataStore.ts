@@ -96,9 +96,10 @@ export default class AppDataStore {
       store.openKeyCursor().onsuccess = (e: Event): void => {
         const cursor = (e.target as IDBRequest<IDBCursor | null>).result;
         if (cursor) {
-          const url = cursor.key.toString().toLowerCase();
+          const value = cursor.key.toString();
+          const url = value.toLowerCase();
           if (url.includes(q)) {
-            result.push(url);
+            result.push(value);
           }
           cursor.continue();
         }
@@ -118,7 +119,9 @@ export default class AppDataStore {
         const request = store.get(key);
         request.onsuccess = (): void => {
           const data = request.result as IUrl;
-          result.push(data);
+          if (data) {
+            result.push(data);
+          }
         };
       });
     });

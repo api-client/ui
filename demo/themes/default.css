@@ -15,6 +15,7 @@ body {
   --primary-background-color: #ffffff;
   --secondary-background-color: #ffffff;
   --dark-divider-opacity: 0.12;
+  --divider-color: rgba(0, 0, 0, var(--dark-divider-opacity));
   --link-color: #0047b2;
   --disabled-text-color: rgba(0, 0, 0, 0.38);
 
@@ -23,6 +24,7 @@ body {
   --anypoint-dropdown-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
   --anypoint-autocomplete-dropdown-shadow: var(--anypoint-dropdown-shadow);
   --anypoint-button-emphasis-high-background-color: var(--accent-color);
+  --anypoint-checkbox-label-color: var(--primary-text-color);
 
   --code-font-family: 'Roboto Mono', 'Consolas', 'Menlo', monospace;
 

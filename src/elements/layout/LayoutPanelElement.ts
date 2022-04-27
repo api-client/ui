@@ -100,6 +100,12 @@ export default class LayoutPanelElement extends LitElement {
       text-transform: none;
     }
 
+    .tab-label {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
     .layout-tab.selected {
       /* z-index: 2; */
       background-color: var(--request-editor-url-area-background-color, #f6f6f6);
@@ -178,7 +184,9 @@ export default class LayoutPanelElement extends LitElement {
     if (!Array.isArray(dragTypes)) {
       return true;
     }
-    return !dragTypes.some(type => !dt.types.includes(type));
+    const eventTypes = [...dt.types];
+    const allowedTypes = dragTypes.map(i => i.toLowerCase());
+    return !allowedTypes.some(type => !eventTypes.includes(type));
   }
 
   protected panelCanDrop(e: DragEvent): boolean {
@@ -311,7 +319,7 @@ export default class LayoutPanelElement extends LitElement {
     return undefined;
   }
 
-  protected _tabSelectHandler(e: Event): void {
+  protected async _tabSelectHandler(e: Event): Promise<void> {
     if (!this.panel) {
       return;
     }
@@ -319,9 +327,17 @@ export default class LayoutPanelElement extends LitElement {
     if (!key) {
       return;
     }
+    if (this.panel.selected === key) {
+      return;
+    }
     this.panel.selected = key;
     this.panel.manager.changed();
     this.requestUpdate();
+    await this.updateComplete;
+    const child = this.querySelector(`[data-key="${key}"]`);
+    if (child) {
+      child.dispatchEvent(new Event('resize'));
+    }
   }
 
   /**
@@ -361,6 +377,10 @@ export default class LayoutPanelElement extends LitElement {
 
   protected closeTab(key: string): void {
     if (this.panel) {
+      const item = this.panel.items.find(i => i.key === key)!;
+      if (item.persistent && item.pinned) {
+        return;
+      }
       this.panel.removeItem(key);
       this.requestUpdate();
     } else {
@@ -525,6 +545,7 @@ export default class LayoutPanelElement extends LitElement {
     const { key, kind, label, index=0, icon } = item;
     const { panel } = this;
     const selected = !!panel && panel.selected === key;
+    const closable = !item.persistent && !item.pinned;
     const classes = {
       'layout-tab': true,
       selected,
@@ -545,8 +566,8 @@ export default class LayoutPanelElement extends LitElement {
       tabindex="0"
     >
       ${icon ? html`<api-icon icon="${icon}" class="tab-favicon"></api-icon>` : ''}
-      ${label}
-      <api-icon icon="cancelFilled" class="close-icon" @click="${this._tabCloseHandler}"></api-icon>
+      <span class="tab-label">${label}</span>
+      ${closable ? html`<api-icon icon="cancelFilled" class="close-icon" @click="${this._tabCloseHandler}"></api-icon>` : ''}
     </div>
     `;
   }

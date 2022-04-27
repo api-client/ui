@@ -44,6 +44,10 @@ export interface ILayoutItem {
    * The icon defined in the internal library to render with the tab.
    */
   icon?: IconType;
+  /**
+   * A tab that is always present in the layout. The user can't close this tab.
+   */
+  persistent?: boolean;
 }
 
 export interface ILayoutOptions {
@@ -337,6 +341,30 @@ export class LayoutPanel {
     this.manager.changed();
     this.manager.forceUpdateLayout(this.id);
     return removed;
+  }
+
+  /**
+   * @param key The key of the item to perform a relative operation from.
+   * @param dir The direction to which close other items. Default to both directions leaving only the `key` item
+   */
+  relativeClose(key: string, dir: 'left' | 'right' | 'both' = 'both'): void {
+    const index = this.items.findIndex(i => i.key === key);
+    if (index < 0) {
+      return;
+    }
+    const item = this.items[index];
+    if (dir === 'both') {
+      this.items = [item];
+      this.selected = item.key;
+    } else if (dir === 'left') {
+      this.items = this.items.splice(index);
+      this.selected = item.key;
+    } else {
+      this.items = this.items.splice(0, index + 1);
+      this.selected = item.key;
+    }
+    this.manager.changed();
+    this.manager.forceUpdateLayout(this.id);
   }
 
   removePanel(id: number): void {
@@ -675,7 +703,6 @@ export class LayoutManager extends EventTarget {
     return undefined;
   }
 
-
   /**
    * Finds a layout item.
    * @param key the key of the item to find.
@@ -711,6 +738,28 @@ export class LayoutManager extends EventTarget {
     }
     activePanel.addItem(item);
     this.forceUpdateLayout();
+  }
+
+  /**
+   * Removes an item from layout.
+   * @param key The key of the item to remove.
+   */
+  removeItem(key: string): void {
+    const panel = this.findItemPanel(key);
+    if (panel) {
+      panel.removeItem(key);
+    }
+  }
+
+  /**
+   * @param key The key of the item to perform a relative operation from.
+   * @param dir The direction to which close other items. Default to both directions leaving only the `key` item
+   */
+  relativeClose(key: string, dir: 'left' | 'right' | 'both' = 'both'): void {
+    const panel = this.findItemPanel(key);
+    if (panel) {
+      panel.relativeClose(key, dir);
+    }
   }
 
   /**

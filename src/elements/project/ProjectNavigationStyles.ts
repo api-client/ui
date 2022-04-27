@@ -23,12 +23,18 @@ ul {
   /* color: var(--accent-color); */
 }
 
-.list-item-content:hover {
+:not([data-disabled]) .list-item-content:hover {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
 li {
   outline: none;
+  list-style: none;
+}
+
+li[data-disabled] {
+  pointer-events: none;
+  opacity: 0.38;
 }
 
 li:focus > .list-item-content,
@@ -42,6 +48,9 @@ li.focused > .list-item-content {
 
 .item-label {
   font-size: medium;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 li[data-parent] {

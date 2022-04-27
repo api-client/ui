@@ -1,9 +1,10 @@
 import { ContextMenuCommand } from '@api-client/context-menu';
 import { HttpProject, ProjectRequestKind } from '@api-client/core/build/browser.js';
-import { folder, rename, deleteFile, environment, request } from '../../elements/icons/Icons.js';
+import { folder, rename, deleteFile, environment, request, close } from '../../elements/icons/Icons.js';
 import ProjectNavigationElement from '../../elements/project/ProjectNavigationElement.js';
 import '../../define/rename-file-dialog.js';
 import { Events } from '../../events/Events.js';
+import { LayoutManager } from '../../elements/layout/LayoutManager.js';
 
 function findNavigation(element: HTMLElement): ProjectNavigationElement {
   const root = element.getRootNode() as ShadowRoot;
@@ -157,6 +158,24 @@ const commands: ContextMenuCommand[] = [
   },
   {
     target: 'li.project-tree-item.request-item',
+    label: 'Duplicate',
+    title: 'Makes a duplicate of this request',
+    execute: (init): void => {
+      const key = init.target.dataset.key as string;
+      const project = init.store.get('project') as HttpProject;
+      const obj = project.findRequest(key);
+      if (!obj) {
+        return;
+      }
+      const callback = init.store.get('callback') as Function;
+      const parent = obj.getParent() || project;
+      const cp = obj.clone();
+      parent.addRequest(cp);
+      callback();
+    },
+  },
+  {
+    target: 'li.project-tree-item.request-item',
     label: 'Delete',
     icon: deleteFile,
     title: 'Deletes this request',
@@ -243,6 +262,103 @@ const commands: ContextMenuCommand[] = [
         }
       });
     }
+  },
+
+  {
+    target: '.layout-tab',
+    label: 'Duplicate',
+    visible: (ctx): boolean => {
+      const { kind, key } = ctx.target.dataset;
+      if (!kind || !key) {
+        return false;
+      }
+      if (kind !== ProjectRequestKind) {
+        return false;
+      }
+      return true;
+    },
+    execute: (init): void => {
+      const { kind, key } = init.target.dataset;
+      if (!kind || !key) {
+        return;
+      }
+      if (kind !== ProjectRequestKind) {
+        return;
+      }
+      
+      const project = init.store.get('project') as HttpProject;
+      const obj = project.findRequest(key);
+      if (!obj) {
+        return;
+      }
+      const callback = init.store.get('callback') as Function;
+      const layout = init.store.get('layout') as LayoutManager;
+      const parent = obj.getParent() || project;
+      const cp = obj.clone();
+      parent.addRequest(cp);
+      layout.addItem({
+        key: cp.key,
+        kind,
+        label: 'New request'
+      });
+      callback();
+    }
+  },
+
+  {
+    target: '.layout-tab',
+    label: '',
+    type: 'separator',
+  },
+
+  {
+    target: '.layout-tab',
+    label: 'Close',
+    icon: close,
+    execute: (init): void => {
+      const { key } = init.target.dataset;
+      if (!key) {
+        return;
+      }
+      const layout = init.store.get('layout') as LayoutManager;
+      layout.removeItem(key);
+    }
+  },
+  {
+    target: '.layout-tab',
+    label: 'Close others',
+    execute: (init): void => {
+      const { key } = init.target.dataset;
+      if (!key) {
+        return;
+      }
+      const layout = init.store.get('layout') as LayoutManager;
+      layout.relativeClose(key, 'both');
+    },
+  },
+  {
+    target: '.layout-tab',
+    label: 'Close on the right',
+    execute: (init): void => {
+      const { key } = init.target.dataset;
+      if (!key) {
+        return;
+      }
+      const layout = init.store.get('layout') as LayoutManager;
+      layout.relativeClose(key, 'right');
+    },
+  },
+  {
+    target: '.layout-tab',
+    label: 'Close on the left',
+    execute: (init): void => {
+      const { key } = init.target.dataset;
+      if (!key) {
+        return;
+      }
+      const layout = init.store.get('layout') as LayoutManager;
+      layout.relativeClose(key, 'left');
+    },
   }
 ];
 

@@ -99,10 +99,10 @@ class ComponentDemoPage extends DemoPage {
   async generateResponse(): Promise<IRequestLog> {
     const init: IRequestLogInit = {
       response: {
-        statusGroup: 2,
-        payload: {
-          force: true,
-        },
+        // statusGroup: 2,
+        // payload: {
+        //   force: true,
+        // },
         timings: true,
       },
     };
@@ -121,6 +121,7 @@ class ComponentDemoPage extends DemoPage {
   navigationTemplate(): TemplateResult {
     return html`
     <nav @click="${this._generatorClick}" @keydown="${this._generatorKeydown}">
+      <button class="nav-item" data-generator="iteration" data-type="any">Random</button>
       <button class="nav-item" data-generator="iteration" data-type="single">Single iteration</button>
     </nav>
     `;
