@@ -2,7 +2,7 @@
 import { 
   IBackendInfo, ProjectKind, WorkspaceKind, IListOptions, IListResponse, IFile,
   IHttpProject, IFileCreateOptions, AccessOperation, IUser, IBackendEvent,
-  Workspace, HttpProject, IAccessPatchInfo, IPatchInfo, IPatchRevision, IApplication,
+  Workspace, HttpProject, IAccessPatchInfo, IPatchInfo, IPatchRevision, IApplication, IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { PlatformBindings } from './PlatformBindings.js';
@@ -63,6 +63,13 @@ export abstract class StoreBindings extends PlatformBindings {
     // User
     window.addEventListener(EventTypes.Store.User.me, this.userMeHandler.bind(this));
     window.addEventListener(EventTypes.Store.User.list, this.listUsersHandler.bind(this));
+
+    // history
+    window.addEventListener(EventTypes.Store.History.create, this.historyCreateHandler.bind(this));
+    window.addEventListener(EventTypes.Store.History.createBulk, this.historyCreateBulkHandler.bind(this));
+    window.addEventListener(EventTypes.Store.History.delete, this.historyDeleteHandler.bind(this));
+    window.addEventListener(EventTypes.Store.History.list, this.historyListHandler.bind(this));
+    window.addEventListener(EventTypes.Store.History.read, this.historyReadHandler.bind(this));
   }
 
   protected initEnvHandler(input: Event): void {
@@ -197,6 +204,36 @@ export abstract class StoreBindings extends PlatformBindings {
     const e = input as CustomEvent;
     e.preventDefault();
     e.detail.result = this.listUsers(e.detail.options);
+  }
+
+  protected historyCreateHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.historyCreate(e.detail.history);
+  }
+
+  protected historyCreateBulkHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.historyCreateBulk(e.detail.info);
+  }
+
+  protected historyDeleteHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.historyDelete(e.detail.key);
+  }
+
+  protected historyListHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.historyList(e.detail.init);
+  }
+
+  protected historyReadHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.historyRead(e.detail.key);
   }
 
   /**
@@ -598,5 +635,69 @@ export abstract class StoreBindings extends PlatformBindings {
       throw new Error(`Environment is not set.`);
     }
     return store.sdk.user.list(options);
+  }
+
+  /**
+   * Creates a single history item.
+   * 
+   * @param history The history item to create.
+   * @returns The key of the created item.
+   */
+  async historyCreate(history: IHttpHistory): Promise<string> {
+    const { store } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    return store.sdk.history.create(history);
+  }
+
+  /**
+   * Creates a single history item.
+   * 
+   * @param info The history bulk info data object
+   * @returns The key of the created item.
+   */
+  async historyCreateBulk(info: IHttpHistoryBulkAdd): Promise<string[]> {
+    const { store } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    return store.sdk.history.createBulk(info);
+  }
+
+  /**
+   * Lists history for data.
+   * @param init The history query options.
+   */
+  async historyList(init: HistoryListOptions): Promise<IListResponse<IHttpHistory>> {
+    const { store } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    return store.sdk.history.list(init);
+  }
+
+  /**
+   * Deletes a history item or a list of history items.
+   * @param key The key or list of keys to delete.
+   */
+  async historyDelete(key: string | string[]): Promise<void> {
+    const { store } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    return store.sdk.history.delete(key as string);
+  }
+
+  /**
+   * Reads a single history item from the store.
+   * @param key The key of the item to read.
+   */
+  async historyRead(key: string): Promise<IHttpHistory> {
+    const { store } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    return store.sdk.history.read(key);
   }
 }

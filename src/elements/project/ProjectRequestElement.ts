@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { css, CSSResult, html, PropertyValueMap, TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents, IProjectRunnerOptions, EventUtils } from '@api-client/core/build/browser.js';
+import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents, IProjectRunnerOptions, EventUtils, IHttpHistory, HttpHistoryKind, IRequestLog, IApplication } from '@api-client/core/build/browser.js';
 import HttpRequestElement from '../http/HttpRequestElement.js';
 import { Events } from '../../events/Events.js';
 import '../../define/request-log.js';
@@ -63,6 +63,12 @@ export default class ProjectRequestElement extends HttpRequestElement {
    * The key of the request being processed.
    */
   @property({ type: String, reflect: true }) key?: string;
+
+  /**
+   * This property is required for the API access to work.
+   * Set it to the current application information.
+   */
+  @property({ type: Object }) appInfo?: IApplication;
 
   @state() expects?: HttpRequest;
 
@@ -246,10 +252,31 @@ export default class ProjectRequestElement extends HttpRequestElement {
       request.setLog(report);
       this.notifyRequestChanged();
       this.requestUpdate();
+      this._addHistory(report);
     } catch (e) {
       // 
     }
     this.loading = false;
+  }
+
+  protected async _addHistory(report: IRequestLog): Promise<void> {
+    const { appInfo, project, key } = this;
+    if (!appInfo) {
+      throw new Error(`The appInfo is not set on ${this.localName}`);
+    }
+    if (!project || !key) {
+      return;
+    }
+    const item: IHttpHistory = {
+      created: Date.now(),
+      kind: HttpHistoryKind,
+      log: report,
+      app: appInfo.code,
+      project: project.key,
+      request: key,
+      user: '',
+    };
+    await Events.Store.History.create(item);
   }
 
   protected _beforeResizeHandler(e: CustomEvent<ResizeEventDetail>): void {

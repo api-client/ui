@@ -15,6 +15,7 @@ import NavElement from '../../elements/project/ProjectRunnerNavigationElement.js
 import { ILayoutItem, LayoutManager } from '../../elements/layout/LayoutManager.js';
 import '../../define/project-runner-navigation.js';
 import '../../define/project-runner.js';
+import AppInfo from './AppInfo.js';
 
 export default class HttpProjectScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
@@ -310,14 +311,14 @@ export default class HttpProjectScreen extends ApplicationScreen {
       `;
     }
     return html`
-    <project-runner ?hidden="${!visible}" data-key="${key}" .project="${project}" folder="${key}"></project-runner>
+    <project-runner ?hidden="${!visible}" data-key="${key}" .project="${project}" .appInfo="${AppInfo}" folder="${key}"></project-runner>
     `;
   }
 
   protected renderProjectRunner(item: ILayoutItem, visible: boolean): TemplateResult {
     const { key } = item;
     return html`
-    <project-runner ?hidden="${!visible}" data-key="${key}" .project="${this.project}"></project-runner>
+    <project-runner ?hidden="${!visible}" data-key="${key}" .project="${this.project}" .appInfo="${AppInfo}"></project-runner>
     `;
   }
 }

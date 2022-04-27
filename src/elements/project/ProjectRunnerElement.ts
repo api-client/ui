@@ -1,7 +1,7 @@
 import { LitElement, html, TemplateResult, CSSResult, css, PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { 
-  HttpProject, ProjectFolder, IProjectRunnerOptions, Events as CoreEvents, IProjectExecutionLog,
+  HttpProject, ProjectFolder, IProjectRunnerOptions, Events as CoreEvents, IProjectExecutionLog, IApplication, IHttpHistoryBulkAdd, IRequestLog,
 } from '@api-client/core/build/browser.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-tabs.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-tab.js';
@@ -11,6 +11,7 @@ import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-progress.js';
 import { AnypointCheckboxElement, AnypointInputElement, AnypointTabsElement } from '@anypoint-web-components/awc';
 import '../../define/project-run-report.js';
+import { Events } from '../../events/Events.js';
 
 export default class ProjectRunnerElement extends LitElement {
   static get styles(): CSSResult[] {
@@ -79,6 +80,12 @@ export default class ProjectRunnerElement extends LitElement {
    * The instance of the current project.
    */
   @property({ type: Object }) project?: HttpProject;
+
+  /**
+   * This property is required for the API access to work.
+   * Set it to the current application information.
+   */
+  @property({ type: Object }) appInfo?: IApplication;
 
   /**
    * The key of the folder to render the runner for.
@@ -169,12 +176,34 @@ export default class ProjectRunnerElement extends LitElement {
       const result = await CoreEvents.Transport.Project.send(this, project.key, init);
       if (!result) {
         this._lastError = 'The project execution event was not handled.';
+      } else {
+        this._lastResult = result;
+        this._createHistory(result);
       }
-      this._lastResult = result;
     } catch (e) {
       this._lastError = (e as Error).message;
     }
     this._running = false;
+  }
+
+  protected async _createHistory(result: IProjectExecutionLog): Promise<void> {
+    const { appInfo, project } = this;
+    if (!appInfo) {
+      throw new Error(`The appInfo is not set on ${this.localName}`);
+    }
+    if (!project) {
+      return;
+    }
+    let log: IRequestLog[] = [];
+    result.iterations.forEach((item) => {
+      log = log.concat(item.executed);
+    });
+    const info: IHttpHistoryBulkAdd = {
+      app: appInfo.code,
+      project: project.key,
+      log,
+    };
+    await Events.Store.History.createBulk(info);
   }
 
   protected render(): TemplateResult {

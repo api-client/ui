@@ -496,6 +496,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
       data-key="${key}" 
       key="${key}" 
       .project="${project}" 
+      .appInfo="${AppInfo}"
       renderSend
       @change="${this._requestChangeHandler}"
     ></project-request>

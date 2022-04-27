@@ -1,7 +1,7 @@
 /* eslint-disable no-redeclare */
 import { 
   IBackendInfo, IListOptions, WorkspaceKind, ProjectKind, IListResponse, IFile, IFileCreateOptions,
-  IHttpProject, AccessOperation, IBackendEvent, IUser, IPatchRevision, IApplication,
+  IHttpProject, AccessOperation, IBackendEvent, IUser, IPatchRevision, IApplication, IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { IConfigEnvironment, IConfigInit } from '../lib/config/Config.js';
@@ -501,6 +501,73 @@ export const StoreEvents = Object.freeze({
       });
       target.dispatchEvent(e);
       return ((e.detail.result as unknown) as Promise<IListResponse<IUser>>);
+    },
+  }),
+  History: Object.freeze({
+    create: async (history: IHttpHistory, target: EventTarget=document.body): Promise<string> => {
+      const e = new CustomEvent(EventTypes.Store.History.create, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          history,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<string>);
+    },
+    createBulk: async (info: IHttpHistoryBulkAdd, target: EventTarget=document.body): Promise<string[]> => {
+      const e = new CustomEvent(EventTypes.Store.History.createBulk, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          info,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<string[]>);
+    },
+    list: async (init: HistoryListOptions, target: EventTarget=document.body): Promise<IListResponse<IHttpHistory>> => {
+      const e = new CustomEvent(EventTypes.Store.History.list, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          init,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<IListResponse<IHttpHistory>>);
+    },
+    delete: async (key: string | string[], target: EventTarget=document.body): Promise<void> => {
+      const e = new CustomEvent(EventTypes.Store.History.delete, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          key,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      await ((e.detail.result as unknown) as Promise<void>);
+    },
+    read: async (key: string, target: EventTarget=document.body): Promise<IHttpHistory> => {
+      const e = new CustomEvent(EventTypes.Store.History.read, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          key,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<IHttpHistory>);
     },
   }),
 });
