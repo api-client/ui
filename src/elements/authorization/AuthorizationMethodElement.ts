@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { html, LitElement, CSSResult, PropertyValueMap, TemplateResult } from "lit";
 import { property } from 'lit/decorators.js';
-import { HttpCertificate, IOauth2GrantType, IOauth2ResponseType, IOidcTokenError, IOidcTokenInfo, OAuth2DeliveryMethod } from "@api-client/core/build/browser.js";
+import { HttpCertificate, IOauth2GrantType, IOauth2ResponseType, IOidcTokenError, IOidcTokenInfo, OAuth2DeliveryMethod, AuthorizationUtils } from "@api-client/core/build/browser.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-input.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-masked-input.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-dropdown-menu.js";
@@ -10,16 +10,6 @@ import "@anypoint-web-components/awc/dist/define/anypoint-item.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-button.js";
 import authStyles from "./CommonAuthStyles.js";
 import { validateForm } from "./Validation.js";
-import {
-  normalizeType,
-  METHOD_BASIC,
-  METHOD_BEARER,
-  METHOD_NTLM,
-  METHOD_DIGEST,
-  METHOD_OAUTH2,
-  METHOD_OIDC,
-  METHOD_CC,
-} from "./Utils.js";
 import { UiDataHelper } from "./ui/UiDataHelper.js";
 import { AllowedScope } from './OAuth2ScopeSelectorElement.js';
 import { Oauth2Credentials, AuthUiInit } from './types.js';
@@ -31,6 +21,17 @@ import Digest from './ui/Digest.js';
 import OAuth2 from './ui/OAuth2.js';
 import OpenID from './ui/OpenID.js';
 import ClientCertificate from './ui/ClientCertificate.js';
+
+const {
+  normalizeType,
+  METHOD_BASIC,
+  METHOD_BEARER,
+  METHOD_NTLM,
+  METHOD_DIGEST,
+  METHOD_OAUTH2,
+  METHOD_OIDC,
+  METHOD_CC,
+} = AuthorizationUtils;
 
 export const typeChangedSymbol = Symbol("typeChangedSymbol");
 export const typeValue = Symbol("typeValue");

@@ -9,6 +9,7 @@ import {
   IHttpRequest,
   HttpRequest,
   RequestUiMeta,
+  SecurityProcessor,
 } from '@api-client/core/build/browser.js';
 import { EventsTargetMixin, ResizableMixin, AnypointTabsElement } from '@anypoint-web-components/awc';
 import "@anypoint-web-components/awc/dist/define/anypoint-dropdown.js";
@@ -24,7 +25,6 @@ import '../../define/body-editor.js';
 import UrlInputEditorElement from './UrlInputEditorElement.js';
 import HeadersEditorElement from './HeadersEditorElement.js';
 import elementStyles from './HttpRequestElementStyles.js';
-import { SecurityProcessor } from '../../lib/security/SecurityProcessor.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import { Events } from '../../events/Events.js';
 import authorizationTemplates from './RequestAuth.template.js';

@@ -1,17 +1,19 @@
 /* eslint-disable arrow-body-style */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { KnownGrants } from '@api-client/core/build/browser.js';
+import { KnownGrants, AuthorizationUtils } from '@api-client/core/build/browser.js';
 import { AnypointInputElement } from '@anypoint-web-components/awc';
-import {
+import AuthorizationMethod from './AuthorizationMethodElement.js';
+
+const {
   normalizeType,
   METHOD_BASIC,
   METHOD_BEARER,
   METHOD_NTLM,
   METHOD_DIGEST,
   METHOD_OAUTH2,
+  METHOD_OIDC,
   METHOD_CC,
-} from './Utils.js';
-import AuthorizationMethod from './AuthorizationMethodElement.js';
+} = AuthorizationUtils;
 
 /**
  * Validates basic authorization form.

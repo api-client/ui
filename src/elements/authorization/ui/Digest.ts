@@ -1,7 +1,6 @@
 import { html, TemplateResult } from "lit";
-import { IDigestAuthorization } from "@api-client/core/build/browser.js";
+import { IDigestAuthorization, AuthorizationUtils } from "@api-client/core/build/browser.js";
 import { inputTemplate, passwordTemplate } from "../CommonTemplates.js";
-import { generateCnonce } from "../Utils.js";
 import md5 from "../../../lib/3rd-party/md5.js";
 import AuthUiBase from "./AuthUiBase.js";
 
@@ -241,7 +240,7 @@ export default class Digest extends AuthUiBase {
       changed = true;
     }
     if (!this.cnonce) {
-      this.cnonce = generateCnonce();
+      this.cnonce = AuthorizationUtils.generateCnonce();
       changed = true;
     }
     if (changed) {

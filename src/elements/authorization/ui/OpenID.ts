@@ -1,11 +1,11 @@
 /* eslint-disable class-methods-use-this */
 import { html, TemplateResult } from "lit";
 import '@github/time-elements';
-import { IOauth2GrantType, IOauth2ResponseType, IOidcAuthorization, IOidcTokenError, IOidcTokenInfo, KnownGrants, IOpenIdProviderMetadata, Events as CoreEvents } from "@api-client/core/build/browser.js";
+import { IOauth2GrantType, IOauth2ResponseType, IOidcAuthorization, IOidcTokenError, IOidcTokenInfo, KnownGrants, IOpenIdProviderMetadata, Events as CoreEvents, AuthorizationUtils } from "@api-client/core/build/browser.js";
 import { AnypointListboxElement } from "@anypoint-web-components/awc";
 import OAuth2 from './OAuth2.js';
 import { inputTemplate } from '../CommonTemplates.js';
-import { generateState, selectNode } from "../Utils.js";
+import { selectNode } from "../Utils.js";
 import { AuthUiInit } from '../types.js';
 
 export const GrantLabels: Record<string, string> = {
@@ -130,7 +130,7 @@ export default class OpenID extends OAuth2 {
     this.requestUpdate();
     this.notifyChange();
     const detail = this.serialize();
-    const state = generateState();
+    const state = AuthorizationUtils.generateState();
     detail.state = state;
 
     try {

@@ -4,7 +4,7 @@ import { DeserializedPayload } from "@api-client/core/build/browser.js";
  * @param body The body 
  * @param charset The optional charset to use with the text decoder.
  */
- export function ensureBodyString(body: DeserializedPayload, charset?: string): string | undefined {
+export function ensureBodyString(body: DeserializedPayload, charset?: string): string | undefined {
   if (body === undefined || body === null) {
     return undefined;
   }
@@ -84,9 +84,9 @@ export const defaultBinaryTypes = [
  * @returns True when the body is a JSON body.
  */
 export function isJsonBody(mime: string): boolean {
-  return mime.includes('/json') || 
+  return mime.includes('/json') ||
     // all kinds of +json like ld+json, graph+json, whatever+json
-    mime.includes('+json') || 
+    mime.includes('+json') ||
     // The legacy JSON mime before official registration.
     mime.includes('text/x-json')
 }

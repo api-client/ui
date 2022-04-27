@@ -198,6 +198,9 @@ export default class ProjectRunnerElement extends LitElement {
     result.iterations.forEach((item) => {
       log = log.concat(item.executed);
     });
+    if (!log.length) {
+      return;
+    }
     const info: IHttpHistoryBulkAdd = {
       app: appInfo.code,
       project: project.key,

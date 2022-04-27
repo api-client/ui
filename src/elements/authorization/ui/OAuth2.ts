@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this */
 import { html, TemplateResult } from "lit";
-import { IOAuth2Authorization, IOauth2GrantType, ITokenInfo, OAuth2DeliveryMethod, KnownGrants, Events as CoreEvents } from "@api-client/core/build/browser.js";
+import { IOAuth2Authorization, IOauth2GrantType, ITokenInfo, OAuth2DeliveryMethod, KnownGrants, Events as CoreEvents, AuthorizationUtils } from "@api-client/core/build/browser.js";
 import { AnypointCheckboxElement, AnypointListboxElement, AnypointSwitchElement } from "@anypoint-web-components/awc";
 import '@anypoint-web-components/awc/dist/define/anypoint-switch.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-checkbox.js';
@@ -10,9 +10,11 @@ import '../../../define/api-icon.js';
 import { passwordTemplate, inputTemplate } from '../CommonTemplates.js';
 import AuthUiBase from "./AuthUiBase.js";
 import '../../../define/oauth2-scope-selector.js';
-import { CUSTOM_CREDENTIALS, generateState, readUrlValue, selectNode, validateRedirectUri } from "../Utils.js";
+import { selectNode } from "../Utils.js";
 import { Oauth2Credentials, AuthUiInit, CredentialsInfo } from '../types.js';
 import OAuth2ScopeSelectorElement, { AllowedScope } from "../OAuth2ScopeSelectorElement.js";
+
+const { CUSTOM_CREDENTIALS, generateState, readUrlValue, validateRedirectUri } = AuthorizationUtils;
 
 /**
  * List of OAuth 2.0 default response types.

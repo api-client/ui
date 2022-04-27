@@ -74,6 +74,13 @@ export default class ProjectRequestElement extends HttpRequestElement {
 
   protected request?: ProjectRequest;
 
+  /**
+   * Thr page cursor for the history list.
+   */
+  protected _historyCursor?: string;
+
+  protected _history?: IHttpHistory[];
+
   constructor() {
     super();
     this.eventsTarget = this;
@@ -95,6 +102,8 @@ export default class ProjectRequestElement extends HttpRequestElement {
     this.environments = undefined;
     this.environment = undefined;
     this.ui = undefined;
+    this._history = undefined;
+    this._historyCursor = undefined;
   }
 
   protected _processRequestChange(): void {
@@ -120,6 +129,7 @@ export default class ProjectRequestElement extends HttpRequestElement {
     this._computeSnippetsRequest();
     this.requestUpdate();
     this._readRequestUi(project.key, key);
+    this._queryRequestHistory(project.key, key);
   }
 
   protected async _readPayload(expects: HttpRequest): Promise<void> {
@@ -210,6 +220,26 @@ export default class ProjectRequestElement extends HttpRequestElement {
     }
   }
 
+  protected async _queryRequestHistory(pid: string, key: string): Promise<void> {
+    try {
+      const result = await Events.Store.History.list({
+        type: 'request',
+        project: pid,
+        id: key,
+      });
+      if (!result) {
+        return;
+      }
+      const { data, cursor } = result;
+      this._history = data;
+      if (cursor) {
+        this._historyCursor = cursor;
+      }
+    } catch (e) {
+      // ...
+    }
+  }
+
   protected async _updateRequestUi(meta: RequestUiMeta): Promise<void> {
     const { project, key } = this;
     if (!project || !key) {
@@ -271,8 +301,8 @@ export default class ProjectRequestElement extends HttpRequestElement {
       created: Date.now(),
       kind: HttpHistoryKind,
       log: report,
-      app: appInfo.code,
       project: project.key,
+      app: appInfo.code,
       request: key,
       user: '',
     };
@@ -306,6 +336,7 @@ export default class ProjectRequestElement extends HttpRequestElement {
   }
 
   protected _responsePaneTemplate(): TemplateResult {
+    // TODO: This should be a history list browser element.
     const { request } = this;
     if (!request || !request.log) {
       return html`
