@@ -144,11 +144,14 @@ export default class LogBodyElement extends LitElement {
    */
   @state() protected _tokens?: string;
 
-  updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
-    super.updated(cp);
+  willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     if (cp.has('payload') || cp.has('contentType')) {
       this._prepare();
     }
+  }
+
+  updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+    super.updated(cp);
     if (cp.has('_bodyType') || cp.has('_viewType')) {
       this._prismComplete();
     }

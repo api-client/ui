@@ -89,8 +89,8 @@ export default class ProjectRequestElement extends HttpRequestElement {
     this.addEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, EventUtils.cancelEvent);
   }
 
-  protected updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
-    super.updated(cp);
+  protected willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+    super.willUpdate(cp);
     if (cp.has('project') || cp.has('key')) {
       this._processRequestChange();
     }
