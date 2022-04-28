@@ -49,18 +49,18 @@ export default class ProjectRunReportElement extends LitElement {
       }
 
       .list-item {
-        min-height: 40px;
+        min-height: var(--list-item-height, 40px);
         display: flex;
         align-items: center;
         padding: 0 20px;
       }
 
       .list-item.double {
-        min-height: 72px;
+        min-height: var(--list-item-two-line-height, 72px);
       }
 
       .active {
-        background: var(--project-run-report-active-background, #e3f2fd);
+        background: var(--list-active-background, #e3f2fd);
       }
 
       .list-content {

@@ -57,7 +57,7 @@ export default css`
 
 .selected-item {
   border: 1px var(--primary-color) solid;
-  background-color: #e3f2fd;
+  background: var(--list-active-background, #e3f2fd);
 }
 
 table .selected-item {
@@ -65,7 +65,7 @@ table .selected-item {
 }
 
 .selected-item td {
-  background-color: #e3f2fd;
+  background: var(--list-active-background, #e3f2fd);
 }
 
 .files-grid {

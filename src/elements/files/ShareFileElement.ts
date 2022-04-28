@@ -88,7 +88,7 @@ export default class ShareFileElement extends AnypointDialogElement {
       }
 
       .highlight {
-        background-color: #e3f2fd;
+        background: var(--list-active-background, #e3f2fd);
       }
 
       .input-line {

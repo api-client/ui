@@ -13,11 +13,10 @@ body {
   --primary-color: #e91e63;
   --secondary-text-color: #707070;
   --primary-background-color: #ffffff;
-  --secondary-background-color: #ffffff;
+  --secondary-background-color: #f6f6f6;
   --dark-divider-opacity: 0.12;
   --divider-color: rgba(0, 0, 0, var(--dark-divider-opacity));
   --link-color: #0047b2;
-  --disabled-text-color: rgba(0, 0, 0, 0.38);
 
   --anypoint-color-primary: rgba(0, 0, 0, 0.74);
 
@@ -29,6 +28,20 @@ body {
   --code-font-family: 'Roboto Mono', 'Consolas', 'Menlo', monospace;
 
   --anypoint-menu-button-border-radius: 8px;
+
+  /* Selection */
+  --outline-color: #000;
+
+  /* Disabled state */
+  --disabled-opacity: .38;
+  --disabled-text-color: rgba(0, 0, 0, var(--disabled-opacity));
+
+  /* Lists */
+  --list-active-background: #e3f2fd;
+  --list-hover-background: rgba(0, 0, 0, 0.08);
+  --list-focus-background: rgba(0, 0, 0, 0.04);
+  --list-item-height: 40px;
+  --list-item-two-line-height: 72px;
 }
 
 a {

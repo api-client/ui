@@ -4,12 +4,13 @@ import { property, state } from 'lit/decorators.js';
 import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents, IProjectRunnerOptions, EventUtils, IHttpHistory, HttpHistoryKind, IRequestLog, IApplication } from '@api-client/core/build/browser.js';
 import HttpRequestElement from '../http/HttpRequestElement.js';
 import { Events } from '../../events/Events.js';
-import '../../define/request-log.js';
 // eslint-disable-next-line import/no-duplicates
 import { ResizeEventDetail } from '../../lib/ResizableElements.js';
 // eslint-disable-next-line import/no-duplicates
 import '../../lib/ResizableElements.js';
 import { EventTypes } from '../../events/EventTypes.js';
+import '../../define/request-log.js';
+import '../../define/request-history-browser.js';
 
 /**
  * An element that specializes in rendering an HTTP request that is defined on an HttpProject.
@@ -79,7 +80,7 @@ export default class ProjectRequestElement extends HttpRequestElement {
    */
   protected _historyCursor?: string;
 
-  protected _history?: IHttpHistory[];
+  @state() protected _history?: IHttpHistory[];
 
   constructor() {
     super();
@@ -336,15 +337,14 @@ export default class ProjectRequestElement extends HttpRequestElement {
   }
 
   protected _responsePaneTemplate(): TemplateResult {
-    // TODO: This should be a history list browser element.
-    const { request } = this;
-    if (!request || !request.log) {
+    const { request, _history } = this;
+    if (!request && !_history) {
       return html`
       <p>Execute the request to see the response details.</p>
       `;
     }
     return html`
-    <request-log .httpLog="${request.log}"></request-log>
+    <request-history-browser .history="${_history}" .current="${request && request.log}"></request-history-browser>
     `;
   }
 }

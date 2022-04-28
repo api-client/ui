@@ -24,7 +24,7 @@ ul {
 }
 
 :not([data-disabled]) .list-item-content:hover {
-  background-color: rgba(0, 0, 0, 0.08);
+  background-color: var(--list-hover-background);
 }
 
 li {
@@ -34,12 +34,12 @@ li {
 
 li[data-disabled] {
   pointer-events: none;
-  opacity: 0.38;
+  opacity: var(--disabled-opacity);
 }
 
 li:focus > .list-item-content,
 li.focused > .list-item-content {
-  background-color: #e3f2fd;
+  background: var(--list-active-background, #e3f2fd);
 }
 
 .opened > div > .open-icon {

@@ -87,7 +87,7 @@ export default class LogHeadersElement extends LitElement {
       }
 
       .active {
-        background: var(--log-headers-active-background, #e3f2fd);
+        background: var(--list-active-background, #e3f2fd);
       }
       `
     ];
