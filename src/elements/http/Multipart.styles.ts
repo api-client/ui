@@ -59,4 +59,9 @@ anypoint-input {
   margin-right: 8px;
   color: #1565C0;
 }
+
+.incompatible-part {
+  flex: 1;
+  text-align: center;
+}
 `;

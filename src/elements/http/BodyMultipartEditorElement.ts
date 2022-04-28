@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable class-methods-use-this */
 /**
 @license
@@ -115,6 +116,9 @@ export default class BodyMultipartEditorElement extends LitElement {
       this._modelValue = [];
     }
     this.requestUpdate('model', old);
+    if (value) {
+      this._upgradeLegacy(value);
+    }
   }
 
   /**
@@ -138,6 +142,68 @@ export default class BodyMultipartEditorElement extends LitElement {
       return true;
     });
     return PayloadSerializer.deserializeFormData(validItems);
+  }
+
+  /**
+   * Makes an attempt to upgrade old definitions of the `IMultipartBody`.
+   * If this fails, the form will show error instead of part field.
+   * @param value The current model.
+   */
+  protected async _upgradeLegacy(value: IMultipartBody[]): Promise<void> {
+    const ps: Promise<void>[] = [];
+    for (const part of value) {
+      if (part.isFile === undefined) {
+        continue;
+      }
+      if (part.isFile === false && !part.type) {
+        delete part.isFile;
+        const oldValue = (part.value || '') as string;
+        part.value = {
+          type: 'string',
+          data: oldValue,
+        };
+      } else if (part.isFile === false && part.type) {
+        ps.push(this._upgradeLegacyBlob(part));
+      } else {
+        ps.push(this._upgradeLegacyFile(part));
+      }
+    }
+    if (ps.length) {
+      await Promise.allSettled(ps);
+      this.requestUpdate();
+      this._notifyChange();
+    }
+  }
+
+  protected async _upgradeLegacyBlob(part: IMultipartBody): Promise<void> {
+    if (typeof part.value !== 'string') {
+      return;
+    }
+    const readBlob = PayloadSerializer.deserializeBlobLegacy(part.value as string);
+    if (!readBlob) {
+      return;
+    }
+    const contents = await readBlob.text();
+    part.blobText = contents || '';
+    const blob = new Blob([part.blobText!], { type: part.type });
+    part.value = await PayloadSerializer.stringifyBlob(blob);
+    delete part.type;
+    delete part.isFile;
+  }
+
+  protected async _upgradeLegacyFile(part: IMultipartBody): Promise<void> {
+    if (typeof part.value !== 'string') {
+      return;
+    }
+    const readBlob = PayloadSerializer.deserializeBlobLegacy(part.value as string);
+    if (!readBlob) {
+      return;
+    }
+    const fname = part.fileName || 'unknown-file.txt';
+    const file = new File([readBlob], fname, { type: readBlob.type });
+    part.value = await PayloadSerializer.stringifyFile(file);
+    delete part.fileName;
+    delete part.isFile;
   }
 
   protected async _updateModel(value?: unknown): Promise<void> {
@@ -408,8 +474,9 @@ export default class BodyMultipartEditorElement extends LitElement {
    */
   protected _paramItemTemplate(part: IMultipartBody, index: number): TemplateResult | string {
     if (typeof part.isFile === 'boolean') {
-      // TODO: This is a legacy type.
-      return '';
+      // When this is still set it means that when setting the model something went wrong. 
+      // This also mean we can't recover from here so the only option is to remove the part.
+      return this._incompatibleTemplate(index);
     }
     normalizePartValue(part);
     const value = part.value as ISafePayload;
@@ -425,6 +492,15 @@ export default class BodyMultipartEditorElement extends LitElement {
     <div class="form-row">
       ${this._paramToggleTemplate(part, index)}
       ${tpl}
+      ${this._paramRemoveTemplate(index)}
+    </div>
+    `;
+  }
+
+  protected _incompatibleTemplate(index: number): TemplateResult {
+    return html`
+    <div class="form-row">
+      <p class="incompatible-part">This part cannot be rendered. Please, remove this part.</p>
       ${this._paramRemoveTemplate(index)}
     </div>
     `;
