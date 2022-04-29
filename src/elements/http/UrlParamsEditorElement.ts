@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
-import { LitElement, html, CSSResult, TemplateResult } from 'lit';
-import { ValidatableMixin, OverlayMixin, ResizableMixin, AnypointInputElement, AnypointCheckboxElement } from '@anypoint-web-components/awc';
+import { html, CSSResult, TemplateResult, PropertyValueMap } from 'lit';
+import { OverlayElement, AnypointInputElement, AnypointCheckboxElement } from '@anypoint-web-components/awc';
 import { property } from 'lit/decorators.js';
 import { UrlProcessor, IUrlParamPart, UrlEncoder } from '@api-client/core/build/browser.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
@@ -34,10 +34,15 @@ import {
  * An element that works with the `url-input-editor` that renders an overlay
  * with query parameter values.
  */
-export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(ValidatableMixin(LitElement))) {
+export default class UrlParamsEditorElement extends OverlayElement {
   static get styles(): CSSResult {
     return styles;
   }
+
+  /**
+   * True if the last call to `validate` is invalid.
+   */
+  @property({ reflect: true, type: Boolean }) invalid?: boolean;
 
   protected _parser = new UrlProcessor('/');
 
@@ -71,6 +76,30 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
    */
   get model(): UrlProcessor {
     return this._parser;
+  }
+
+  protected updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+    if (cp.has('invalid')) {
+      if (this.invalid) {
+        this.setAttribute('aria-invalid', 'true');
+        
+      } else {
+        this.removeAttribute('aria-invalid');
+      }
+    }
+  }
+
+  /**
+   * @return Returns `true` if the value of the element has no validity problems; otherwise returns false.
+   */
+  checkValidity(): boolean {
+    const state = this._getValidity();
+    const { invalid } = this;
+    if (state === invalid || invalid === undefined) {
+      this.invalid = !state;
+      this.dispatchEvent(new Event('invalid'));
+    }
+    return state;
   }
 
   [notifyChange](): void {
@@ -147,7 +176,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     const inputs = Array.from(this.shadowRoot!.querySelectorAll('.params-list anypoint-input')) as AnypointInputElement[];
     let result = true;
     inputs.forEach((input) => {
-      const vResult = input.validate();
+      const vResult = input.checkValidity();
       if (result && !vResult) {
         result = vResult;
       }
@@ -166,7 +195,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     // TODO: UrlEncoder.decodeQueryString(part, false) on each path segment
     this.requestUpdate();
     this._updateValue();
-    setTimeout(() => this.validate(this.value));
+    setTimeout(() => this.checkValidity());
   }
 
   [decodeQueryParameters](): void {
@@ -180,7 +209,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     // TODO: UrlEncoder.encodeQueryString(part, false) on each path segment
     this.requestUpdate();
     this._updateValue();
-    setTimeout(() => this.validate(this.value));
+    setTimeout(() => this.checkValidity());
   }
 
   [enabledHandler](e: CustomEvent): void {
@@ -200,9 +229,9 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     const index = Number(node.dataset.index);
     const list = this._parser.search.list();
     if (prop === 'name') {
-      list[index].name = value;
+      list[index].name = value as string;
     } else {
-      list[index].value = value;
+      list[index].value = value as string;
     }
     this._parser.search.update(index, list[index]);
     this._updateValue();
@@ -287,7 +316,7 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
     <anypoint-switch
       data-index="${index}"
       .checked="${item.enabled}"
-      @checkedchange="${this[enabledHandler]}"
+      @change="${this[enabledHandler]}"
       title="Enable / disable parameter"
       aria-label="Activate to toggle enabled state of this item"
       class="param-switch"
@@ -311,8 +340,8 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
       pattern="\\S*"
       @change="${this[paramInputHandler]}"
       noLabelFloat
+      label="Parameter name"
     >
-      <label slot="label">Parameter name</label>
     </anypoint-input>
     `;
   }
@@ -333,8 +362,8 @@ export default class UrlParamsEditorElement extends ResizableMixin(OverlayMixin(
       pattern="\\S*"
       @change="${this[paramInputHandler]}"
       noLabelFloat
+      label="Parameter value"
     >
-      <label slot="label">Parameter value</label>
     </anypoint-input>
     `;
   }

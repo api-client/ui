@@ -11,10 +11,10 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 */
-import { html, LitElement, TemplateResult, CSSResult } from 'lit';
+import { html, TemplateResult, CSSResult } from 'lit';
 import { property, query } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import { ValidatableMixin, ControlStateMixin } from '@anypoint-web-components/awc';
+import { ValidatableElement } from '@anypoint-web-components/awc';
 import { Suggestion } from '@anypoint-web-components/awc/dist/types.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
@@ -110,7 +110,7 @@ See demo page for example implementation.
 @fires change When the scopes list changed.
 @fires invalidchange
 */
-export default class OAuth2ScopeSelectorElement extends ControlStateMixin(ValidatableMixin(LitElement)) {
+export default class OAuth2ScopeSelectorElement extends ValidatableElement {
   static get styles(): CSSResult {
     return elementStyles;
   }
@@ -212,35 +212,6 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
     this.requestUpdate();
   }
 
-  [invalidValue] = false;
-
-  /**
-   * Returns true if the value is invalid.
-   *
-   * If `autoValidate` is true, the `invalid` attribute is managed automatically,
-   * which can clobber attempts to manage it manually.
-   */
-  @property({ type: Boolean, reflect: true })
-  get invalid(): boolean {
-    return this[invalidValue];
-  }
-
-  set invalid(value: boolean) {
-    const old = this[invalidValue];
-    /* istanbul ignore if */
-    if (old === value) {
-      return;
-    }
-    this[invalidValue] = value;
-    this.requestUpdate('invalid', old);
-    this[invalidChangeHandler](value);
-    this.dispatchEvent(new CustomEvent('invalidchange', {
-      detail: {
-        value
-      }
-    }));
-  }
-
   [invalidMessage]?: string;
 
   @query('.scope-input')
@@ -251,14 +222,6 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
   //   this[inputTarget] = /** @type HTMLElement */ (this.shadowRoot.querySelector('.scope-input'));
   //   this.requestUpdate();
   // }
-
-
-  /**
-   * Called by the `invalid` property setter when the change.
-   */
-  [invalidChangeHandler](invalid: boolean): void {
-    this.setAttribute('aria-invalid', String(invalid));
-  }
 
   [clearValidation](): void {
     this[invalidMessage] = undefined;
@@ -295,7 +258,7 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
     this[notifyChanged]();
     this.requestUpdate();
     if (this.autoValidate) {
-      this.validate(this.value);
+      this.checkValidity();
     }
   }
 
@@ -572,8 +535,8 @@ export default class OAuth2ScopeSelectorElement extends ControlStateMixin(Valida
       .invalidMessage="${message}"
       @input="${this[valueHandler]}"
       @keydown="${this[keyDownHandler]}"
+      label="Scope value"
     >
-      <label slot="label">Scope value</label>
       <anypoint-icon-button
         class="add-button"
         data-action="add-scope"

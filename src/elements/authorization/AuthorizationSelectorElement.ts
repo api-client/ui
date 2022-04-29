@@ -1,9 +1,9 @@
 /* eslint-disable lit-a11y/click-events-have-key-events */
 /* eslint-disable no-plusplus */
 /* eslint-disable class-methods-use-this */
-import { html, LitElement, CSSResult, TemplateResult } from 'lit';
+import { html, CSSResult, TemplateResult, PropertyValueMap } from 'lit';
 import { property } from 'lit/decorators.js';
-import { MultiSelectableMixin, AnypointDropdownMenuElement, AnypointSwitchElement, AnypointListboxElement } from '@anypoint-web-components/awc';
+import { MultiSelectableElement, AnypointDropdownMenuElement, AnypointSwitchElement, AnypointListboxElement } from '@anypoint-web-components/awc';
 import '@anypoint-web-components/awc/dist/define/anypoint-dropdown-menu.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-listbox.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-item.js';
@@ -75,7 +75,7 @@ function stopPropagation(e: Event): void {
   e.stopPropagation();
 }
 
-export default class AuthorizationSelectorElement extends MultiSelectableMixin(LitElement) {
+export default class AuthorizationSelectorElement extends MultiSelectableElement {
   static get styles(): CSSResult[] {
     return [
       styles,
@@ -124,34 +124,6 @@ export default class AuthorizationSelectorElement extends MultiSelectableMixin(L
     return this[readAuthType](selected);
   }
 
-  get selectable(): string {
-    return selectable;
-  }
-
-  set selectable(value) {
-    // simply ignore it.
-  }
-
-  _selected?: number;
-
-  get selected(): number | undefined {
-    return this._selected;
-  }
-
-  set selected(value: number | undefined) {
-    const old = this._selected;
-    /* istanbul ignore if */
-    if (old === value) {
-      return;
-    }
-    this._selected = value;
-    if (!this.multi) {
-      this._updateSelected();
-    }
-    this.requestUpdate();
-    this[selectionHandler]();
-  }
-
   /**
    * An attribute to use to read value for the label to be rendered in the
    * drop down when `type` property cannot be translated to a common name.
@@ -175,12 +147,19 @@ export default class AuthorizationSelectorElement extends MultiSelectableMixin(L
    */
   [dropdownSelected]?: number;
 
-
   constructor() {
     super();
     this[itemsHandler] = this[itemsHandler].bind(this);
     this[methodChange] = this[methodChange].bind(this);
     this.multi = false;
+    this.selectable = selectable
+  }
+
+  protected updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+    super.updated(cp);
+    if (cp.has('selected')) {
+      this[selectionHandler]();
+    }
   }
 
   connectedCallback(): void {
@@ -416,7 +395,7 @@ export default class AuthorizationSelectorElement extends MultiSelectableMixin(L
       return;
     }
     const { selected } = this;
-    const selectedItem = this.items[selected!] as AuthorizationMethodElement;
+    const selectedItem = this.items[selected as number] as AuthorizationMethodElement;
     if (!selectedItem) {
       slotted.forEach((node) => node.setAttribute('hidden', ''));
       return;

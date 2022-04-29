@@ -14,10 +14,10 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 */
-import { LitElement, html, CSSResult, TemplateResult } from 'lit';
+import { html, CSSResult, TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 // import * as monaco from 'monaco-editor'; // /esm/vs/editor/editor.main.js
-import { ResizableMixin } from '@anypoint-web-components/awc';
+import { ResizableElement } from '@anypoint-web-components/awc';
 import { editor } from 'monaco-editor';
 import { assignTheme } from '../../monaco/theme.js';
 import MonacoStyles from '../../monaco/Monaco.styles.js';
@@ -52,7 +52,7 @@ import { MonacoSchema } from '../../monaco/types.js';
 
 let modelId = 0;
 
-export default class BodyRawEditorElement extends ResizableMixin(LitElement) {
+export default class BodyRawEditorElement extends ResizableElement {
   static get styles(): CSSResult[] {
     return [elementStyles, MonacoStyles];
   }

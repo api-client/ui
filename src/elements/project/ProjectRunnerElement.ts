@@ -151,7 +151,7 @@ export default class ProjectRunnerElement extends LitElement {
     const input = e.target as AnypointInputElement;
     const name = input.name as 'iterations' | 'iterationDelay';
     const { _config = {} } = this;
-    _config[name] = parseInt(input.value, 10);
+    _config[name] = parseInt(input.value as string, 10);
     this._config = _config;
   }
 
@@ -295,8 +295,7 @@ export default class ProjectRunnerElement extends LitElement {
     const value = typeof c.iterations === 'number' ? c.iterations : 1;
     return html`
     <div class="form-row">
-      <anypoint-input required aria-required="true" aria-labelledby="iterationsDescription" name="iterations" type="number" min="1" step="1" .value="${value}" @change="${this._numberInputHandler}">
-        <label slot="label">Iterations</label>
+      <anypoint-input required label="Iterations" aria-required="true" aria-labelledby="iterationsDescription" name="iterations" type="number" min="1" step="1" .value="${String(value)}" @change="${this._numberInputHandler}">
       </anypoint-input>
       <p class="form-help" id="iterationsDescription">The number of times the execution should be repeated.</p>
     </div>
@@ -308,8 +307,7 @@ export default class ProjectRunnerElement extends LitElement {
     const value = typeof c.iterationDelay === 'number' ? c.iterationDelay : 0;
     return html`
     <div class="form-row">
-      <anypoint-input name="iterationDelay" aria-labelledby="iterationDelayDescription" type="number" min="0" step="1" .value="${value}" @change="${this._numberInputHandler}">
-        <label slot="label">Iteration delay</label>
+      <anypoint-input name="iterationDelay" label="Iteration delay" aria-labelledby="iterationDelayDescription" type="number" min="0" step="1" .value="${String(value)}" @change="${this._numberInputHandler}">
         <span class="input-suffix" slot="suffix">ms</span>
       </anypoint-input>
       <p class="form-help" id="iterationDelayDescription">The number of milliseconds to wait between each iteration.</p>

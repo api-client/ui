@@ -320,7 +320,7 @@ export default class BodyMultipartEditorElement extends LitElement {
     if (old === value) {
       return;
     }
-    item.name = value;
+    item.name = value as string;
     this._notifyChange();
   }
 
@@ -356,7 +356,7 @@ export default class BodyMultipartEditorElement extends LitElement {
     if (old === value) {
       return;
     }
-    item.name = value;
+    item.name = value as string;
     this._notifyChange();
   }
 
@@ -377,10 +377,10 @@ export default class BodyMultipartEditorElement extends LitElement {
     normalizePartValue(item);
     const typedValue = item.value as ISafePayload;
     if (typedValue.type === 'string') {
-      typedValue.data = value;
+      typedValue.data = value as string;
     } else {
       item.blobText = value;
-      const blob = new Blob([value], { type: typedValue.meta?.mime || 'text/plain' });
+      const blob = new Blob([value as string], { type: typedValue.meta?.mime || 'text/plain' });
       item.value = await PayloadSerializer.stringifyBlob(blob);
     }
     this._notifyChange();
@@ -526,9 +526,8 @@ export default class BodyMultipartEditorElement extends LitElement {
       ?readOnly="${readOnly}"
       noLabelFloat
       @change="${this._filePartNameHandler}"
-    >
-      <label slot="label">Part name</label>
-    </anypoint-input>
+      label="Part name"
+    ></anypoint-input>
     <div class="param-value">
       <anypoint-button @click="${this._pickFileHandler}">Choose file</anypoint-button>
       <input type="file" hidden data-index="${index}" @change="${this._filePartValueHandler}"/>
@@ -571,9 +570,8 @@ export default class BodyMultipartEditorElement extends LitElement {
       ?readOnly="${readOnly}"
       noLabelFloat
       @change="${this._textPartNameHandler}"
-    >
-      <label slot="label">Part name</label>
-    </anypoint-input>
+      label="Part name"
+    ></anypoint-input>
     `;
   }
 
@@ -589,9 +587,8 @@ export default class BodyMultipartEditorElement extends LitElement {
       ?readOnly="${readOnly}"
       noLabelFloat
       @change="${this._textPartValueHandler}"
-    >
-      <label slot="label">Part value</label>
-    </anypoint-input>
+      label="Part value"
+    ></anypoint-input>
     `;
   }
 
@@ -605,9 +602,8 @@ export default class BodyMultipartEditorElement extends LitElement {
       ?readOnly="${readOnly}"
       noLabelFloat
       @change="${this._handlePartMimeChange}"
-    >
-      <label slot="label">Part mime (optional)</label>
-    </anypoint-input>
+      label="Part mime (optional)"
+    ></anypoint-input>
     `;
   }
 
@@ -638,8 +634,8 @@ export default class BodyMultipartEditorElement extends LitElement {
     return html`
     <anypoint-switch
       data-index="${index}"
-      .checked="${item.enabled}"
-      @checkedchange="${this._enabledHandler}"
+      .checked="${item.enabled || false}"
+      @change="${this._enabledHandler}"
       title="Enable / disable parameter"
       aria-label="Activate to toggle enabled state of this item"
       class="param-switch"

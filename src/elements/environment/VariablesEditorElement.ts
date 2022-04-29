@@ -1,9 +1,9 @@
 /* eslint-disable class-methods-use-this */
-import { LitElement, html, TemplateResult, CSSResult, css } from 'lit';
+import { html, TemplateResult, CSSResult, css } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
 import { IProperty, Property } from '@api-client/core/build/browser.js';
 import { property, state } from 'lit/decorators.js';
-import { ResizableMixin } from '@anypoint-web-components/awc';
+import { ResizableElement } from '@anypoint-web-components/awc';
 import '@anypoint-web-components/awc/dist/define/anypoint-masked-input.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
@@ -16,7 +16,7 @@ import '../../define/api-icon.js'
 /**
  * An element to render a list of variables with an ability to edit them.
  */
-export default class VariablesEditorElement extends ResizableMixin(LitElement) {
+export default class VariablesEditorElement extends ResizableElement {
   static get styles(): CSSResult {
     return css`
     :host {
@@ -320,7 +320,7 @@ export default class VariablesEditorElement extends ResizableMixin(LitElement) {
     return html`
     <li class="var-editor">
       <anypoint-switch
-        .checked="${item.enabled}"
+        .checked="${item.enabled || false}"
         @change="${this._toggleVariableHandler}"
         title="Toggle variable enabled"
         aria-label="Toggle variable enabled state"
@@ -339,12 +339,11 @@ export default class VariablesEditorElement extends ResizableMixin(LitElement) {
         preventInvalidInput
         invalidMessage="Variable name is not valid"
         data-index="${index}"
-      >
-        <label slot="label">Variable name</label>
-      </anypoint-input>
+        label="Variable name"
+      ></anypoint-input>
       <anypoint-masked-input
         class="variable-value"
-        .value="${item.value}"
+        .value="${item.value as string || ''}"
         name="value"
         @change="${this._variableInputHandler}"
         noLabelFloat
@@ -352,8 +351,8 @@ export default class VariablesEditorElement extends ResizableMixin(LitElement) {
         required
         data-index="${index}"
         .visible="${this.renderValues}"
+        label="Variable value"
       >
-        <label slot="label">Variable value</label>
       </anypoint-masked-input>
       <anypoint-button 
         @click="${this._variableEditorCloseHandler}"

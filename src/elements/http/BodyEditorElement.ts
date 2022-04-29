@@ -13,7 +13,7 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 */
-import { LitElement, html, CSSResult, TemplateResult } from 'lit';
+import { html, CSSResult, TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-dropdown-menu.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-listbox.js';
@@ -21,7 +21,7 @@ import '@anypoint-web-components/awc/dist/define/anypoint-item.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import { EventUtils, IBodyMetaModel, IMultipartBody, IProperty, IRawBody, ISafePayload, PayloadSerializer } from '@api-client/core/build/browser.js';
-import { ResizableMixin } from '@anypoint-web-components/awc';
+import { ResizableElement } from '@anypoint-web-components/awc';
 import '../../define/api-icon.js';
 import elementStyles from './BodyEditor.styles.js';
 import {
@@ -109,7 +109,7 @@ export const editorTypes: Readonly<EditorType[]> = Object.freeze([
 /**
  * @fires change When the value and the model change
  */
-export default class BodyEditorElement extends ResizableMixin(LitElement) {
+export default class BodyEditorElement extends ResizableElement {
   static get styles(): CSSResult[] {
     return [elementStyles];
   }

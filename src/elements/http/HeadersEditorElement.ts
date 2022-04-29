@@ -188,7 +188,7 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
     if (old === value) {
       return;
     }
-    item[prop] = value;
+    item[prop] = value as string;
     this._propagateModelChange();
   }
 
@@ -487,7 +487,7 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
     <anypoint-switch
       data-index="${index}"
       .checked="${item.enabled}"
-      @checkedchange="${this._enabledHandler}"
+      @change="${this._enabledHandler}"
       title="Enable / disable header"
       aria-label="Activate to toggle enabled state of this item"
       class="param-switch"
@@ -512,11 +512,11 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
       class="param-name"
       ?readOnly="${readOnly}"
       pattern="\\S*"
-      @valuechange="${this._headerInputHandler}"
+      @change="${this._headerInputHandler}"
       noLabelFloat
       @focus="${this._inputFocusHandler}"
+      label="Header name"
     >
-      <label slot="label">Header name</label>
     </anypoint-input>
     `;
   }
@@ -535,11 +535,11 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
       data-index="${index}"
       class="param-value"
       ?readOnly="${readOnly}"
-      @valuechange="${this._headerInputHandler}"
+      @change="${this._headerInputHandler}"
       noLabelFloat
       @focus="${this._inputFocusHandler}"
+      label="Header value"
     >
-      <label slot="label">Header value</label>
     </anypoint-input>
     `;
   }

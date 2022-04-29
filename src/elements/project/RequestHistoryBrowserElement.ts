@@ -2,6 +2,8 @@ import { ErrorResponse, HttpHistoryKind, IHttpHistory, IResponse, IRequestLog, R
 import { CSSResult, LitElement, css, TemplateResult, html, PropertyValueMap } from "lit";
 import { property, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
+// import { Chart, registerables } from 'chart.js';
+// import { LineChart } from '../../lib/chart/LineChart.js';
 import { relativeDay } from "../../lib/time/Conversion.js";
 import { statusTemplate, StatusStyles } from '../http/HttpStatus.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
@@ -10,6 +12,8 @@ import '@github/time-elements/dist/relative-time-element.js'
 import '../../define/api-icon.js';
 
 export const GroupKind = 'UI#HistoryGroup';
+
+// Chart.register(...registerables);
 
 /**
  * An element that renders HTTP history for a configured list of requests.
@@ -23,6 +27,7 @@ export default class RequestHistoryBrowserElement extends LitElement {
       css`
       :host {
         display: block;
+        height: 100%;
       }
 
       menu {
@@ -36,20 +41,47 @@ export default class RequestHistoryBrowserElement extends LitElement {
         list-style: none;
       }
 
-      .content {
-        display: grid;
-        grid-template: "list response" auto / minmax(200px, 2fr) 10fr;
-      }
-
-      .history-list {
-        grid-area: list;
+      .rail {
+        width: 72px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         border-right: 1px var(--divider-color) solid;
       }
 
+      .rail > .button {
+        margin: 12px 0;
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+      }
+
+      .rail > .button.active {
+        background: var(--accent-color);
+      }
+
+      .content {
+        height: inherit;
+        display: flex;
+      }
+
+      .history-list {
+        border-right: 1px var(--divider-color) solid;
+        height: inherit;
+        overflow: auto;
+        flex: 2 1 0%;
+      }
+
       .response-content {
-        grid-area: response;
         overflow: hidden;
+        flex: 10 1 0%;
         /* margin-right: 20px; */
+      }
+
+      menu {
+        overflow: auto;
       }
 
       .history-list-header {
@@ -158,6 +190,8 @@ export default class RequestHistoryBrowserElement extends LitElement {
   @state() protected _item?: IHttpHistory | IRequestLog | RequestLog;
 
   @state() protected _closedGroups: string[] = [];
+
+  @state() protected _view: number = 0;
 
   protected willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     if (cp.has('history')) {
@@ -511,6 +545,15 @@ export default class RequestHistoryBrowserElement extends LitElement {
     this.requestUpdate();
   }
 
+  protected _railHandler(e: Event): void {
+    const button = e.currentTarget as HTMLElement;
+    const i = Number(button.dataset.index);
+    if (Number.isNaN(i)) {
+      return;
+    }
+    this._view = i;
+  }
+
   protected render(): TemplateResult | string {
     const { _sortedHistory: history } = this;
     if (!history) {
@@ -518,9 +561,42 @@ export default class RequestHistoryBrowserElement extends LitElement {
     }
     return html`
     <div class="content">
-      <div class="history-list">${this._listTemplate(history)}</div>
-      <div class="response-content">${this._selectedItemTemplate()}</div>
+      ${this._railTemplate()}
+      ${this._contentTemplate()}
     </div>
+    `;
+  }
+
+  protected _railTemplate(): TemplateResult {
+    const { _view: view } = this;
+    return html`
+    <div class="rail">
+      <button class="button ${view === 0 ? 'active' : ''}" data-index="0" @click="${this._railHandler}" aria-label="History list view"  title="History list view">
+        <api-icon icon="add" role="presentation"></api-icon>
+      </button>
+      <button class="button ${view === 1 ? 'active' : ''}" data-index="1" @click="${this._railHandler}" aria-label="History analysis view" title="History analysis view">
+        <api-icon icon="api" role="presentation"></api-icon>
+      </button>
+    </div>
+    `;
+  }
+
+  protected _contentTemplate(): TemplateResult | string {
+    const { _view: view } = this;
+    if (view === 1) {
+      return this._analysisView();
+    }
+    return this._historyView();
+  }
+
+  protected _historyView(): TemplateResult | string {
+    const { _sortedHistory: history } = this;
+    if (!history) {
+      return '';
+    }
+    return html`
+    <div class="history-list">${this._listTemplate(history)}</div>
+    <div class="response-content">${this._selectedItemTemplate()}</div>
     `;
   }
 
@@ -646,5 +722,30 @@ export default class RequestHistoryBrowserElement extends LitElement {
       Current
     </li>
     `;
+  }
+
+  protected _analysisView(): TemplateResult | string {
+    const { _sortedHistory: history } = this;
+    if (!history) {
+      return '';
+    }
+    const flat: IHttpHistory[] = [];
+    history.forEach(group => {
+      group.forEach(item => flat.push(item));
+    });
+    return html`aaaa`;
+    // const svg = LineChart(flat, {
+    //   x: (item => item.created),
+    //   y: (item => (item.log.response! as IResponse).loadingTime || 0),
+    //   yLabel: 'milliseconds',
+    //   height: 400,
+    //   width: 900,
+    // });
+    // if (!svg) {
+    //   return html`<p>Invalid data</p>`;
+    // }
+    // return html`
+    // ${svg}
+    // `;
   }
 }

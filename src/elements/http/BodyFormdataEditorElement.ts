@@ -186,7 +186,7 @@ export default class BodyFormdataEditorElement extends LitElement {
     if (old === value) {
       return;
     }
-    item[prop] = value;
+    item[prop] = value as string;
     this[modelChanged]();
   }
 
@@ -324,8 +324,8 @@ export default class BodyFormdataEditorElement extends LitElement {
     return html`
     <anypoint-switch
       data-index="${index}"
-      .checked="${item.enabled}"
-      @checkedchange="${this[enabledHandler]}"
+      .checked="${item.enabled || false}"
+      @change="${this[enabledHandler]}"
       title="Enable / disable parameter"
       aria-label="Activate to toggle enabled state of this item"
       class="param-switch"
@@ -352,8 +352,8 @@ export default class BodyFormdataEditorElement extends LitElement {
       .pattern="${pattern}"
       @change="${this[paramInputHandler]}"
       noLabelFloat
+      label="Parameter name"
     >
-      <label slot="label">Parameter name</label>
     </anypoint-input>
     `;
   }
@@ -368,7 +368,7 @@ export default class BodyFormdataEditorElement extends LitElement {
     return html`
     <anypoint-input
       ?autoValidate="${hasPattern}"
-      .value="${item.value}"
+      .value="${item.value as string || ''}"
       data-property="value"
       data-index="${index}"
       class="param-value"
@@ -376,8 +376,8 @@ export default class BodyFormdataEditorElement extends LitElement {
       .pattern="${pattern}"
       @change="${this[paramInputHandler]}"
       noLabelFloat
+      label="Parameter value"
     >
-      <label slot="label">Parameter value</label>
     </anypoint-input>
     `;
   }

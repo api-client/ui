@@ -117,9 +117,7 @@ export default class EnvironmentEditor extends LitElement {
   protected _nameTemplate(): TemplateResult {
     const { environment } = this;
     return html`
-    <anypoint-input required name="name" .value="${environment.info.name}" @change="${this._nameHandler}" class="name-input">
-      <label slot="label">Environment name</label>
-    </anypoint-input>
+    <anypoint-input required name="name" label="Environment name" .value="${environment.info.name}" @change="${this._nameHandler}" class="name-input"></anypoint-input>
     `;
   }
 
@@ -128,7 +126,7 @@ export default class EnvironmentEditor extends LitElement {
     return html`
     <div class="encapsulate-item">
       <anypoint-switch
-        .checked="${environment.encapsulated}"
+        .checked="${environment.encapsulated || false}"
         @change="${this._toggleEncapsulatedHandler}"
         title="Toggle the encapsulated state"
         aria-label="Toggles the encapsulated state"

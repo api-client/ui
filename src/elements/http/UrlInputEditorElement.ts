@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable lit-a11y/click-events-have-key-events */
 /**
 @license
@@ -13,11 +12,11 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 */
-import { LitElement, html, CSSResult, TemplateResult, PropertyValueMap } from 'lit';
+import { html, CSSResult, TemplateResult, PropertyValueMap } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { property, state, query } from 'lit/decorators.js';
-import { ValidatableMixin, EventsTargetMixin, AnypointListboxElement } from '@anypoint-web-components/awc';
+import { ValidatableElement, EventsTargetMixin, AnypointListboxElement } from '@anypoint-web-components/awc';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
@@ -86,7 +85,7 @@ import { EventTypes } from '../../events/EventTypes.js';
  *
  * The element renders an editor for a HTTP request editor.
  */
-export default class UrlInputEditorElement extends EventsTargetMixin(ValidatableMixin(LitElement)) {
+export default class UrlInputEditorElement extends EventsTargetMixin(ValidatableElement) {
   static get styles(): CSSResult {
     return classStyles;
   }
@@ -366,7 +365,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
   _getValidity(): boolean {
     if (this.detailsOpened) {
       const element = this.shadowRoot!.querySelector('url-params-editor') as UrlParamsEditorElement;
-      return element.validate(this.value);
+      return element.checkValidity();
     }
     const element = this.shadowRoot!.querySelector('.main-input') as HTMLInputElement;
     if (!element) {

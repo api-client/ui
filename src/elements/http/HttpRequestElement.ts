@@ -1,5 +1,5 @@
 /* eslint-disable class-methods-use-this */
-import { LitElement, html, TemplateResult, CSSResult, PropertyValueMap } from 'lit';
+import { html, TemplateResult, CSSResult, PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { 
@@ -11,7 +11,7 @@ import {
   RequestUiMeta,
   SecurityProcessor,
 } from '@api-client/core/build/browser.js';
-import { EventsTargetMixin, ResizableMixin, AnypointTabsElement } from '@anypoint-web-components/awc';
+import { EventsTargetMixin, ResizableElement, AnypointTabsElement } from '@anypoint-web-components/awc';
 import "@anypoint-web-components/awc/dist/define/anypoint-dropdown.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-listbox.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-icon-item.js";
@@ -74,7 +74,7 @@ export const NonPayloadMethods = ['GET', 'HEAD'];
  * @fires send A custom event when the user requested to send the request. The detail object is the editor's request.
  * @fires abort When the user requested to abort the ongoing request.
  */
-export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin(LitElement)) {
+export default class HttpRequestElement extends EventsTargetMixin(ResizableElement) {
   static get styles(): CSSResult[] {
     return [elementStyles];
   }
@@ -280,7 +280,7 @@ export default class HttpRequestElement extends ResizableMixin(EventsTargetMixin
     if (!panel) {
       return true;
     }
-    return panel.validate(panel.value);
+    return panel.checkValidity();
   }
 
   /**
