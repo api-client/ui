@@ -740,7 +740,7 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
     return html`
     <anypoint-tabs
       .selected="${selected}"
-      @selectedchange="${this[tabChangeHandler]}"
+      @selected="${this[tabChangeHandler]}"
       class="editor-tabs"
     >
       <anypoint-tab data-tab="headers">Headers</anypoint-tab>

@@ -235,7 +235,7 @@ export default class ProjectRunnerElement extends LitElement {
     return html`
     <anypoint-tabs
       .selected="${selected}"
-      @selectedchange="${this._tabChangeHandler}"
+      @selected="${this._tabChangeHandler}"
       class="editor-tabs"
       attrForSelected="data-tab"
       fallbackSelection="config"

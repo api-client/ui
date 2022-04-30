@@ -947,7 +947,7 @@ export default class OAuth2 extends AuthUiBase {
       <anypoint-listbox
         slot="dropdown-content"
         .selected="${grantType}"
-        @selectedchange="${ctx._grantTypeSelectionHandler}"
+        @selected="${ctx._grantTypeSelectionHandler}"
         data-name="grantType"
         .disabled="${disabled || readOnly}"
         attrforselected="data-value"
@@ -980,7 +980,7 @@ export default class OAuth2 extends AuthUiBase {
       <anypoint-listbox
         slot="dropdown-content"
         .selected="${credentialSource}"
-        @selectedchange="${ctx._credentialSourceHandler}"
+        @selected="${ctx._credentialSourceHandler}"
         data-name="credentialSource"
         attrforselected="data-value"
       >
@@ -1292,7 +1292,7 @@ export default class OAuth2 extends AuthUiBase {
       <anypoint-listbox
         slot="dropdown-content"
         .selected="${ccDeliveryMethod}"
-        @selectedchange="${this.selectHandler}"
+        @selected="${this.selectHandler}"
         data-name="ccDeliveryMethod"
         .disabled="${disabled || readOnly}"
         attrforselected="data-value"
@@ -1336,8 +1336,8 @@ export default class OAuth2 extends AuthUiBase {
       required
       autoValidate
       type="url"
+      label="Redirect URI value"
     >
-      <label slot="label">Redirect URI value</label>
     </anypoint-input>
     `;
   }

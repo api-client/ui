@@ -215,7 +215,7 @@ export default class AuthorizationSelectorElement extends MultiSelectableElement
   }
 
   /**
-   * Handler for `selectedchange` event dispatched by the selectable mixin.
+   * Handler for `selected` event dispatched by the selectable mixin.
    *
    * Updates selection state and sets/removed `hidden` attribute on the children.
    */
@@ -227,7 +227,7 @@ export default class AuthorizationSelectorElement extends MultiSelectableElement
   }
 
   /**
-   * A handler for the `selectedchange` event dispatched on the dropdown
+   * A handler for the `selected` event dispatched on the dropdown
    * element.
    * It maps selected index on the dropdown to currently `selected` value.
    * Note, when `attrForSelected` is used then it won't be the index of selected

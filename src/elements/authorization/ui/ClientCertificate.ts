@@ -184,7 +184,7 @@ export default class ClientCertificate extends AuthUiBase {
       <anypoint-radio-group
         attrForSelected="data-id"
         .selected="${certificate && certificate.key}"
-        @selectedchange="${this.selectedHandler}"
+        @selected="${this.selectedHandler}"
       >
         ${this.defaultItemTemplate()}
         ${items.map((item) => this.certItemTemplate(item))}

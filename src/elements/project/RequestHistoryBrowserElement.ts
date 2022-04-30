@@ -3,7 +3,7 @@ import { CSSResult, LitElement, css, TemplateResult, html, PropertyValueMap } fr
 import { property, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 // import { Chart, registerables } from 'chart.js';
-// import { LineChart } from '../../lib/chart/LineChart.js';
+import { HttpHistoryChart, chartStyles } from '../../lib/chart/HttpHistoryChart.js';
 import { relativeDay } from "../../lib/time/Conversion.js";
 import { statusTemplate, StatusStyles } from '../http/HttpStatus.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
@@ -24,6 +24,7 @@ export default class RequestHistoryBrowserElement extends LitElement {
   static get styles(): CSSResult[] {
     return [
       StatusStyles,
+      chartStyles,
       css`
       :host {
         display: block;
@@ -152,6 +153,11 @@ export default class RequestHistoryBrowserElement extends LitElement {
 
       .opened > .toggle-icon {
         transform: rotate(90deg);
+      }
+
+      .chart {
+        flex: 1;
+        height: 360px;
       }
       `,
     ];
@@ -729,23 +735,7 @@ export default class RequestHistoryBrowserElement extends LitElement {
     if (!history) {
       return '';
     }
-    const flat: IHttpHistory[] = [];
-    history.forEach(group => {
-      group.forEach(item => flat.push(item));
-    });
-    return html`aaaa`;
-    // const svg = LineChart(flat, {
-    //   x: (item => item.created),
-    //   y: (item => (item.log.response! as IResponse).loadingTime || 0),
-    //   yLabel: 'milliseconds',
-    //   height: 400,
-    //   width: 900,
-    // });
-    // if (!svg) {
-    //   return html`<p>Invalid data</p>`;
-    // }
-    // return html`
-    // ${svg}
-    // `;
+    const chart = new HttpHistoryChart(history);
+    return chart.durationPlot();
   }
 }

@@ -358,7 +358,7 @@ export default class Digest extends AuthUiBase {
       <anypoint-listbox
         slot="dropdown-content"
         .selected="${qop}"
-        @selectedchange="${ctx.selectHandler}"
+        @selected="${ctx.selectHandler}"
         ?disabled="${disabled||readOnly}"
         attrforselected="data-qop"
       >
@@ -380,7 +380,7 @@ export default class Digest extends AuthUiBase {
       <anypoint-listbox
         slot="dropdown-content"
         .selected="${algorithm}"
-        @selectedchange="${ctx.selectHandler}"
+        @selected="${ctx.selectHandler}"
         ?disabled="${disabled||readOnly}"
         attrforselected="data-algorithm"
       >
