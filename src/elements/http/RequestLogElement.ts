@@ -52,6 +52,11 @@ export default class RequestLogElement extends LitElement {
       .padded-panel {
         padding: 0 20px;
       }
+
+      .no-data {
+        text-align: left;
+        margin: 20px;
+      }
       `,
     ];
   }
@@ -372,7 +377,7 @@ export default class RequestLogElement extends LitElement {
 
   protected _noDataTemplate(arialLabelledBy: string): TemplateResult {
     return html`
-    <div class="no-data padded-panel" aria-labelledby="${arialLabelledBy}">No data to render in this view.</div>
+    <div class="no-data" aria-labelledby="${arialLabelledBy}">No data to render in this view.</div>
     `;
   }
 }

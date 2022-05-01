@@ -133,6 +133,10 @@ const chartStyles = css`
   align-items: end;
 }
 
+.label.inside {
+  transform: translate(0px, 1.5rem);
+}
+
 .bar-value {
   transition: all 0.4s ease-in-out 0s;
   background: rgb(76 175 80 / 78%);
@@ -304,9 +308,13 @@ export class HttpHistoryChart {
     if (this._topDuration) {
       scale = d / this._topDuration;
     }
+    const classes = {
+      'label': true,
+      'inside': scale >= 0.75,
+    };
     return html`
     <div class="data-bar bar-day-entry">
-      <span class="label">${d}</span>
+      <span class="${classMap(classes)}">${d}</span>
       <div class="bar-value" style="flex-basis: ${scale * 100}%">
       </div>
     </div>

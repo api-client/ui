@@ -34,6 +34,7 @@ export default class RequestHistoryBrowserElement extends LitElement {
       menu {
         margin: 0;
         padding: 0;
+        overflow: hidden;
       }
 
       li {
@@ -73,16 +74,18 @@ export default class RequestHistoryBrowserElement extends LitElement {
         height: inherit;
         overflow: auto;
         flex: 2 1 0%;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .history-list.resized {
+        flex: unset;
       }
 
       .response-content {
         overflow: hidden;
         flex: 10 1 0%;
         /* margin-right: 20px; */
-      }
-
-      menu {
-        overflow: auto;
       }
 
       .history-list-header {
@@ -92,8 +95,19 @@ export default class RequestHistoryBrowserElement extends LitElement {
         align-items: center;
       }
 
+      .history-list-header .label {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: block;
+      }
+
       .history-list-header.focused {
         outline: var(--outline-color, #000) auto 1px;
+      }
+
+      .toggle-icon {
+        min-width: 40px;
       }
 
       .list-item {
@@ -590,6 +604,13 @@ export default class RequestHistoryBrowserElement extends LitElement {
     this._view = i;
   }
 
+  protected _historyListResized(e: Event): void {
+    const node = e.target as HTMLElement;
+    if (!node.classList.contains('resized')) {
+      node.classList.add('resized');
+    }
+  }
+
   protected render(): TemplateResult | string {
     const { _sortedHistory: history } = this;
     if (!history) {
@@ -639,7 +660,7 @@ export default class RequestHistoryBrowserElement extends LitElement {
       return '';
     }
     return html`
-    <div class="history-list">${this._listTemplate(history)}</div>
+    <div class="history-list" .resize="${'east'}" @resized="${this._historyListResized}">${this._listTemplate(history)}</div>
     <div class="response-content">${this._selectedItemTemplate()}</div>
     `;
   }
@@ -688,7 +709,7 @@ export default class RequestHistoryBrowserElement extends LitElement {
       <anypoint-icon-button tabindex="-1" aria-label="Toggle this section" class="toggle-icon">
         <api-icon icon="chevronRight" role="presentation"></api-icon>
       </anypoint-icon-button>
-      ${relativeDay(midnight)}
+      <span class="label">${relativeDay(midnight)}</span>
     </div>
     `;
   }

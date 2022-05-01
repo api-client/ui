@@ -130,7 +130,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
 
   [focusedValue] = false;
 
-  [overlayOpenedValue] = false;
+  [overlayOpenedValue]?: boolean;
 
   [shadowContainerOpened] = false;
 
@@ -452,7 +452,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
   }
 
   [toggleSuggestions](opened: boolean): void {
-    if (!opened) {
+    if (!opened && this[overlayOpenedValue]) {
       const element = this.shadowRoot!.querySelector('.main-input') as HTMLInputElement;
       element.focus();
     }
@@ -635,7 +635,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
 
   render(): TemplateResult {
     const focused = this[focusedValue];
-    const overlay = this[overlayOpenedValue];
+    const overlay = !!this[overlayOpenedValue];
     const acOpened = this[autocompleteOpened];
     const classes = {
       container: true,

@@ -87,6 +87,7 @@ export default class UrlParamsEditorElement extends OverlayElement {
         this.removeAttribute('aria-invalid');
       }
     }
+    super.updated(cp);
   }
 
   /**
@@ -100,6 +101,22 @@ export default class UrlParamsEditorElement extends OverlayElement {
       this.dispatchEvent(new Event('invalid'));
     }
     return state;
+  }
+
+  /**
+   * Validates the element.
+   * @returns True if the form is valid.
+   */
+  _getValidity(): boolean {
+    const inputs = Array.from(this.shadowRoot!.querySelectorAll('.params-list anypoint-input')) as AnypointInputElement[];
+    let result = true;
+    inputs.forEach((input) => {
+      const vResult = input.checkValidity();
+      if (result && !vResult) {
+        result = vResult;
+      }
+    });
+    return result;
   }
 
   [notifyChange](): void {
@@ -166,22 +183,6 @@ export default class UrlParamsEditorElement extends OverlayElement {
     await this.updateComplete;
     this.refit();
     this.notifyResize();
-  }
-
-  /**
-   * Validates the element.
-   * @returns True if the form is valid.
-   */
-  _getValidity(): boolean {
-    const inputs = Array.from(this.shadowRoot!.querySelectorAll('.params-list anypoint-input')) as AnypointInputElement[];
-    let result = true;
-    inputs.forEach((input) => {
-      const vResult = input.checkValidity();
-      if (result && !vResult) {
-        result = vResult;
-      }
-    });
-    return result;
   }
 
   [encodeQueryParameters](): void {

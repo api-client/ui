@@ -110,6 +110,12 @@ export default class LogBodyElement extends LitElement {
       .padded-panel {
         padding: 0 20px;
       }
+
+      .error,
+      .no-info {
+        text-align: left;
+        margin: 20px;
+      }
       `,
     ];
   }
@@ -408,7 +414,7 @@ export default class LogBodyElement extends LitElement {
   protected render(): TemplateResult {
     const { _body: body, _bodyType: type, _viewType: view } = this;
     if (type === BodyType.nil) {
-      return html`<p class="no-info">No data available.</p>`;
+      return html`<p class="no-info">No data to render in this view.</p>`;
     }
     if (view === ViewType.ImageError) {
       return this._imageErrorView();
@@ -536,10 +542,10 @@ export default class LogBodyElement extends LitElement {
   }
 
   protected _noDataTemplate(label: string = 'Unsupported view.'): TemplateResult {
-    return html`<p class="no-info padded-panel">${label}</p>`;
+    return html`<p class="no-info">${label}</p>`;
   }
 
   protected _errorTemplate(message: string): TemplateResult {
-    return html`<p class="error padded-panel">${message}</p>`;
+    return html`<p class="error">${message}</p>`;
   }
 }

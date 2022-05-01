@@ -134,6 +134,11 @@ export default class LogTimings extends LitElement {
     :host([narrow]) .status-row {
       justify-content: flex-start;
     }
+
+    .no-data {
+      text-align: left;
+      margin: 20px;
+    }
     `;
   }
 

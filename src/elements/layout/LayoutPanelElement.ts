@@ -108,12 +108,12 @@ export default class LayoutPanelElement extends LitElement {
 
     .layout-tab.selected {
       /* z-index: 2; */
-      background-color: var(--request-editor-url-area-background-color, #f6f6f6);
+      background: var(--layout-tab-select-background, #f6f6f6);
     }
 
     .layout-tab:not(.selected):hover {
       /* z-index: 3; */
-      background-color: var(--anypoint-button-emphasis-low-hover-background-color, #fafafa);
+      background-color: var(--layout-tab-hover-background, #fafafa);
     }
 
     .layout-tab:focus {
@@ -130,6 +130,12 @@ export default class LayoutPanelElement extends LitElement {
       width: 16px;
       height: 16px;
       margin-left: auto;
+    }
+
+    .tab-divider {
+      width: 1px;
+      height: 20px;
+      background-color: var(--divider-color);
     }
     `;
   }
@@ -528,6 +534,7 @@ export default class LayoutPanelElement extends LitElement {
     if (!items) {
       return '';
     }
+    const size = items.length;
     return html`
     <div 
       class="layout-tabs" 
@@ -536,12 +543,12 @@ export default class LayoutPanelElement extends LitElement {
       @dragover="${this._tabsDragoverHandler}" 
       @drop="${this._tabsDrop}"
     >
-    ${items.map(tab => this.tabTemplate(tab))}
+    ${items.map((tab, i) => this.tabTemplate(tab, i + 1 === size))}
     </div>
     `;
   }
 
-  protected tabTemplate(item: ILayoutItem): TemplateResult {
+  protected tabTemplate(item: ILayoutItem, last: boolean): TemplateResult {
     const { key, kind, label, index=0, icon } = item;
     const { panel } = this;
     const selected = !!panel && panel.selected === key;
@@ -569,6 +576,7 @@ export default class LayoutPanelElement extends LitElement {
       <span class="tab-label">${label}</span>
       ${closable ? html`<api-icon icon="cancelFilled" class="close-icon" @click="${this._tabCloseHandler}"></api-icon>` : ''}
     </div>
+    ${last ? '' : html`<div class="tab-divider"></div>`}
     `;
   }
 }
