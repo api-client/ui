@@ -3,6 +3,7 @@
 import { Server, StoreLevelUp, ProxyServer } from '@api-client/net-store';
 import { DefaultLogger } from '@api-client/core';
 import Secrets from './secrets.js';
+import host from './IpAddress.js';
 
 /** @typedef {import('@web/dev-server-core').Plugin} Plugin */
 /** @typedef {import('@web/dev-server-core').ServerStartParams} ServerStartParams */
@@ -11,7 +12,6 @@ import Secrets from './secrets.js';
 
 const logger = new DefaultLogger();
 const store = new StoreLevelUp(logger, 'demo/store/data');
-const host = '192.168.86.249';
 const prefix = '/v1';
 const singlePort = 8550;
 const multiPort = 8551;
