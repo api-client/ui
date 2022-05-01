@@ -43,3 +43,13 @@ export function relativeDay(time: number, format?: Intl.DateTimeFormatOptions): 
   };
   return new Intl.DateTimeFormat(undefined, init).format(new Date(current));
 }
+
+/**
+ * Reads a time only in a local format from a timestamp
+ */
+export function getTime(time: number): string {
+  const init: Intl.DateTimeFormatOptions = {
+    timeStyle: 'short',
+  };
+  return new Intl.DateTimeFormat(undefined, init).format(new Date(time));
+}

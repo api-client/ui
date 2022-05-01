@@ -11,6 +11,7 @@ import '../../lib/ResizableElements.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import '../../define/request-log.js';
 import '../../define/request-history-browser.js';
+import { midnightTimestamp } from '../../lib/time/Conversion.js';
 
 /**
  * An element that specializes in rendering an HTTP request that is defined on an HttpProject.
@@ -306,8 +307,16 @@ export default class ProjectRequestElement extends HttpRequestElement {
       app: appInfo.code,
       request: key,
       user: '',
+      midnight: midnightTimestamp(),
     };
-    await Events.Store.History.create(item);
+    if (this._history) {
+      this._history.splice(0, 0, item);
+    }
+    item.key = await Events.Store.History.create(item);
+    const element = this.shadowRoot!.querySelector('request-history-browser');
+    if (element) {
+      element.addHistory(item, true);
+    }
   }
 
   protected _beforeResizeHandler(e: CustomEvent<ResizeEventDetail>): void {
@@ -337,14 +346,14 @@ export default class ProjectRequestElement extends HttpRequestElement {
   }
 
   protected _responsePaneTemplate(): TemplateResult {
-    const { request, _history } = this;
-    if (!request && !_history) {
+    const { _history } = this;
+    if (!_history) {
       return html`
       <p>Execute the request to see the response details.</p>
       `;
     }
     return html`
-    <request-history-browser .history="${_history}" .current="${request && request.log}"></request-history-browser>
+    <request-history-browser .history="${_history}"></request-history-browser>
     `;
   }
 }

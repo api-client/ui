@@ -103,10 +103,7 @@ export default class RequestHistoryBrowserElement extends LitElement {
         align-items: start;
         justify-content: center;
         padding: 0px 20px;
-      }
-
-      .list-item.current {
-        min-height: var(--list-item-height, 72px);
+        overflow: hidden;
       }
 
       .history-request {
@@ -157,7 +154,17 @@ export default class RequestHistoryBrowserElement extends LitElement {
 
       .chart {
         flex: 1;
-        height: 360px;
+        height: 400px;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+
+      .no-data {
+        display: flex;
+        height: 100%;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
       }
       `,
     ];
@@ -167,12 +174,6 @@ export default class RequestHistoryBrowserElement extends LitElement {
    * The history list to render.
    */
   @property({ type: Array }) history?: IHttpHistory[];
-
-  /**
-   * The last log object to render in the view, if any.
-   * This adds a list item in the history that is "current" and always renders this item.
-   */
-  @property({ type: Object }) current?: IRequestLog | RequestLog;
 
   /**
    * A sorted list of history items by the `midnight` property.
@@ -212,9 +213,39 @@ export default class RequestHistoryBrowserElement extends LitElement {
     }
   }
 
+  /**
+   * Adds a new history to the list.
+   * This is used instead of re-assigning the entire array and triggering initial computations.
+   * @param item The history item to add
+   * @param select When true it makes this item selected,
+   */
+  addHistory(item: IHttpHistory, select?: boolean): void {
+    const { _sortedHistory: list } = this;
+    if (!list) {
+      this._sortedHistory = [[item]];
+      return;
+    }
+    const { midnight = Date.now() } = item;
+    const index = list.findIndex(i => i[0].midnight === midnight);
+    if (index >= 0) {
+      this._pushSorted(list[index], item);
+    } else {
+      const position = list.findIndex(i => (i[0].midnight || 0) < midnight);
+      list.splice(position, 0, [item]);
+    }
+    if (select && item.key) {
+      this._selectedItem = item.key;
+    }
+    this.requestUpdate();
+  }
+
   protected _computeHistory(): void {
     const { history } = this;
     this._closedGroups = [];
+    this._selectedItem = undefined;
+    this._item = undefined;
+    this._focusedItem = undefined;
+
     if (!Array.isArray(history) || !history.length) {
       this._sortedHistory = undefined;
       return;
@@ -231,15 +262,14 @@ export default class RequestHistoryBrowserElement extends LitElement {
       }
     });
     this._sortedHistory = result;
+    if (result.length) {
+      this._selectedItem = result[0][0].key;
+    }
   }
 
   protected _computeSelectedItem(): void {
     const { history, _selectedItem } = this;
     this._item = undefined;
-    if (_selectedItem === 'current') { 
-      this._item = this.current;
-      return;
-    }
     if (!_selectedItem || !Array.isArray(history)) {
       return;
     }
@@ -563,7 +593,7 @@ export default class RequestHistoryBrowserElement extends LitElement {
   protected render(): TemplateResult | string {
     const { _sortedHistory: history } = this;
     if (!history) {
-      return '';
+      return this._emptyTemplate();
     }
     return html`
     <div class="content">
@@ -573,15 +603,23 @@ export default class RequestHistoryBrowserElement extends LitElement {
     `;
   }
 
+  protected _emptyTemplate(): TemplateResult {
+    return html`
+    <div class="no-data">
+      No response data to render in this view.
+    </div>
+    `;
+  }
+
   protected _railTemplate(): TemplateResult {
     const { _view: view } = this;
     return html`
     <div class="rail">
       <button class="button ${view === 0 ? 'active' : ''}" data-index="0" @click="${this._railHandler}" aria-label="History list view"  title="History list view">
-        <api-icon icon="add" role="presentation"></api-icon>
+        <api-icon icon="history" role="presentation"></api-icon>
       </button>
       <button class="button ${view === 1 ? 'active' : ''}" data-index="1" @click="${this._railHandler}" aria-label="History analysis view" title="History analysis view">
-        <api-icon icon="api" role="presentation"></api-icon>
+        <api-icon icon="leaderBoard" role="presentation"></api-icon>
       </button>
     </div>
     `;
@@ -621,7 +659,6 @@ export default class RequestHistoryBrowserElement extends LitElement {
   protected _listTemplate(items: IHttpHistory[][]): TemplateResult {
     return html`
     <menu aria-label="History list" tabindex="${this._selectedItem ? '-1' : '0'}" @click="${this._listClick}" @keydown="${this._listKeydown}">
-    ${this._currentListItemTemplate()}
     ${items.map(group => this._listItemsTemplate(group))}
     </menu>
     `;
@@ -705,27 +742,6 @@ export default class RequestHistoryBrowserElement extends LitElement {
       <div class="history-meta">
         <relative-time datetime="${isoTime}"></relative-time> at <local-time datetime="${isoTime}" hour="2-digit" minute="2-digit" second="2-digit"></local-time>
       </div>
-    </li>
-    `;
-  }
-
-  protected _currentListItemTemplate(): TemplateResult | string {
-    const { current } = this;
-    if (!current) {
-      return '';
-    }
-    const key = 'current';
-    const active = key === this._selectedItem;
-    const focused = key === this._focusedItem;
-    const classes = {
-      'list-item': true,
-      current: true,
-      active,
-      focused,
-    };
-    return html`
-    <li class="${classMap(classes)}" data-key="${key!}" data-kind="${current.kind}" tabindex="${focused ? '0' : '-1'}">
-      Current
     </li>
     `;
   }

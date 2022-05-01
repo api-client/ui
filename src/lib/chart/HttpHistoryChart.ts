@@ -3,7 +3,8 @@ import { ErrorResponse, IHttpHistory, IResponse } from '@api-client/core/build/b
 import { css, html, TemplateResult } from 'lit';
 import { range } from 'lit/directives/range.js';
 import { map } from 'lit/directives/map.js';
-import { relativeDay } from '../time/Conversion.js';
+import { classMap } from 'lit/directives/class-map.js';
+import { getTime, relativeDay } from '../time/Conversion.js';
 
 const chartStyles = css`
 .grid-container {
@@ -11,7 +12,7 @@ const chartStyles = css`
   grid-template:
     "header header" 40px
     "rows data" auto
-    ". columns" 40px / 80px auto;
+    ". columns" 80px / 80px auto;
 }
 
 .chart-title {
@@ -41,9 +42,7 @@ const chartStyles = css`
 }
 
 .chart-data {
-  grid-area: data;
-  display: flex;
-  gap: 20px;
+  grid-area: data; 
 }
 
 .chart-rows,
@@ -53,6 +52,13 @@ const chartStyles = css`
 
 .chart-columns {
   grid-area: columns;
+  /* overflow: hidden; */
+}
+
+.chart-data,
+.chart-columns {
+  display: flex;
+  gap: 12px;
 }
 
 .data-rows {
@@ -69,22 +75,26 @@ const chartStyles = css`
   margin-top: 8px;
 }
 
+.data-column,
 .data-bar {
   display: block;
   min-width: 8px;
   background-color: transparent;
   min-width: 20px;
-  flex: 1;
-  margin: 0 12px;
+  flex: 1 1 0%;
 }
 
 .data-bar.day-separator {
+  background-color: #03a9f45e;
+}
+
+.data-bar.day-separator,
+.data-column.day-separator {
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   max-width: 60px;
-  background-color: #03a9f45e;
 }
 
 .data-bar.day-separator .label {
@@ -92,6 +102,20 @@ const chartStyles = css`
   white-space: nowrap;
   background-color: #a2dffb;
   padding: 8px;
+}
+
+.data-column {
+  display: flex;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.data-column .label {
+  display: block;
+  transform: rotate(-90deg);
+  white-space: nowrap;
+  /* overflow: hidden;
+  text-overflow: ellipsis; */
 }
 
 .bar-day-entry {
@@ -139,6 +163,10 @@ interface IEntry {
    * Response size
    */
   rps: number;
+  /**
+   * The log created time
+   */
+  t: number;
 }
 
 type DataEntry = IEntry | IDaySeparator;
@@ -178,8 +206,8 @@ export class HttpHistoryChart {
         label: relativeDay(group[0].midnight!),
       };
       result.push(groupEntry);
-      for (const item of group) {
-        const { log } = item;
+      for (const item of [...group].reverse()) {
+        const { log, created } = item;
         if (!log) {
           continue;
         }
@@ -188,6 +216,7 @@ export class HttpHistoryChart {
           d: 0,
           res: 0,
           rps: 0,
+          t: created,
         };
         result.push(entry);
         const { size, response } = log;
@@ -247,7 +276,11 @@ export class HttpHistoryChart {
   }
 
   private _durationColumns(): TemplateResult {
-    return html`<div class="chart-columns">footer</div>`;
+    const data = this._values;
+    return html`
+    <div class="chart-columns">
+      ${data.map(i => this._durationColumn(i))}
+    </div>`;
   }
 
   private _durationItem(item: DataEntry): TemplateResult {
@@ -276,6 +309,22 @@ export class HttpHistoryChart {
       <span class="label">${d}</span>
       <div class="bar-value" style="flex-basis: ${scale * 100}%">
       </div>
+    </div>
+    `;
+  }
+
+  private _durationColumn(item: DataEntry): TemplateResult {
+    const classes = {
+      'data-column': true,
+      'day-separator': item.kind === DaySeparatorKind,
+    };
+    let label: string | undefined;
+    if (item.kind === EntryKind) {
+      label = getTime(item.t);
+    }
+    return html`
+    <div class="${classMap(classes)}">
+      ${label ? html`<span class="label">${label}</span>` : ''}
     </div>
     `;
   }
