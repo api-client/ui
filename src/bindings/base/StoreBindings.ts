@@ -1,8 +1,9 @@
 /* eslint-disable no-dupe-class-members */
 import { 
-  IBackendInfo, ProjectKind, WorkspaceKind, IListOptions, IListResponse, IFile,
-  IHttpProject, IFileCreateOptions, AccessOperation, IUser, IBackendEvent,
-  Workspace, HttpProject, IAccessPatchInfo, IPatchInfo, IPatchRevision, IApplication, IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions,
+  IBackendInfo, ProjectKind, WorkspaceKind, DataNamespaceKind, IListOptions, IListResponse, IFile,
+  IFileCreateOptions, AccessOperation, IUser, IBackendEvent,
+  Workspace, HttpProject, IAccessPatchInfo, IPatchInfo, IPatchRevision, IApplication, 
+  IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions, Project, ListFileKind, DataNamespace, DataFile
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { PlatformBindings } from './PlatformBindings.js';
@@ -129,7 +130,7 @@ export abstract class StoreBindings extends PlatformBindings {
   protected fileCreateHandler(input: Event): void {
     const e = input as CustomEvent;
     e.preventDefault();
-    e.detail.result = this.createFile(e.detail.file, e.detail.opts);
+    e.detail.result = this.createFile(e.detail.meta, e.detail.media, e.detail.opts);
   }
 
   protected fileCreateDefaultHandler(input: Event): void {
@@ -322,7 +323,7 @@ export abstract class StoreBindings extends PlatformBindings {
    * @param kinds the list of kinds to list. Spaces are always included.
    * @param options Optional query options.
    */
-  async listFiles(kinds: (typeof ProjectKind | typeof WorkspaceKind)[], options?: IListOptions): Promise<IListResponse<IFile>> {
+  async listFiles(kinds?: ListFileKind[], options?: IListOptions): Promise<IListResponse<IFile>> {
     const { store } = this;
     if (!store) {
       throw new Error(`Environment is not set.`);
@@ -336,7 +337,7 @@ export abstract class StoreBindings extends PlatformBindings {
    * @param kinds the list of kinds to list. Spaces are always included.
    * @param options Optional query options.
    */
-  async listSharedFiles(kinds: (typeof ProjectKind | typeof WorkspaceKind)[], options?: IListOptions): Promise<IListResponse<IFile>> {
+  async listSharedFiles(kinds?: ListFileKind[], options?: IListOptions): Promise<IListResponse<IFile>> {
     const { store } = this;
     if (!store) {
       throw new Error(`Environment is not set.`);
@@ -347,16 +348,19 @@ export abstract class StoreBindings extends PlatformBindings {
   /**
    * Creates a file in the store.
    * 
-   * @param file The definition of a file that extends the IFile interface or one of the supported by the server schemas.
-   * @param opts Optional options when creating a file
+   * @param meta The definition of a file that extends the IFile interface.
+   * @param media The file content to create with the file meta, if available.
    * @returns The key of the creates file.
    */
-  async createFile(file: IFile | IHttpProject, opts?: IFileCreateOptions): Promise<string> {
+  async createFile(meta: IFile, media?: unknown, opts?: IFileCreateOptions): Promise<string> {
     const { store } = this;
     if (!store) {
       throw new Error(`Environment is not set.`);
     }
-    return store.sdk.file.create(file, opts);
+    if (media) {
+      return store.sdk.file.create(meta, media, opts);
+    }
+    return store.sdk.file.createMeta(meta, opts);
   }
 
   /**
@@ -371,6 +375,7 @@ export abstract class StoreBindings extends PlatformBindings {
     switch (kind) {
       case ProjectKind: return this.createDefaultProject(name, opts);
       case WorkspaceKind: return this.createDefaultWorkspace(name, opts);
+      case DataNamespaceKind: return this.createDefaultDataNamespace(name, opts);
       default: 
         throw new Error(`Unrecognized file kind: ${kind}`);
     }
@@ -389,7 +394,25 @@ export abstract class StoreBindings extends PlatformBindings {
       throw new Error(`Environment is not set.`);
     }
     const media = HttpProject.fromName(name);
-    return store.sdk.file.create(media.toJSON(), opts);
+    const file = Project.fromProject(media);
+    return store.sdk.file.create(file.toJSON(), media.toJSON(), opts);
+  }
+
+  /**
+   * Creates a default DataNamespace from a name
+   * 
+   * @param name The name of the DataNamespace
+   * @param opts Create options.
+   * @returns The key of the created file.
+   */
+  async createDefaultDataNamespace(name: string, opts?: IFileCreateOptions): Promise<string> {
+    const { store } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const media = DataNamespace.fromName(name);
+    const file = DataFile.fromDataNamespace(media);
+    return store.sdk.file.create(file.toJSON(), media.toJSON(), opts);
   }
 
   /**
@@ -405,7 +428,7 @@ export abstract class StoreBindings extends PlatformBindings {
       throw new Error(`Environment is not set.`);
     }
     const space = Workspace.fromName(name);
-    return store.sdk.file.create(space.toJSON(), opts);
+    return store.sdk.file.createMeta(space.toJSON(), opts);
   }
 
   /**

@@ -1,7 +1,7 @@
 /* eslint-disable no-redeclare */
 import { 
-  IBackendInfo, IListOptions, WorkspaceKind, ProjectKind, IListResponse, IFile, IFileCreateOptions,
-  IHttpProject, AccessOperation, IBackendEvent, IUser, IPatchRevision, IApplication, IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions,
+  IBackendInfo, IListOptions, IListResponse, IFile, IFileCreateOptions,
+  ListFileKind, AccessOperation, IBackendEvent, IUser, IPatchRevision, IApplication, IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { IConfigEnvironment, IConfigInit } from '../lib/config/Config.js';
@@ -225,7 +225,7 @@ export const StoreEvents = Object.freeze({
      * @param kinds the list of kinds to list. Spaces are always included.
      * @param options Optional query options.
      */
-    list: async (kinds: (typeof ProjectKind | typeof WorkspaceKind)[], options?: IListOptions, target: EventTarget=document.body): Promise<IListResponse<IFile>> =>  {
+    list: async (kinds?: ListFileKind[], options?: IListOptions, target: EventTarget=document.body): Promise<IListResponse<IFile>> =>  {
       const e = new CustomEvent(EventTypes.Store.File.list, {
         bubbles: true,
         cancelable: true,
@@ -245,7 +245,7 @@ export const StoreEvents = Object.freeze({
      * @param kinds the list of kinds to list. Spaces are always included.
      * @param options Optional query options.
      */
-    listShared: async (kinds: (typeof ProjectKind | typeof WorkspaceKind)[], options?: IListOptions, target: EventTarget=document.body): Promise<IListResponse<IFile>> =>  {
+    listShared: async (kinds?: ListFileKind[], options?: IListOptions, target: EventTarget=document.body): Promise<IListResponse<IFile>> =>  {
       const e = new CustomEvent(EventTypes.Store.File.listShared, {
         bubbles: true,
         cancelable: true,
@@ -262,17 +262,19 @@ export const StoreEvents = Object.freeze({
     /**
      * Creates a file in the store.
      * 
-     * @param file The definition of a file that extends the IFile interface or one of the supported by the server schemas.
+     * @param meta The definition of a file that extends the IFile interface.
+     * @param media The file content to create with the file meta, if available.
      * @param opts Optional options when creating a file
      * @returns The key of the creates file.
      */
-    create: async (file: IFile | IHttpProject, opts?: IFileCreateOptions, target: EventTarget=document.body): Promise<string> => {
+    create: async (meta: IFile, media?: unknown, opts?: IFileCreateOptions, target: EventTarget=document.body): Promise<string> => {
       const e = new CustomEvent(EventTypes.Store.File.create, {
         bubbles: true,
         cancelable: true,
         composed: true,
         detail: {
-          file,
+          meta,
+          media,
           opts,
           result: undefined,
         },

@@ -199,13 +199,11 @@ export default class StartScreen extends ApplicationScreen {
 
   protected filesTemplate(): TemplateResult {
     const { parent, viewType } = this;
-    const kinds = [ProjectKind];
     return html`
     <api-files 
       .parent="${parent}" 
       .appInfo="${AppInfo}"
       allowAdd 
-      .kinds="${kinds}"
       .viewType="${viewType || 'list'}"
       .scrollTarget="${this.main}"
       .user="${this.user}"
@@ -221,12 +219,10 @@ export default class StartScreen extends ApplicationScreen {
 
   protected sharedTemplate(): TemplateResult {
     const { parent, viewType } = this;
-    const kinds = [ProjectKind];
     return html`
     <api-files 
       .parent="${parent}" 
       .appInfo="${AppInfo}"
-      .kinds="${kinds}"
       .viewType="${viewType || 'list'}"
       .scrollTarget="${this.main}"
       .user="${this.user}"

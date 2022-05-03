@@ -36,7 +36,7 @@ const singleUser = /** @type IServerConfiguration */ ({
     enabled: true,
     cors: {
       exposeHeaders: ['location'],
-      allowHeaders: ['authorization'],
+      allowHeaders: ['authorization', 'content-type'],
     },
   },
 });

@@ -4,12 +4,12 @@
 Copyright 2022 Pawel Psztyc
 Licensed under the CC-BY 2.0
 */
-import { html, TemplateResult, LitElement, CSSResult } from 'lit';
+import { html, TemplateResult, LitElement, CSSResult, PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import {
   IListOptions, IBackendEvent, ProjectKind, IFile, WorkspaceKind, IFileCreateOptions, IUser,
-  IApplication,
+  IApplication, DataFileKind,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { AnypointListboxElement } from '@anypoint-web-components/awc';
@@ -35,14 +35,16 @@ interface SelectionInfo {
 
 const pageLimit = 100;
 
+const AllKinds = [WorkspaceKind, ProjectKind, DataFileKind];
+
 /**
  * An element that renders a list of files from the API store.
  * It can be configured to render different types of files via the `kinds` property.
  * 
  * ## Usage
  * 
- * The store requires to set the list of `kinds` of the files the application is requesting.
- * Regardless of the list, spaces are always returned by the store.
+ * By default the store returns all files available to the user. To limit the types of files
+ * allowed in the view set the `kinds` property.
  * 
  * ```html
  * <api-files .kinds="${["Core#Project"]}" .appInfo="${AppInfo}"></api-files>
@@ -174,23 +176,7 @@ export default class ApiFilesElement extends LitElement {
    * The currently rendered space key.
    * Setting the value will trigger reading files from the server.
    */
-  @property({ type: String })
-  get parent(): string | undefined {
-    return this._parent;
-  }
-
-  set parent(value: string | undefined) {
-    const old = this._parent;
-    if (old === value) {
-      return;
-    }
-    this._parent = value;
-    this.cleanup();
-    this.loadFiles();
-    if (value) {
-      this.loadFile(value);
-    }
-  }
+  @property({ type: String }) parent?: string;
 
   /**
    * A flag that prevents from requesting more files when the previous
@@ -229,9 +215,6 @@ export default class ApiFilesElement extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
-    if (!this.loadingFiles) {
-      this.loadFiles();
-    }
     if (this.parent && !this.loadingFile) {
       this.loadFile(this.parent);
     }
@@ -244,6 +227,20 @@ export default class ApiFilesElement extends LitElement {
     this.scrollTarget = undefined;
   }
 
+  protected willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+    super.willUpdate(cp);
+    if (cp.has('type') || cp.has('parent') || cp.has('kinds')) {
+      this.cleanup();
+      this.loadFiles();
+    }
+    if (cp.has('parent')) {
+      this.file = undefined;
+      if (this.parent) {
+        this.loadFile(this.parent);
+      }
+    }
+  }
+
   private cleanup(): void {
     this.files = [];
     this.filesCursor = undefined;
@@ -253,11 +250,11 @@ export default class ApiFilesElement extends LitElement {
   }
 
   async loadFiles(): Promise<void> {
-    if (!this.kinds || !this.hasMoreFiles) {
+    if (!this.hasMoreFiles) {
       return;
     }
     const { type, parent, filesCursor } = this;
-    const kinds = this.kinds as any[];
+    const kinds = this.kinds as any[] | undefined;
 
     this.loadingFiles = true;
     const opts: IListOptions = {};
@@ -715,10 +712,13 @@ export default class ApiFilesElement extends LitElement {
     if (!this.allowAdd) {
       return '';
     }
-    const { anypoint, kinds = [] } = this;
-    const list = [WorkspaceKind, ...kinds];
+    const { anypoint, kinds = AllKinds } = this;
+    const list = [...kinds];
+    if (!list.includes(WorkspaceKind)) {
+      list.unshift(WorkspaceKind);
+    }
     return html`
-    <anypoint-menu-button dynamicAlign ?anypoint="${anypoint}" closeOnActivate>
+    <anypoint-menu-button dynamicAlign ?anypoint="${anypoint}">
       <anypoint-icon-button slot="dropdown-trigger" aria-label="Press to select a type of file to add"
         title="Add a new file or space. Press to select the type." ?anypoint="${anypoint}">
         <api-icon icon="add"></api-icon>
@@ -752,14 +752,14 @@ export default class ApiFilesElement extends LitElement {
       `;
     }
     const spaces = files.filter(i => i.kind === WorkspaceKind);
-    const projects = files.filter(i => i.kind === ProjectKind);
+    const metaFiles = files.filter(i => i.kind !== WorkspaceKind);
     if (viewType === 'grid') {
-      return this.filesGridTemplate(spaces, projects);
+      return this.filesGridTemplate(spaces, metaFiles);
     }
-    return this.fileListTemplate(spaces, projects);
+    return this.fileListTemplate(spaces, metaFiles);
   }
 
-  protected filesGridTemplate(spaces: IFile[], projects: IFile[]): TemplateResult {
+  protected filesGridTemplate(spaces: IFile[], files: IFile[]): TemplateResult {
     return html`
     <section class="spaces-grid" @click="${this._gridClickHandler}" @dblclick="${this._gridDblHandler}"
       @keydown="${this._filesKeydown}">
@@ -768,12 +768,12 @@ export default class ApiFilesElement extends LitElement {
     <div class="files-section-title">Files</div>
     <section class="files-grid" @click="${this._gridClickHandler}" @dblclick="${this._gridDblHandler}"
       @keydown="${this._filesKeydown}">
-      ${projects.map((item) => this.fileTileTemplate(item))}
+      ${files.map((item) => this.fileTileTemplate(item))}
     </section>
     `;
   }
 
-  protected fileListTemplate(spaces: IFile[], projects: IFile[]): TemplateResult {
+  protected fileListTemplate(spaces: IFile[], files: IFile[]): TemplateResult {
     return html`
     <table class="files-list" @click="${this._tableClickHandler}" @dblclick="${this._gridDblHandler}"
       @keydown="${this._filesKeydown}">
@@ -786,7 +786,7 @@ export default class ApiFilesElement extends LitElement {
       </thead>
       <tbody>
         ${spaces.map((item) => this.fileListItemTemplate(item))}
-        ${projects.map((item) => this.fileListItemTemplate(item))}
+        ${files.map((item) => this.fileListItemTemplate(item))}
       </tbody>
     </table>
     `;
