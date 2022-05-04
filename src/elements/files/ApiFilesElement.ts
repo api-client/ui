@@ -9,7 +9,7 @@ import { property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import {
   IListOptions, IBackendEvent, ProjectKind, IFile, WorkspaceKind, IFileCreateOptions, IUser,
-  IApplication, DataFileKind, IPatchRevision,
+  IApplication, DataFileKind, IPatchRevision, SerializableError,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { AnypointListboxElement } from '@anypoint-web-components/awc';
@@ -22,6 +22,7 @@ import '@github/time-elements/dist/time-ago-element.js';
 import '../../define/add-file-dialog.js';
 import '../../define/share-file.js';
 import '../../define/api-icon.js';
+import '../../define/confirm-delete-dialog.js';
 import { Events } from '../../events/Events.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import styles from './ApiFilesElement.styles.js';
@@ -295,7 +296,7 @@ export default class ApiFilesElement extends LitElement {
     }
   }
 
-  _scrollHandler(e: Event): void {
+  protected _scrollHandler(e: Event): void {
     const target = e.target as HTMLElement;
     const { scrollTop, offsetHeight, scrollHeight } = target;
     const bottom = scrollTop + offsetHeight >= scrollHeight;
@@ -338,6 +339,7 @@ export default class ApiFilesElement extends LitElement {
     const index = this.files.findIndex(i => i.key === id);
     if (index >= 0) {
       this.files.splice(index, 1);
+      this.requestUpdate();
     }
     if (id === this.parent) {
       this.parent = undefined;
@@ -683,6 +685,44 @@ export default class ApiFilesElement extends LitElement {
     });
   }
 
+  protected _deleteSelected(): void {
+    const { selected } = this;
+    const keys = selected.map(i => i.key);
+    const files = this.files.filter(i => keys.includes(i.key));
+    if (!files) {
+      return;
+    }
+    const dialog = document.createElement('confirm-delete-dialog');
+    dialog.opened = true;
+    dialog.type = 'files';
+    dialog.names = files.map(i => i.info.name || 'Unnamed file');
+    document.body.appendChild(dialog);
+    dialog.addEventListener('closed', (ev: Event) => {
+      document.body.removeChild(dialog);
+      const event = ev as CustomEvent;
+      const { canceled, confirmed } = event.detail;
+      if (!canceled && confirmed) {
+        this._deleteFiles(files.map(i => i.key));
+      }
+    });
+  }
+
+  protected async _deleteFiles(ids: string[]): Promise<void> {
+    const ps = ids.map(id => Events.Store.File.delete(id));
+    const results = await Promise.allSettled(ps);
+
+    const messages: string[] = [];
+    results.forEach((result) => {
+      if (result.status === 'rejected') {
+        const err = result.reason as SerializableError;
+        messages.push(err.message);
+      }
+    });
+    if (messages.length) {
+      throw new Error(messages.join(`\n`));
+    }
+  }
+
   render(): TemplateResult {
     const { listTitle, loadingFiles } = this;
     return html`
@@ -910,8 +950,23 @@ export default class ApiFilesElement extends LitElement {
     if (!this.canTrash) {
       return '';
     }
+    const { selected, files } = this;
+    const allowed = !selected.some((selectionInfo) => {
+      // find one that cannot be shared.
+      const file = files.find(i => i.key === selectionInfo.key);
+      if (!file) {
+        // invalid selection, apparently.
+        return true;
+      }
+      if (!file.capabilities) {
+        // invalid file definition
+        return true;
+      }
+      return !file.capabilities.canDelete;
+    });
+
     return html`
-    <anypoint-icon-button title="Trash file">
+    <anypoint-icon-button title="Move file to thrash" ?disabled="${!allowed}" @click="${this._deleteSelected}">
       <api-icon icon="deleteFile"></api-icon>
     </anypoint-icon-button>
     `;
