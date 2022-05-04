@@ -1,12 +1,12 @@
 import { html, TemplateResult, CSSResult } from 'lit';
-import { DataNamespace, IDataNamespace, ApiError, Events as CoreEvents, IBackendEvent, DataNamespaceKind, IPatchRevision } from '@api-client/core/build/browser.js';
+import { DataNamespace, IDataNamespace, ApiError, Events as CoreEvents, IBackendEvent, DataNamespaceKind, IPatchRevision, DataEntityKind, DataModelKind, DataModel, DataEntity } from '@api-client/core/build/browser.js';
 import { JsonPatch, Patch } from '@api-client/json';
 import { ApplicationScreen } from '../ApplicationScreen.js';
 import { query, reactive } from '../../lib/decorators.js';
 import styles from './styles.js';
 import globalStyles from '../styles/global-styles.js';
 import mainLayout from '../styles/grid-hnmf.js';
-import { IRoute } from '../../mixins/RouteMixin.js';
+import { IRoute, IRouteResult } from '../../mixins/RouteMixin.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import { Events } from '../../events/Events.js';
 import { navigate } from '../../lib/route.js';
@@ -15,6 +15,7 @@ import NavElement from '../../elements/schema-design/SchemaDesignNavigationEleme
 import AppInfo from './AppInfo.js';
 import '../../define/schema-design-navigation.js';
 import { randomString } from '../../lib/Random.js';
+import { ISelectDetail } from '../../elements/navigation/AppNavigationElement.js';
 
 export default class SchemaDesignerScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
@@ -24,7 +25,10 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
   static get routes(): IRoute[] {
     return [
       { pattern: '/default', method: 'defaultRoute', fallback: true, name: 'Schema Designer', title: 'Schema Designer Home home' },
-      { pattern: '/404', method: 'e404Route', name: 'Not found', title: 'Not found' }
+      { pattern: '/404', method: 'e404Route', name: 'Not found', title: 'Not found' },
+      { pattern: '/namespace/(?<key>.*)', method: 'namespaceRoute', name: 'Namespace', title: 'A namespace' },
+      { pattern: '/model/(?<key>.*)', method: 'modelRoute', name: 'Data model', title: 'A data model' },
+      { pattern: '/entity/(?<key>.*)', method: 'entityRoute', name: 'Entity model', title: 'An entity model' },
     ];
   }
 
@@ -61,6 +65,13 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
    * This is to used to recognize own patches so it won't process a patch that is already applied to the project.
    */
   protected livePatches = new Map<string, IPatchRevision>();
+
+  /**
+   * The key of the selected item in the root namespace. It corresponds to the `page`.
+   */
+  @reactive() selected?: string;
+
+  @reactive() current?: DataNamespace | DataModel | DataEntity;
 
   constructor() {
     super();
@@ -105,6 +116,8 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
 
   protected resetRoute(): void {
     this.page = undefined;
+    this.selected = undefined;
+    this.current = undefined;
   }
 
   protected defaultRoute(): void {
@@ -115,6 +128,51 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
   protected e404Route(): void {
     this.resetRoute();
     this.page = '404';
+  }
+
+  protected namespaceRoute(info: IRouteResult): void {
+    if (!info.params || !info.params.key) {
+      throw new Error(`Invalid route configuration. Missing parameters.`);
+    }
+    this.resetRoute();
+    const key = info.params.key as string;
+    this.page = 'namespace';
+    this.selected = key;
+    const { root } = this;
+    if (!root) {
+      return;
+    }
+    this.current = root.findNamespace(key);
+  }
+
+  protected modelRoute(info: IRouteResult): void {
+    if (!info.params || !info.params.key) {
+      throw new Error(`Invalid route configuration. Missing parameters.`);
+    }
+    this.resetRoute();
+    const key = info.params.key as string;
+    this.page = 'model';
+    this.selected = key;
+    const { root } = this;
+    if (!root) {
+      return;
+    }
+    this.current = root.findDataModel(key);
+  }
+
+  protected entityRoute(info: IRouteResult): void {
+    if (!info.params || !info.params.key) {
+      throw new Error(`Invalid route configuration. Missing parameters.`);
+    }
+    this.resetRoute();
+    const key = info.params.key as string;
+    this.page = 'entity';
+    this.selected = key;
+    const { root } = this;
+    if (!root) {
+      return;
+    }
+    this.current = root.definitions.entities.find(i => i.key === key);
   }
 
   protected readFileKey(): string | undefined {
@@ -222,6 +280,19 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
     }
   }
 
+  protected _navigationSelectionHandler(e: CustomEvent): void {
+    const { key, kind } = e.detail as ISelectDetail;
+    navigate(this._kindToRoute(kind), key);
+  }
+
+  protected _kindToRoute(kind: string): string {
+    switch (kind) {
+      case DataEntityKind: return 'entity';
+      case DataModelKind: return 'model';
+      default: return 'namespace';
+    }
+  }
+
   pageTemplate(): TemplateResult {
     const { initialized } = this;
     if (!initialized) {
@@ -249,7 +320,7 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
 
   protected navigationTemplate(): TemplateResult {
     return html`
-    <schema-design-navigation .root="${this.root}"></schema-design-navigation>
+    <schema-design-navigation .root="${this.root}" @select="${this._navigationSelectionHandler}"></schema-design-navigation>
     `;
   }
 
@@ -260,7 +331,7 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
     }
     return html`
     <main>
-      TODO
+    ${this.renderPage()}
     </main>`;
   }
 
@@ -276,5 +347,44 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
         <anypoint-button emphasis="high" @click="${this.openStart}">Back to start</anypoint-button>
       </div>
     </main>`;
+  }
+
+  protected renderPage(): TemplateResult {
+    console.log(this.current);
+    switch (this.page) {
+      case 'namespace': return this._namespaceTemplate();
+      case 'model': return this._dataModelTemplate();
+      case 'entity': return this._entityTemplate();
+      default: return this._emptySelectionTemplate();
+    }
+  }
+
+  protected _emptySelectionTemplate(): TemplateResult {
+    return html`
+    <div class="empty-state">
+      Schema designer allows you to design data and translate them into schemas which then can be used in other tools 
+      to generate HTTP payloads and examples.
+
+      <p style="color: red">Please, fix me, style me.</p>
+    </div>
+    `;
+  }
+
+  protected _namespaceTemplate(): TemplateResult {
+    return html`
+    <p>TODO: Namespace view for ${this.selected}</p>
+    `;
+  }
+
+  protected _dataModelTemplate(): TemplateResult {
+    return html`
+    <p>TODO: Data model view for ${this.selected}</p>
+    `;
+  }
+
+  protected _entityTemplate(): TemplateResult {
+    return html`
+    <p>TODO: Entity view for ${this.selected}</p>
+    `;
   }
 }
