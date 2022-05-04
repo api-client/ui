@@ -324,7 +324,7 @@ export default class ApiFilesElement extends LitElement {
     if (parent !== this.parent) {
       return;
     }
-    if (![ProjectKind, WorkspaceKind].includes(kind)) {
+    if (![ProjectKind, WorkspaceKind, DataFileKind].includes(kind)) {
       return;
     }
     this.files.push(data as IFile);

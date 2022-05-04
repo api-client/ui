@@ -13,9 +13,10 @@ import { navigate } from '../../lib/route.js';
 import { SchemaDesignerContextMenu } from './SchemaDesignerContextMenu.js';
 import NavElement from '../../elements/schema-design/SchemaDesignNavigationElement.js';
 import AppInfo from './AppInfo.js';
-import '../../define/schema-design-navigation.js';
 import { randomString } from '../../lib/Random.js';
 import { ISelectDetail } from '../../elements/navigation/AppNavigationElement.js';
+import '../../define/schema-design-navigation.js';
+import '../../define/data-entity-editor.js';
 
 export default class SchemaDesignerScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
@@ -86,7 +87,6 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
     }
     await this.initializeStore();
     const key = this.readFileKey();
-    // async to the initialization
     if (!key) {
       this.reportCriticalError('The project key is not set. Go back to the start page.');
       return;
@@ -168,11 +168,6 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
     const key = info.params.key as string;
     this.page = 'entity';
     this.selected = key;
-    const { root } = this;
-    if (!root) {
-      return;
-    }
-    this.current = root.definitions.entities.find(i => i.key === key);
   }
 
   protected readFileKey(): string | undefined {
@@ -293,6 +288,10 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
     }
   }
 
+  protected _entityChangeHandler(): void {
+    this.updateSchema();
+  }
+
   pageTemplate(): TemplateResult {
     const { initialized } = this;
     if (!initialized) {
@@ -320,7 +319,7 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
 
   protected navigationTemplate(): TemplateResult {
     return html`
-    <schema-design-navigation .root="${this.root}" @select="${this._navigationSelectionHandler}"></schema-design-navigation>
+    <schema-design-navigation .root="${this.root}" .selected="${this.selected}" @select="${this._navigationSelectionHandler}"></schema-design-navigation>
     `;
   }
 
@@ -350,7 +349,6 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
   }
 
   protected renderPage(): TemplateResult {
-    console.log(this.current);
     switch (this.page) {
       case 'namespace': return this._namespaceTemplate();
       case 'model': return this._dataModelTemplate();
@@ -384,7 +382,7 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
 
   protected _entityTemplate(): TemplateResult {
     return html`
-    <p>TODO: Entity view for ${this.selected}</p>
+    <data-entity-editor .root="${this.root}" .selected="${this.selected}" @change="${this._entityChangeHandler}"></data-entity-editor>
     `;
   }
 }

@@ -99,6 +99,10 @@ export default class StartScreen extends ApplicationScreen {
   }
 
   protected sharedRoute(): void {
+    if (this.isSingleUser) {
+      navigate('files');
+      return;
+    }
     this.resetRoute();
     this.page = 'shared' as NavigationPage;
   }
@@ -173,7 +177,7 @@ export default class StartScreen extends ApplicationScreen {
       <ul class="navigation-list">
         <li class="navigation-item ${page === 'recent' ? 'selected' : ''}"><a href="${buildRoute('recent')}">Recent</a></li>
         <li class="navigation-item ${page === 'files' ? 'selected' : ''}"><a href="${buildRoute('files')}">Files</a></li>
-        <li class="navigation-item ${page === 'shared' ? 'selected' : ''}"><a href="${buildRoute('shared')}">Shared with me</a></li>
+        ${this.isSingleUser ? '' : html`<li class="navigation-item ${page === 'shared' ? 'selected' : ''}"><a href="${buildRoute('shared')}">Shared with me</a></li>`}
       </ul>
     </nav>
     `;

@@ -115,6 +115,7 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
     });
     return this._parentListItemTemplate(current.key, current.kind, current.info.name || 'Unnamed namespace', contents, {
       indent,
+      parentIcon: 'schemaNamespace',
     });
   }
 
@@ -142,6 +143,7 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
     const entities = current.entities.map(i => this._entityItemTemplate(i, indent + 1));
     return this._parentListItemTemplate(current.key, current.kind, label, entities, {
       indent,
+      parentIcon: 'schemaModel',
     });
   }
 
@@ -150,6 +152,7 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
     const content = this._itemContentTemplate('schemaEntity', label);
     return this._listItemTemplate(item.key, item.kind, label, content, {
       indent: indent + 1,
+      draggable: true,
     });
   }
 }

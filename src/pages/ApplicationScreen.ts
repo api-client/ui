@@ -1,7 +1,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable class-methods-use-this */
 import { html, TemplateResult } from 'lit';
-import { IUser, Events as CoreEvents } from '@api-client/core/build/browser.js';
+import { IUser, Events as CoreEvents, IBackendInfo } from '@api-client/core/build/browser.js';
 import { RenderableMixin } from '../mixins/RenderableMixin.js';
 import { RouteMixin } from '../mixins/RouteMixin.js';
 import { reactive } from '../lib/decorators.js';
@@ -67,6 +67,24 @@ export abstract class ApplicationScreen extends RouteMixin(RenderableMixin(Event
   @reactive() protected loadingUser = false;
   
   @reactive() protected authenticated = false;
+
+  /**
+   * This is automatically set when initializing the store.
+   * Basic information about the store.
+   */
+  protected storeInfo?: IBackendInfo;
+
+  /**
+   * Checks whether the store is in the single user mode.
+   * It also returns true when the store info is not set (before the backend was initialized).
+   */
+  get isSingleUser(): boolean {
+    const { storeInfo } = this;
+    if (!storeInfo) {
+      return true;
+    }
+    return storeInfo.mode === 'single-user';
+  }
 
   protected pendingResolver?: (value: void | PromiseLike<void>) => void;
 
@@ -220,13 +238,14 @@ export abstract class ApplicationScreen extends RouteMixin(RenderableMixin(Event
         throw e;
       }
     }
-    if (!env) {
+    if (!env || !env.location) {
       return new Promise((resolve) => {
         this.pendingResolver = resolve;
         this.page = 'env-required';
       });
     }
     await Events.Store.Global.setEnv(env);
+    this.storeInfo = await Events.Store.storeInfo(env.location);
     const authStatus = await Events.Store.Auth.isAuthenticated();
     if (!authStatus) {
       if (!defaultFlows) {

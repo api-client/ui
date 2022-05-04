@@ -1,6 +1,6 @@
 /* eslint-disable no-dupe-class-members */
 import { 
-  IBackendInfo, ProjectKind, WorkspaceKind, DataNamespaceKind, IListOptions, IListResponse, IFile,
+  IBackendInfo, ProjectKind, WorkspaceKind, DataFileKind, IListOptions, IListResponse, IFile,
   IFileCreateOptions, AccessOperation, IUser, IBackendEvent,
   Workspace, HttpProject, IAccessPatchInfo, IPatchInfo, IPatchRevision, IApplication, 
   IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions, Project, ListFileKind, DataNamespace, DataFile
@@ -375,7 +375,7 @@ export abstract class StoreBindings extends PlatformBindings {
     switch (kind) {
       case ProjectKind: return this.createDefaultProject(name, opts);
       case WorkspaceKind: return this.createDefaultWorkspace(name, opts);
-      case DataNamespaceKind: return this.createDefaultDataNamespace(name, opts);
+      case DataFileKind: return this.createDefaultDataNamespace(name, opts);
       default: 
         throw new Error(`Unrecognized file kind: ${kind}`);
     }

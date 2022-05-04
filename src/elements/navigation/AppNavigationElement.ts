@@ -29,6 +29,11 @@ export interface IListItemRenderOptions {
   indent?: number;
   parent?: string;
   disabled?: boolean;
+  /**
+   * Only relevant for parent list item.
+   * When set it forces this icon to be rendered next to the toggle button.
+   */
+  parentIcon?: IconType;
 }
 
 /**
@@ -230,6 +235,13 @@ export default class AppNavigation extends LitElement {
     this.setAttribute('tabindex', '0');
   }
 
+  protected willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+    super.willUpdate(cp);
+    if (cp.has('selected') && !cp.get('selected') && this.selected) {
+      this.ensureTreeVisibility(this.selected);
+    }
+  }
+
   protected updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(cp);
     if (cp.has('edited') && this.edited) {
@@ -278,6 +290,32 @@ export default class AppNavigation extends LitElement {
     } else if (!this.hasAttribute('tabindex')) {
       // restore tabindex on self.
       this.setAttribute('tabindex', '0');
+    }
+  }
+
+  /**
+   * Makes sure the node represented by the passed key is visible in the UI.
+   * This opens all parents on the way up to the root and scrolls to the node, when needed.
+   * @param key The key of the object to ensure visibility for.
+   */
+  ensureTreeVisibility(key: string): void {
+    const node = this.shadowRoot?.querySelector(`li[data-key="${key}"]`) as HTMLLIElement;
+    if (!node) {
+      return;
+    }
+    const { _opened } = this;
+    let changed = false;
+    let parent = this._findParentListItem(node);
+    while (parent) {
+      const id = parent.dataset.key as string;
+      if (!_opened.includes(id)) {
+        _opened.push(id);
+        changed = true;
+      }
+      parent = this._findParentListItem(parent);
+    }
+    if (changed) {
+      this.requestUpdate();
     }
   }
 
@@ -855,6 +893,7 @@ export default class AppNavigation extends LitElement {
     return html`
     <div class="list-item-content" style="${styleMap(styles)}">
       <api-icon icon="chevronRight" class="group-toggle-icon"></api-icon>
+      ${opts.parentIcon ? html`<api-icon icon="${opts.parentIcon}" class="object-icon"></api-icon>` : ''}
       <span class="item-label" title="${label}">${label}</span>
     </div>
     `;
