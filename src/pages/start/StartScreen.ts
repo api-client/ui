@@ -1,5 +1,5 @@
 import { html, TemplateResult, CSSResult } from 'lit';
-import { Events as CoreEvents, ProjectKind, WorkspaceKind, IFile } from '@api-client/core/build/browser.js';
+import { Events as CoreEvents, ProjectKind, WorkspaceKind, IFile, DataFileKind } from '@api-client/core/build/browser.js';
 import { Events } from '../../events/Events.js';
 import { ApplicationScreen } from '../ApplicationScreen.js';
 import { reactive, query } from '../../lib/decorators.js';
@@ -133,6 +133,8 @@ export default class StartScreen extends ApplicationScreen {
       navigate(this.page || 'files', file.key);
     } else if (file.kind === ProjectKind) {
       Events.Navigation.App.runHttpProject({ key: file.key });
+    } else if (file.kind === DataFileKind) {
+      Events.Navigation.App.runSchemaDesigner({ key: file.key });
     }
   }
 

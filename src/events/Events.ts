@@ -3,6 +3,7 @@ import { NavigationEvents } from './NavigationEvents.js';
 import { StoreEvents } from './StoreEvents.js';
 import { HttpProjectEvents } from './HttpProjectEvents.js';
 import { AppDataEvents } from './AppDataEvents.js';
+import { SchemaDesignEvents } from './SchemaDesignEvents.js';
 
 export const Events = Object.freeze({
   AppData: AppDataEvents,
@@ -10,4 +11,5 @@ export const Events = Object.freeze({
   Navigation: NavigationEvents,
   Store: StoreEvents,
   HttpProject: HttpProjectEvents,
+  SchemaDesign: SchemaDesignEvents,
 });

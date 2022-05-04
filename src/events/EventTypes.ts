@@ -87,6 +87,7 @@ export const EventTypes = Object.freeze({
     App: Object.freeze({
       runProjectRunner: 'navapprunprojectrunner',
       runHttpProject: 'navapprunhttpproject',
+      runSchemaDesigner: 'navapprunschemadesigner',
       runStart: 'navapprunstart',
     }),
     Store: Object.freeze({
@@ -131,5 +132,11 @@ export const EventTypes = Object.freeze({
         }),
       }),
     }),
+  }),
+  SchemaDesign: Object.freeze({
+    changed: 'schemadesignchange',
+    State: Object.freeze({
+      nameChanged: 'schemadesignnamechange',
+    })
   }),
 });

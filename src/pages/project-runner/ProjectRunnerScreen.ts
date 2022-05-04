@@ -6,7 +6,6 @@ import { reactive, query } from '../../lib/decorators.js';
 import styles from './styles.js';
 import globalStyles from '../styles/global-styles.js';
 import mainLayout from '../styles/grid-hnmf.js';
-// import AppInfo from './AppInfo.js';
 import { Events } from '../../events/Events.js';
 import { navigate } from '../../lib/route.js';
 import { EventTypes } from '../../events/EventTypes.js';

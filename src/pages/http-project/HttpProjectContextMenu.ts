@@ -34,7 +34,7 @@ export class HttpProjectContextMenu extends ContextMenu {
         continue;
       }
       const elm = target as HTMLElement;
-      if (elm.matches('li.project-tree-item')) {
+      if (elm.matches('li[data-key][data-kind]')) {
         return elm;
       }
       // top most for the navigation
@@ -62,4 +62,18 @@ export class HttpProjectContextMenu extends ContextMenu {
     }
     return undefined;
   }
+
+  // elementToTarget(element: HTMLElement | SVGElement): string | undefined {
+  //   let result = super.elementToTarget(element);
+  //   if (!result) {
+  //     return result;
+  //   }
+  //   const att = Array.from(element.attributes).filter(a => a.name.startsWith('data-'));
+  //   att.forEach((item) => {
+  //     const { name, value } = item;
+  //     result += `[${name}="${value}"]`;
+  //   });
+  //   console.log(result);
+  //   return result;
+  // }
 }

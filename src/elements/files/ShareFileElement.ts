@@ -4,7 +4,7 @@ import { property, state } from 'lit/decorators.js';
 import { AnypointDialogElement, AnypointListboxElement, AnypointDropdownElement } from '@anypoint-web-components/awc';
 import { 
   IFile, Events as CoreEvents, IUser, AccessOperation, IAccessAddOperation, PermissionRole, IPermission,
-  IBackendEvent, ProjectKind, WorkspaceKind, IApplication,
+  IBackendEvent, ProjectKind, WorkspaceKind, IApplication, IPatchRevision,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import dialogStyles from '@anypoint-web-components/awc/dist/styles/AnypointDialogInternalStyles.js';
@@ -413,7 +413,7 @@ export default class ShareFileElement extends AnypointDialogElement {
   }
 
   protected _handleMetaPatch(event: IBackendEvent): void {
-    const { kind, data, id } = event;
+    const { kind, id } = event;
     if (![ProjectKind, WorkspaceKind].includes(kind)) {
       return;
     }
@@ -421,7 +421,8 @@ export default class ShareFileElement extends AnypointDialogElement {
       return;
     }
     const file = this.file as IFile;
-    const patch = data as Patch.JsonPatch;
+    const rev = event.data as IPatchRevision;
+    const { patch } = rev;
     const result = Patch.apply(file, patch);
     this.file = result.doc as IFile;
     const hasPermission = patch.some(i => i.path.startsWith('/permissions'));

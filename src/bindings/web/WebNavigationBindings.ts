@@ -1,4 +1,4 @@
-import { INavDetail, INavRunHttpProjectDetail, INavRunProjectRunnerDetail } from '../../events/NavigationEvents.js';
+import { INavDetail, INavRunHttpProjectDetail, INavRunProjectRunnerDetail, INavRunSchemaDesignerDetail } from '../../events/NavigationEvents.js';
 import { NavigationBindings } from '../base/NavigationBindings.js';
 
 export class WebNavigationBindings extends NavigationBindings {
@@ -70,5 +70,13 @@ export class WebNavigationBindings extends NavigationBindings {
   async openStoreAuthenticate(init: INavDetail = {}): Promise<void> {
     const url = this.getPageUrl('../init/ConfigAuthenticate.html').toString();
     this.open(url, url, init.sameWindow);
+  }
+
+  async openSchemaDesigner(init: INavRunSchemaDesignerDetail): Promise<void> {
+    const uri = this.getPageUrl('../schema-design/main.html');
+    const { key, sameWindow } = init;
+    uri.searchParams.set('key', key);
+    const url = uri.toString();
+    this.open(url, url, sameWindow);
   }
 }

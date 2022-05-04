@@ -3,7 +3,7 @@ import { EventTypes } from './EventTypes.js';
 export const HttpProjectEvents = {
   /**
    * Informs the application that the HttpProject has changed
-   * internally and the view should be updated and project stored in the store.
+   * The view should be updated and the project should be stored in the store.
    * 
    * @param target Optional event target.
    */

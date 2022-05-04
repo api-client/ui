@@ -9,7 +9,7 @@ import { property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import {
   IListOptions, IBackendEvent, ProjectKind, IFile, WorkspaceKind, IFileCreateOptions, IUser,
-  IApplication, DataFileKind,
+  IApplication, DataFileKind, IPatchRevision,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { AnypointListboxElement } from '@anypoint-web-components/awc';
@@ -345,7 +345,7 @@ export default class ApiFilesElement extends LitElement {
   }
 
   protected _handleMetaPatch(event: IBackendEvent): void {
-    const { kind, data, id } = event;
+    const { kind, id } = event;
     if (![ProjectKind, WorkspaceKind].includes(kind)) {
       return;
     }
@@ -353,7 +353,8 @@ export default class ApiFilesElement extends LitElement {
     if (index < 0) {
       return;
     }
-    const patch = data as Patch.JsonPatch;
+    const rev = event.data as IPatchRevision;
+    const { patch } = rev;
     const file = this.files[index];
     const result = Patch.apply(file, patch);
     this.files[index] = result.doc as IFile;

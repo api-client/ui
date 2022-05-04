@@ -16,6 +16,13 @@ export interface INavRunHttpProjectDetail extends INavDetail {
   key: string;
 }
 
+export interface INavRunSchemaDesignerDetail extends INavDetail {
+  /**
+   * The schema file id to run
+   */
+  key: string;
+}
+
 export interface INavRunProjectRunnerDetail extends INavDetail {
   /**
    * The project key to run
@@ -28,7 +35,7 @@ export interface INavRunProjectRunnerDetail extends INavDetail {
   parent?: string;
 }
 
-export type NavRunDetail = INavRunHttpProjectDetail | INavRunProjectRunnerDetail | INavDetail;
+export type NavRunDetail = INavRunHttpProjectDetail | INavRunProjectRunnerDetail | INavRunSchemaDesignerDetail | INavDetail;
 
 export class AppNavigationEvent extends CustomEvent<NavRunDetail> {
   constructor(type: string, detail: NavRunDetail) {
@@ -68,6 +75,16 @@ export const NavigationEvents = Object.freeze({
      */
     runHttpProject: (detail: INavRunHttpProjectDetail, target: EventTarget=document.body): void => {
       const e = new AppNavigationEvent(EventTypes.Navigation.App.runHttpProject, detail);
+      target.dispatchEvent(e);
+    },
+    /**
+     * Opens the Schema Designer application. The detail object requires providing at least the `key` of the schema to run.
+     * 
+     * @param detail The init environment for the Schema Designer app.
+     * @param target Optional events target
+     */
+    runSchemaDesigner: (detail: INavRunSchemaDesignerDetail, target: EventTarget=document.body): void => {
+      const e = new AppNavigationEvent(EventTypes.Navigation.App.runSchemaDesigner, detail);
       target.dispatchEvent(e);
     },
     /**

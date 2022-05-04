@@ -1,6 +1,6 @@
 import { PlatformBindings } from './PlatformBindings.js';
 import { EventTypes } from '../../events/EventTypes.js';
-import { AppNavigationEvent, INavRunHttpProjectDetail, INavRunProjectRunnerDetail, INavDetail } from '../../events/NavigationEvents.js';
+import { AppNavigationEvent, INavRunHttpProjectDetail, INavRunProjectRunnerDetail, INavDetail, INavRunSchemaDesignerDetail } from '../../events/NavigationEvents.js';
 
 /**
  * Global navigation bindings.
@@ -17,6 +17,7 @@ export abstract class NavigationBindings extends PlatformBindings {
     window.addEventListener(EventTypes.Navigation.App.runHttpProject, this.appNavigationHandler.bind(this) as EventListener);
     window.addEventListener(EventTypes.Navigation.App.runProjectRunner, this.appNavigationHandler.bind(this) as EventListener);
     window.addEventListener(EventTypes.Navigation.App.runStart, this.appNavigationHandler.bind(this) as EventListener);
+    window.addEventListener(EventTypes.Navigation.App.runSchemaDesigner, this.appNavigationHandler.bind(this) as EventListener);
     window.addEventListener(EventTypes.Navigation.Store.authenticate, this.appNavigationHandler.bind(this) as EventListener);
   }
 
@@ -73,6 +74,9 @@ export abstract class NavigationBindings extends PlatformBindings {
       case EventTypes.Navigation.Store.authenticate: 
         this.openStoreAuthenticate(e.detail as INavDetail);
         break;
+      case EventTypes.Navigation.App.runSchemaDesigner: 
+        this.openSchemaDesigner(e.detail as INavRunSchemaDesignerDetail);
+        break;
       default:
         // nothing, just ignore.
     }
@@ -104,4 +108,9 @@ export abstract class NavigationBindings extends PlatformBindings {
    * Opens store authentication configuration.
    */
   abstract openStoreAuthenticate(init?: INavDetail): Promise<void>;
+
+  /**
+   * Opens the schema designer app.
+   */
+  abstract openSchemaDesigner(init: INavRunSchemaDesignerDetail): Promise<void>;
 }

@@ -1,5 +1,5 @@
 import { ContextMenuCommand } from '@api-client/context-menu';
-import { HttpProject, ProjectRequestKind } from '@api-client/core/build/browser.js';
+import { EnvironmentKind, HttpProject, ProjectFolderKind, ProjectRequestKind } from '@api-client/core/build/browser.js';
 import { folder, rename, deleteFile, environment, request, close } from '../../elements/icons/Icons.js';
 import ProjectNavigationElement from '../../elements/project/ProjectNavigationElement.js';
 import '../../define/rename-file-dialog.js';
@@ -62,37 +62,43 @@ const commands: ContextMenuCommand[] = [
 
   // folders
   {
-    target: 'li.project-tree-item.folder-item',
+    target: `li[data-kind="${ProjectFolderKind}"]`,
     label: 'Add folder',
     icon: folder,
     execute: (init): void => {
       const project = init.store.get('project') as HttpProject;
       const callback = init.store.get('callback') as Function;
       const key = init.target.dataset.key as string;
-      project.addFolder(undefined, { parent: key, });
+      const created = project.addFolder(undefined, { parent: key, });
       const nav = findNavigation(init.target as HTMLElement);
-      nav.openFolder(key);
+      nav.edited = created.key;
+      nav.openGroup(key);
       callback();
+      
     },
     visible: (init) => init.store.has('project'),
   },
   {
-    target: 'li.project-tree-item.folder-item',
+    target: `li[data-kind="${ProjectFolderKind}"]`,
     label: 'Add request',
     icon: request,
     execute: (init): void => {
       const project = init.store.get('project') as HttpProject;
       const callback = init.store.get('callback') as Function;
       const key = init.target.dataset.key as string;
-      project.addRequest('http://', { parent: key });
-      const nav = findNavigation(init.target as HTMLElement);
-      nav.openFolder(key);
-      callback();
+      const f = project.findFolder(key);
+      if (f) {
+        const created = f.addRequest('http://');
+        const nav = findNavigation(init.target as HTMLElement);
+        nav.edited = created.key;
+        nav.openGroup(key);
+        callback();
+      }
     },
     visible: (init) => init.store.has('project'),
   },
   {
-    target: 'li.project-tree-item.folder-item',
+    target: `li[data-kind="${ProjectFolderKind}"]`,
     label: 'Add environment',
     title: 'Adds a new environment definition to the folder',
     icon: environment,
@@ -102,21 +108,22 @@ const commands: ContextMenuCommand[] = [
       const key = init.target.dataset.key as string;
       const f = project.findFolder(key);
       if (f) {
-        f.addEnvironment('New environment');
+        const created = f.addEnvironment('New environment');
         const nav = findNavigation(init.target as HTMLElement);
-        nav.openFolder(key);
+        nav.edited = created.key;
+        nav.openGroup(key);
         callback();
       }
     },
     visible: (init) => init.store.has('project'),
   },
   {
-    target: 'li.project-tree-item.folder-item',
+    target: `li[data-kind="${ProjectFolderKind}"]`,
     type: 'separator',
     label: '',
   },
   {
-    target: 'li.project-tree-item.folder-item',
+    target: `li[data-kind="${ProjectFolderKind}"]`,
     label: 'Rename',
     icon: rename,
     title: 'Renames this folder',
@@ -127,7 +134,7 @@ const commands: ContextMenuCommand[] = [
     },
   },
   {
-    target: 'li.project-tree-item.folder-item',
+    target: `li[data-kind="${ProjectFolderKind}"]`,
     label: 'Delete',
     icon: deleteFile,
     title: 'Deletes this folder',
@@ -146,7 +153,7 @@ const commands: ContextMenuCommand[] = [
 
   // requests
   {
-    target: 'li.project-tree-item.request-item',
+    target: `li[data-kind="${ProjectRequestKind}"]`,
     label: 'Rename',
     icon: rename,
     title: 'Renames this request',
@@ -157,7 +164,7 @@ const commands: ContextMenuCommand[] = [
     },
   },
   {
-    target: 'li.project-tree-item.request-item',
+    target: `li[data-kind="${ProjectRequestKind}"]`,
     label: 'Duplicate',
     title: 'Makes a duplicate of this request',
     execute: (init): void => {
@@ -175,7 +182,7 @@ const commands: ContextMenuCommand[] = [
     },
   },
   {
-    target: 'li.project-tree-item.request-item',
+    target: `li[data-kind="${ProjectRequestKind}"]`,
     label: 'Delete',
     icon: deleteFile,
     title: 'Deletes this request',
@@ -194,7 +201,7 @@ const commands: ContextMenuCommand[] = [
 
   // environments
   {
-    target: 'li.project-tree-item.environment-item',
+    target: `li[data-kind="${EnvironmentKind}"]`,
     label: 'Rename',
     icon: rename,
     title: 'Renames this environment',
@@ -206,7 +213,7 @@ const commands: ContextMenuCommand[] = [
   },
   
   {
-    target: 'li.project-tree-item.environment-item',
+    target: `li[data-kind="${EnvironmentKind}"]`,
     label: 'Delete',
     icon: deleteFile,
     title: 'Deletes this environment',
