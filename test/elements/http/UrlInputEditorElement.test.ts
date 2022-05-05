@@ -90,16 +90,16 @@ describe('UrlInputEditorElement', () => {
       element = await basicFixture();
     });
 
-    it('Empty value does not passes validation', async () => {
+    it('does not pass the validation with an empty value', async () => {
       element.value = '';
       await nextFrame();
-      const result = element.validate('');
+      const result = element.checkValidity();
       assert.isFalse(result);
     });
 
-    it('Passes validation with value', () => {
+    it('passes the validation with value', () => {
       element.value = 'test';
-      const result = element.validate('test');
+      const result = element.checkValidity();
       assert.isTrue(result);
     });
   });
@@ -161,7 +161,7 @@ describe('UrlInputEditorElement', () => {
 
     it('parameters overlay is closed by default', () => {
       const node = element.shadowRoot!.querySelector('url-params-editor');
-      assert.isFalse(node.opened);
+      assert.isUndefined(node.opened);
     });
 
     it('dispatches detailsopened event', () => {
@@ -303,10 +303,10 @@ describe('UrlInputEditorElement', () => {
   });
 
   describe('_getValidity()', () => {
-    it('calls validate on detailed editor', async () => {
+    it('calls checkValidity on detailed editor', async () => {
       const element = await detailsFixture();
       const node = element.shadowRoot!.querySelector('url-params-editor');
-      const spy = sinon.spy(node, 'validate');
+      const spy = sinon.spy(node, 'checkValidity');
       element._getValidity();
       assert.isTrue(spy.called);
     });
@@ -488,6 +488,7 @@ describe('UrlInputEditorElement', () => {
       it('selects a suggestion value', async () => {
         const item = element.shadowRoot!.querySelector('anypoint-item');
         item.click();
+        await nextFrame();
         const sorted = [...items];
         sortUrls(sorted, 'http');
         assert.equal(element.value, sorted[0].url);
@@ -496,6 +497,7 @@ describe('UrlInputEditorElement', () => {
       it('closes the list after selection', async () => {
         const item = element.shadowRoot!.querySelector('anypoint-item');
         item.click();
+        await nextFrame();
         assert.isFalse(element[autocompleteOpened]);
       });
 
@@ -504,6 +506,7 @@ describe('UrlInputEditorElement', () => {
         element.addEventListener(EventTypes.HttpProject.Request.State.urlChange, spy);
         const item = element.shadowRoot!.querySelector('anypoint-item');
         item.click();
+        await nextFrame();
         assert.isTrue(spy.calledOnce);
       });
 
@@ -557,6 +560,7 @@ describe('UrlInputEditorElement', () => {
         });
         input.dispatchEvent(e);
         assert.isTrue(e.defaultPrevented, 'the event is cancelled');
+        await nextFrame();
         const rendered = element[renderedSuggestions];
         assert.equal(element.value, rendered[0].url, 'updates the url');
       });
@@ -580,6 +584,7 @@ describe('UrlInputEditorElement', () => {
           code: 'Enter',
         });
         input.dispatchEvent(e);
+        await nextFrame();
         assert.isFalse(spy.called);
       });
 
