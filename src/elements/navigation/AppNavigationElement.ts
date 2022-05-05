@@ -304,18 +304,13 @@ export default class AppNavigation extends LitElement {
       return;
     }
     const { _opened } = this;
-    let changed = false;
     let parent = this._findParentListItem(node);
     while (parent) {
       const id = parent.dataset.key as string;
       if (!_opened.includes(id)) {
         _opened.push(id);
-        changed = true;
       }
       parent = this._findParentListItem(parent);
-    }
-    if (changed) {
-      this.requestUpdate();
     }
   }
 

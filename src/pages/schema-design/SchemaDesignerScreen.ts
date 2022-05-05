@@ -292,6 +292,10 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
     this.updateSchema();
   }
 
+  protected _entityNameChangeHandler(): void {
+    this.nav?.requestUpdate();
+  }
+
   pageTemplate(): TemplateResult {
     const { initialized } = this;
     if (!initialized) {
@@ -382,7 +386,7 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
 
   protected _entityTemplate(): TemplateResult {
     return html`
-    <data-entity-editor .root="${this.root}" .selected="${this.selected}" @change="${this._entityChangeHandler}"></data-entity-editor>
+    <data-entity-editor .root="${this.root}" .selected="${this.selected}" @change="${this._entityChangeHandler}" @namechange="${this._entityNameChangeHandler}"></data-entity-editor>
     `;
   }
 }

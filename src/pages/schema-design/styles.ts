@@ -5,4 +5,8 @@ export default css`
   margin: 0;
   padding: 0;
 }
+
+schema-design-navigation {
+  border-right: 1px var(--divider-color) solid
+}
 `;

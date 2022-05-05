@@ -92,6 +92,11 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
     if (!root) {
       return html``;
     }
+    const hasChildren = root.items.some(i => [DataNamespaceKind, DataModelKind].includes(i.kind));
+    if (!hasChildren) {
+      // TODO: Render empty screen.
+      return html``;
+    }
     return html`
       <div class="section-title">Namespace</div>
       ${this._namespaceTreeTemplate(root)}
@@ -99,7 +104,16 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
   }
 
   protected _namespaceTreeTemplate(root: DataNamespace): TemplateResult {
-    const contents = this._nsItemTemplate(root, -1);
+    const namespaces = root.listNamespaces();
+    const dataModels = root.listDataModels();
+    const contents: TemplateResult[] = [];
+    namespaces.forEach(ns => {
+      contents.push(this._namespaceItemTemplate(ns, 0));
+    });
+    dataModels.forEach(ns => {
+      contents.push(this._dataModelItemTemplate(ns, 0));
+    });
+
     return this._outerListTemplate(contents);
   }
 
@@ -108,10 +122,10 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
     const dataModels = current.listDataModels();
     const contents: TemplateResult[] = [];
     namespaces.forEach(ns => {
-      contents.push(this._nsItemTemplate(ns, indent));
+      contents.push(this._namespaceItemTemplate(ns, indent + 1));
     });
     dataModels.forEach(ns => {
-      contents.push(this._dmItemTemplate(ns, indent));
+      contents.push(this._dataModelItemTemplate(ns, indent + 1));
     });
     return this._parentListItemTemplate(current.key, current.kind, current.info.name || 'Unnamed namespace', contents, {
       indent,
@@ -119,10 +133,10 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
     });
   }
 
-  protected _nsItemTemplate(item: DataNamespace, indent: number): TemplateResult {
+  protected _namespaceItemTemplate(item: DataNamespace, indent: number): TemplateResult {
     const hasChildren = item.items.some(i => [DataNamespaceKind, DataModelKind].includes(i.kind));
     if (hasChildren) {
-      return this._nsChildrenTemplate(item, indent + 1);
+      return this._nsChildrenTemplate(item, indent);
     }
     const label = item.info.name || 'Unnamed namespace';
     const content = this._itemContentTemplate('schemaNamespace', label);
@@ -131,7 +145,7 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
     });
   }
 
-  protected _dmItemTemplate(current: DataModel, indent: number): TemplateResult {
+  protected _dataModelItemTemplate(current: DataModel, indent: number): TemplateResult {
     const hasChildren = !!current.entities.length;
     const label = current.info.name || 'Unnamed data model';
     if (!hasChildren) {

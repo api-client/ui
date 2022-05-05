@@ -12,4 +12,26 @@ export default css`
   text-transform: uppercase;
   font-size: 0.873rem;
 }
+
+.secondary {
+  font-size: .875rem;
+  color: var(--secondary-text-color);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.drop-zone {
+  height: 120px;
+  border: 4px var(--accent-color) dotted;
+  margin: 28px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text-selectable {
+  user-select: text;
+}
 `;
