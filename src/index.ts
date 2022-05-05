@@ -1,6 +1,8 @@
 // Elements
 
 export { default as ApiIconElement } from "./elements/icons/ApiIconElement.js";
+export { default as MarkedHighlightElement } from "./elements/highlight/MarkedHighlightElement.js";
+export { default as PrismHighlightElement } from "./elements/highlight/PrismHighlightElement.js";
 
 
 // Pages
@@ -30,3 +32,10 @@ export { EventTypes } from './events/EventTypes.js';
 
 // Router
 export * as Router from './lib/route.js';
+
+// libs
+
+export { PrismHighlighter } from './elements/highlight/PrismHighlighter.js';
+export { default as PrismStyles } from './elements/highlight/PrismStyles.js';
+export { default as MarkdownStyles } from './elements/highlight/MarkdownStyles.js';
+export * as PrismAutoDetect from './elements/highlight/PrismAutoDetect.js';

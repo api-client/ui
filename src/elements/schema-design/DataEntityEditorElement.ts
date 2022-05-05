@@ -7,7 +7,9 @@ import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import { AnypointInputElement } from "@anypoint-web-components/awc";
 import theme from '../theme.js';
 import schemaCommon from './schemaCommon.js';
+import MarkdownStyles from '../highlight/MarkdownStyles.js';
 import '../../define/api-icon.js';
+import '../../define/marked-highlight.js';
 
 /**
  * The DataEntity editor UI and logic.
@@ -20,6 +22,7 @@ export default class DataEntityEditorElement extends LitElement {
     return [
       theme,
       schemaCommon,
+      MarkdownStyles,
       css`
       :host {
         display: block;
@@ -369,7 +372,9 @@ export default class DataEntityEditorElement extends LitElement {
       <div class="label">${label}</div>
       <div class="description">
         ${entity.info.description ?
-        html`<pre><code>${entity.info.description}</code></pre>` :
+        html`<marked-highlight sanitize .markdown="${entity.info.description}">
+        <div slot="markdown-html" class="markdown-body text-selectable"></div>
+      </marked-highlight>` :
         html`<span class="no-description">No schema description provided.</span>`}
       </div>
     </div>
@@ -406,9 +411,9 @@ export default class DataEntityEditorElement extends LitElement {
         </div>
         <div class="description-column">  
           <div class="api-description">
-            <arc-marked sanitize>
-              <div slot="markdown-html" class="markdown-body text-selectable">${info.description || 'No description'}</div>
-            </arc-marked>
+            <marked-highlight sanitize .markdown="${info.description || 'No description'}">
+              <div slot="markdown-html" class="markdown-body text-selectable"></div>
+            </marked-highlight>
           </div>
         </div>
         <div class="details-column"></div>
