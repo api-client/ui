@@ -1,10 +1,16 @@
 import { css, CSSResult, html, LitElement, PropertyValueMap, TemplateResult } from "lit";
 import { property, state } from "lit/decorators.js";
-import { DataEntity, DataEntityKind, DataNamespace, DataProperty } from "@api-client/core/build/browser.js";
+import { classMap } from "lit/directives/class-map.js";
+import { DataEntity, DataEntityKind, DataNamespace, DataProperty, DataPropertyType, DataPropertyTypes, EventUtils } from "@api-client/core/build/browser.js";
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
-import { AnypointInputElement } from "@anypoint-web-components/awc";
+import '@anypoint-web-components/awc/dist/define/anypoint-dropdown-menu.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-listbox.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-item.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-checkbox.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-chip.js';
+import { AnypointCheckboxElement, AnypointInputElement, AnypointListboxElement } from "@anypoint-web-components/awc";
 import theme from '../theme.js';
 import schemaCommon from './schemaCommon.js';
 import MarkdownStyles from '../highlight/MarkdownStyles.js';
@@ -112,6 +118,18 @@ export default class DataEntityEditorElement extends LitElement {
 
       .add-property-section {
         margin-top: 20px;
+      }
+
+      .property-container.selected {
+        background: var(--list-active-background);
+      }
+
+      .checkbox-group {
+        margin: 0 20px;
+      }
+
+      .checkbox-group anypoint-checkbox {
+        display: block;
       }
       `,
     ];
@@ -222,6 +240,7 @@ export default class DataEntityEditorElement extends LitElement {
       return;
     }
     this._highlightEntityDropZone = true;
+    this.selectedProperty = undefined;
   }
 
   protected _dragLeaveHandler(e: DragEvent): void {
@@ -341,6 +360,84 @@ export default class DataEntityEditorElement extends LitElement {
     this.requestUpdate();
   }
 
+  protected _propertyTypeHandler(e: Event): void {
+    const { _entity, selectedProperty } = this;
+    if (!_entity || !selectedProperty) {
+      return;
+    }
+    const item = _entity.properties.find(i => i.key === selectedProperty);
+    if (!item) {
+      return;
+    }
+    const list = e.target as AnypointListboxElement;
+    const value = list.selected as DataPropertyType;
+    if (item.type === value) {
+      return;
+    }
+    item.type = value;
+    this._notifyChanged();
+    this.requestUpdate();
+  }
+
+  protected _propertyCheckedHandler(e: Event): void {
+    const { _entity, selectedProperty } = this;
+    if (!_entity || !selectedProperty) {
+      return;
+    }
+    const item = _entity.properties.find(i => i.key === selectedProperty);
+    if (!item) {
+      return;
+    }
+    const input = e.target as AnypointCheckboxElement;
+    const name = input.name as 'multiple' | 'required' | 'primary' | 'index';
+    const { checked } = input;
+    if (item[name] === checked) {
+      return;
+    }
+    item[name] = checked;
+    this._notifyChanged();
+    this.requestUpdate();
+  }
+
+  protected _propertyTagChangeHandler(e: Event): void {
+    const { _entity, selectedProperty } = this;
+    if (!_entity || !selectedProperty) {
+      return;
+    }
+    const item = _entity.properties.find(i => i.key === selectedProperty);
+    if (!item) {
+      return;
+    }
+    const input = e.target as AnypointInputElement;
+    const value = input.value?.trim();
+    if (!value || item.tags.includes(value)) {
+      return;
+    }
+    item.addTag(value);
+    input.value = '';
+    this._notifyChanged();
+    this.requestUpdate();
+  }
+
+  protected _propertyTagRemoveHandler(e: Event): void {
+    const { _entity, selectedProperty } = this;
+    if (!_entity || !selectedProperty) {
+      return;
+    }
+    const target = e.target as HTMLElement;
+    const index = Number(target.dataset.index);
+    if (Number.isNaN(index)) {
+      return;
+    }
+    const item = _entity.properties.find(i => i.key === selectedProperty);
+    if (!item) {
+      return;
+    }
+    item.tags.splice(index, 1);
+    this._notifyChanged();
+    this.requestUpdate();
+  }
+
   protected render(): TemplateResult {
     const { _entity } = this;
     if (!_entity) {
@@ -381,33 +478,35 @@ export default class DataEntityEditorElement extends LitElement {
     `;
   }
 
-  protected _entityPropertiesTemplate(entity: DataEntity): TemplateResult {
+  protected _entityPropertiesTemplate(entity: DataEntity, readonly?: boolean): TemplateResult {
     const { properties, associations } = entity;
     if (!properties.length && !associations.length) {
       return html`<p class="no-properties">This entity has no properties or associations.</p>`;
     }
     return html`
-    ${properties.map(p => this._propertyTemplate(p))}
+    ${properties.map(p => this._propertyTemplate(p, readonly))}
     `;
   }
 
-  protected _propertyTemplate(item: DataProperty): TemplateResult {
-    const { info, type, key, required } = item;
-    const label = info.name || 'Unnamed property';
+  protected _propertyTemplate(item: DataProperty, readonly=false): TemplateResult {
+    const { info, type, key, required, multiple, index, primary } = item;
+    const containerClasses = {
+      'property-container': true,
+      selected: this.selectedProperty === item.key,
+    };
     return html`
-    <div class="property-container" data-key="${key}">
+    <div class="${classMap(containerClasses)}" data-key="${key}">
       <div class="property-border"></div>
       <div class="property-value">
         <div class="property-headline">
           <div class="property-decorator scalar" tabindex="-1"><hr></div>
-          <div class="param-name required">
-            <span class="param-label text-selectable">${label}</span>
-          </div>
+          ${this._paramNameTemplate(item)}
           <span class="headline-separator"></span>
           <div class="param-type text-selectable">${type || 'Any type'}</div>
-          ${required ? html`<span class="param-pill pill" title="This property is required.">
-            Required
-          </span>` : ''}
+          ${this._pillTemplate('Required', 'This property is required.', required)}
+          ${this._pillTemplate('Multiple', 'Multiple instances of the value are possible.', multiple)}
+          ${this._pillTemplate('Index', 'This property is a key which can be indexed.', index)}
+          ${this._pillTemplate('Primary', 'This property is the primary key for this entity.', primary)}
         </div>
         <div class="description-column">  
           <div class="api-description">
@@ -418,6 +517,7 @@ export default class DataEntityEditorElement extends LitElement {
         </div>
         <div class="details-column"></div>
       </div>
+      ${readonly ? '' : html`
       <div class="property-actions">
         <anypoint-icon-button aria-label="Remove this property" title="Remove this property" @click="${this._propertyRemoveHandler}">
           <api-icon icon="remove" aria-hidden="true"></api-icon>
@@ -426,8 +526,37 @@ export default class DataEntityEditorElement extends LitElement {
           <api-icon icon="edit" aria-hidden="true"></api-icon>
         </anypoint-icon-button>
       </div>
+      `}
     </div>
     `;
+  }
+
+  /**
+   * A template for the display name of a property.
+   * @param item The property to render the name filed for
+   * @return {TemplateResult} The template for the property name. 
+   */
+  protected _paramNameTemplate(item: DataProperty): TemplateResult {
+    const { info, required=false, deprecated=false } = item;
+    const paramName = info.displayName ? '' : info.name;
+    const classes = {
+      'param-name': true,
+      required,
+      deprecated,
+    };
+    return html`
+    <div class="${classMap(classes)}">
+      <span class="param-label text-selectable">${info.renderLabel}</span>
+    </div>
+    ${paramName ? html`<span class="param-name-secondary text-selectable" title="Schema property name">${paramName}</span>` : ''}
+    `;
+  }
+
+  protected _pillTemplate(label: string, title: string, test?: any): TemplateResult | string {
+    if (!test) {
+      return '';
+    }
+    return html`<span class="param-pill pill" title="${title}">${label}</span>`;
   }
 
   protected _entityParentsProperties(parents: DataEntity[]): TemplateResult[] | string {
@@ -436,7 +565,7 @@ export default class DataEntityEditorElement extends LitElement {
     }
     return parents.map(p => html`
     <p class="inheritance-label text-selectable">Properties inherited from <b>${p.info.name}</b>.</p>
-    ${this._entityPropertiesTemplate(p)}
+    ${this._entityPropertiesTemplate(p, true)}
     `);
   }
 
@@ -464,13 +593,29 @@ export default class DataEntityEditorElement extends LitElement {
     if (!item) {
       return '';
     }
-    const { info } = item;
+    const { info, multiple=false, required=false, primary=false, index=false, tags } = item;
     return html`
-    <div class="editor-title">Data Property</div>
+    <form name="data-property" @submit="${EventUtils.cancelEvent}" data-key="${id}">
+      <div class="editor-title">Data Property</div>
 
-    <anypoint-input class="input" name="name" .value="${info.name}" label="Property name" @change="${this._propertyInfoChangeHandler}"></anypoint-input>
-    <anypoint-input class="input" name="description" .value="${info.description}" label="Property description (optional)" @change="${this._propertyInfoChangeHandler}"></anypoint-input>
+      <anypoint-input class="input" name="name" .value="${info.name}" label="Property name" @change="${this._propertyInfoChangeHandler}"></anypoint-input>
+      <anypoint-input class="input" name="description" .value="${info.description}" label="Property description (optional)" @change="${this._propertyInfoChangeHandler}"></anypoint-input>
 
+      ${this._propertyTypeSelector(item)}
+
+      <div class="checkbox-group">
+        <anypoint-checkbox name="required" .checked="${required}" title="Whether the property is required in the schema" @change="${this._propertyCheckedHandler}">Required</anypoint-checkbox>
+        <anypoint-checkbox name="multiple" .checked="${multiple}" title="When set it declares this property as an array. Multiple instances of the value are permitted." @change="${this._propertyCheckedHandler}">Multiple</anypoint-checkbox>
+        <anypoint-checkbox name="primary" .checked="${primary}" title="Makes this property a primary key for the schema. This is optional for a schema." @change="${this._propertyCheckedHandler}">Primary key</anypoint-checkbox>
+        <anypoint-checkbox name="index" .checked="${index}" title="Indicates the property is a key and should be indexed." @change="${this._propertyCheckedHandler}">Indexed key</anypoint-checkbox>
+      </div>
+
+      <div class="tags-input">
+        <anypoint-input class="input" name="tag" label="Tags" @change="${this._propertyTagChangeHandler}">
+          ${tags.map((t, i) => html`<anypoint-chip slot="prefix" removable @chipremoved="${this._propertyTagRemoveHandler}" data-index="${i}">${t}</anypoint-chip>`)}
+        </anypoint-input>
+      </div>
+    </form>
     `;
   }
 
@@ -533,6 +678,23 @@ export default class DataEntityEditorElement extends LitElement {
         <api-icon icon="remove" aria-hidden="true"></api-icon>
       </anypoint-icon-button>
     </li>
+    `;
+  }
+
+  protected _propertyTypeSelector(item: DataProperty): TemplateResult {
+    const { type='any' } = item;
+    return html`
+    <anypoint-dropdown-menu
+      name="type"
+      title="Property data type"
+      fitPositionTarget
+      class="input"
+    >
+      <label slot="label">Data type</label>
+      <anypoint-listbox slot="dropdown-content" tabindex="-1" @selected="${this._propertyTypeHandler}" attrForSelected="data-value" .selected="${type}">
+      ${DataPropertyTypes.map(value => html`<anypoint-item data-value="${value}">${value}</anypoint-item>`)}
+      </anypoint-listbox>
+    </anypoint-dropdown-menu>
     `;
   }
 }
