@@ -17,6 +17,8 @@ import { randomString } from '../../lib/Random.js';
 import { ISelectDetail } from '../../elements/navigation/AppNavigationElement.js';
 import '../../define/schema-design-navigation.js';
 import '../../define/data-entity-editor.js';
+import '../../define/viz-workspace.js';
+import { DataModelLayout } from '../../visualization/plugin/positioning/DataModelLayout.js';
 
 export default class SchemaDesignerScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
@@ -27,7 +29,7 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
     return [
       { pattern: '/default', method: 'defaultRoute', fallback: true, name: 'Schema Designer', title: 'Schema Designer Home home' },
       { pattern: '/404', method: 'e404Route', name: 'Not found', title: 'Not found' },
-      { pattern: '/namespace/(?<key>.*)', method: 'namespaceRoute', name: 'Namespace', title: 'A namespace' },
+      // { pattern: '/namespace/(?<key>.*)', method: 'namespaceRoute', name: 'Namespace', title: 'A namespace' },
       { pattern: '/model/(?<key>.*)', method: 'modelRoute', name: 'Data model', title: 'A data model' },
       { pattern: '/entity/(?<key>.*)', method: 'entityRoute', name: 'Entity model', title: 'An entity model' },
     ];
@@ -130,22 +132,22 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
     this.page = '404';
   }
 
-  protected namespaceRoute(info: IRouteResult): void {
-    if (!info.params || !info.params.key) {
-      throw new Error(`Invalid route configuration. Missing parameters.`);
-    }
-    this.resetRoute();
-    const key = info.params.key as string;
-    this.page = 'namespace';
-    this.selected = key;
-    const { root } = this;
-    if (!root) {
-      return;
-    }
-    this.current = root.findNamespace(key);
-  }
+  // protected namespaceRoute(info: IRouteResult): void {
+  //   if (!info.params || !info.params.key) {
+  //     throw new Error(`Invalid route configuration. Missing parameters.`);
+  //   }
+  //   this.resetRoute();
+  //   const key = info.params.key as string;
+  //   this.page = 'namespace';
+  //   this.selected = key;
+  //   const { root } = this;
+  //   if (!root) {
+  //     return;
+  //   }
+  //   this.current = root.findNamespace(key);
+  // }
 
-  protected modelRoute(info: IRouteResult): void {
+  protected async modelRoute(info: IRouteResult): Promise<void> {
     if (!info.params || !info.params.key) {
       throw new Error(`Invalid route configuration. Missing parameters.`);
     }
@@ -158,6 +160,26 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
       return;
     }
     this.current = root.findDataModel(key);
+    await this.updateComplete;
+    requestAnimationFrame(() => {
+      this._positionDataModel();
+    });
+  }
+
+  protected _positionDataModel(): void {
+    const workspace = document.querySelector('viz-workspace');
+    if (!workspace || !this.current) {
+      return;
+    }
+    const layout = new DataModelLayout(workspace);
+    const result = layout.layout(this.current as DataModel);
+    result?.nodes.forEach((info) => {
+      const node = document.querySelector(`[data-key="${info.id}"]`) as HTMLElement;
+      if (node) {
+        node.style.transform = `translate(${info.node.x}px, ${info.node.y}px)`;
+      }
+    });
+    workspace.edges.recalculate()
   }
 
   protected entityRoute(info: IRouteResult): void {
@@ -277,14 +299,18 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
 
   protected _navigationSelectionHandler(e: CustomEvent): void {
     const { key, kind } = e.detail as ISelectDetail;
-    navigate(this._kindToRoute(kind), key);
+    const base = this._kindToRoute(kind);
+    if (base) {
+      navigate(base, key);
+    }
   }
 
-  protected _kindToRoute(kind: string): string {
+  protected _kindToRoute(kind: string): string | undefined {
     switch (kind) {
       case DataEntityKind: return 'entity';
       case DataModelKind: return 'model';
-      default: return 'namespace';
+      default: return undefined;
+      // default: return 'namespace';
     }
   }
 
@@ -354,7 +380,7 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
 
   protected renderPage(): TemplateResult {
     switch (this.page) {
-      case 'namespace': return this._namespaceTemplate();
+      // case 'namespace': return this._namespaceTemplate();
       case 'model': return this._dataModelTemplate();
       case 'entity': return this._entityTemplate();
       default: return this._emptySelectionTemplate();
@@ -372,15 +398,63 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
     `;
   }
 
-  protected _namespaceTemplate(): TemplateResult {
-    return html`
-    <p>TODO: Namespace view for ${this.selected}</p>
-    `;
-  }
+  // protected _namespaceTemplate(): TemplateResult {
+  //   return html`
+  //   <p>TODO: Namespace view for ${this.selected}</p>
+  //   `;
+  // }
 
   protected _dataModelTemplate(): TemplateResult {
     return html`
-    <p>TODO: Data model view for ${this.selected}</p>
+    <viz-workspace>${this._dataModelVisualizationContent()}</viz-workspace>
+    `;
+  }
+
+  protected _dataModelVisualizationContent(): TemplateResult | string {
+    const { selected, root } = this;
+    if (!selected || !root) {
+      return '';
+    }
+    const dm = root.findDataModel(selected);
+    if (!dm) {
+      return '';
+    }
+    const all = dm.entities;
+    all.forEach((item) => {
+      item.parents.forEach(id => {
+        if (all.some(i => i.key === id)) {
+          return;
+        }
+        const parent = dm.getParent()!.root!.definitions.entities.find(i => i.key === id);
+        if (parent) {
+          all.push(parent);
+        }
+      });
+      item.associations.forEach(assoc => {
+        if (!assoc.target) {
+          return;
+        }
+        if (all.some(i => i.key === assoc.target)) {
+          return;
+        }
+        const entity = assoc.getTarget();
+        if (entity) {
+          all.push(entity);
+        }
+      });
+    });
+
+    return html`
+    ${all.map(item => this._entityVisualization(item))}
+    `;
+  }
+
+  protected _entityVisualization(entity: DataEntity): TemplateResult {
+    return html`
+    <div class="entity" data-key="${entity.key}" style="width: 250px; height: 400px;    background-color: #03a9f46b;" data-selectable="true">
+      <div>${entity.info.renderLabel}</div>
+      ${entity.associations.map(assoc => html`<viz-association data-key="${assoc.key}" data-target="${assoc.target!}"></viz-association>`)}
+    </div>
     `;
   }
 

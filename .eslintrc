@@ -51,7 +51,9 @@
       "files": [ "src/**/*.ts" ],
       "rules": {
         "no-useless-constructor": "off",
-        "no-empty-function": "off"
+        "no-empty-function": "off",
+        "no-use-before-define": "off",
+        "no-dupe-class-members": "off"
       }
     }
   ],
@@ -62,6 +64,7 @@
     "WorkerType": true,
     "FormDataEntryValue": true,
     "MutationObserverInit": true,
+    "ScrollToOptions": true,
     "GlobalEventHandlers": true
   }
 }

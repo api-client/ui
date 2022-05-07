@@ -47,6 +47,9 @@ body {
   --list-focus-background: rgba(0, 0, 0, 0.04);
   --list-item-height: 40px;
   --list-item-two-line-height: 72px;
+
+  --selection-color: #1976D2;
+  --secondary-selection-color: #64B5F6;
 }
 
 a {
