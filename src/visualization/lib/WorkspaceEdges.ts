@@ -330,7 +330,7 @@ export class WorkspaceEdges {
    */
   [calculateNearestPoints](sourceElement: HTMLElement, targetElement: HTMLElement, others?: IWorkspaceEdge[]): Point[] | null {
     const { workspace } = this;
-    if ((sourceElement.hasAttribute('associationSlots') || sourceElement.dataset.associationSlots) && (targetElement.hasAttribute('associationSlots') || targetElement.dataset.associationSlots)) {
+    if (sourceElement.hasAttribute('data-association-slots') && targetElement.hasAttribute('data-association-slots')) {
       return closestAnchors(sourceElement, targetElement, workspace, others);
     }
     const sourceBox = getObjectBoundingClientRect(sourceElement, workspace);
@@ -370,7 +370,7 @@ export class WorkspaceEdges {
     const assocElement = this.workspace.querySelector(`viz-association[data-key="${id}"]`) as HTMLElement;
     const style = this.createAssociationStyles(assocElement);
     const tips = this.createAssociationTips(assocElement, sketch, directions);
-    const positionChange = (sourceElement.hasAttribute('associationSlots') || !!sourceElement.dataset.associationSlots) && (targetElement.hasAttribute('associationSlots') || !!targetElement.dataset.associationSlots);
+    const positionChange = sourceElement.hasAttribute('data-association-slots') && targetElement.hasAttribute('data-association-slots');
     
     const shape: IAssociationShape = {
       selection: {

@@ -1,0 +1,80 @@
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+.workspace-position-wrapper {
+  margin: 40px;
+}
+
+.workspace-dummy {
+  width: 40px;
+  height: 80px;
+  position: absolute;
+  background-color: red;
+}
+
+.workspace-dummy.big {
+  width: 200px;
+  height: 360px;
+  position: absolute;
+  background-color: red;
+}
+
+.manual-association {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px #000 solid;
+  border-radius: 50%;
+  background-color: #fff;
+  cursor: crosshair;
+}
+
+.manual-association.top-edge {
+  top: -8px;
+}
+
+.manual-association.bottom-edge {
+  bottom: -8px;
+}
+
+.manual-association.left-edge {
+  left: -8px;
+}
+
+.manual-association.right-edge {
+  right: -8px;
+}
+
+.manual-association.left-slot {
+  left: 20%;
+}
+
+.manual-association.center-slot {
+  left: calc(50% - 6px);
+}
+
+.manual-association.right-slot {
+  right: 20%;
+}
+
+.manual-association.top-slot {
+  top: 20%;
+}
+
+.manual-association.middle-slot {
+  top: calc(50% - 6px);
+}
+
+.manual-association.bottom-slot {
+  bottom: 20%;
+}
+
+.entity {
+  position: absolute;
+  border: 1px solid #afafaf;
+  min-width: 240px;
+  min-height: 200px;
+  width: fit-content;
+}

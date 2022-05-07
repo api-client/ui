@@ -51,7 +51,7 @@ export interface IEdgeUpdateInfo {
 
 /**
  * A helper that allows to manually draw a line from one visualization object to another.
- * The visualization object has to have the `associationSlots` attribute set on the element
+ * The visualization object has to have the `data-association-slots` attribute set on the element
  * and the mouse event target having the `data-association-slot` attribute with the index of the slot.
  * 
  * The association line can be drawn to another object that has both attributes.
@@ -130,7 +130,7 @@ export class AssociationAnchors {
         return false;
       }
       const typed = node as Element;
-      return typed.hasAttribute('associationSlots') || typed.hasAttribute('data-association-slots');
+      return typed.hasAttribute('data-association-slots');
     });
     return element as Element;
   }
@@ -159,7 +159,7 @@ export class AssociationAnchors {
       this.startUpdate(dataset.key!, dataset.dir!);
       return;
     }
-    if (!node.hasAttribute('associationSlots') && !node.dataset.associationSlots) {
+    if (!node.hasAttribute('data-association-slots')) {
       return;
     }
     if (source.nodeType !== Node.ELEMENT_NODE) {
@@ -194,14 +194,14 @@ export class AssociationAnchors {
       this.cleanup();
       return;
     }
-    if (!node.hasAttribute('associationSlots')) {
+    if (!node.hasAttribute('data-association-slots')) {
       const parent = this.findSlotParent(e.composedPath() as Node[]);
       if (!parent) {
         return;
       }
       node = parent as HTMLElement;
     }
-    if (!node.hasAttribute('associationSlots') && !node.dataset.associationSlots) {
+    if (!node.hasAttribute('data-association-slots')) {
       this.cleanup();
       return;
     }

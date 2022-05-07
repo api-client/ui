@@ -65,6 +65,7 @@
     "FormDataEntryValue": true,
     "MutationObserverInit": true,
     "ScrollToOptions": true,
+    "NodeListOf": true,
     "GlobalEventHandlers": true
   }
 }

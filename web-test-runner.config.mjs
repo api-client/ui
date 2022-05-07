@@ -44,4 +44,14 @@ export default /** @type {import("@web/test-runner").TestRunnerConfig} */ ({
   // ],
 
   // See documentation for all available options
+
+  testRunnerHtml: testFramework =>
+  `<html>
+    <head>
+      <link rel="stylesheet" href="/test/visualization/lib/test-styles.css" />
+    </head>
+    <body>
+      <script type="module" src="${testFramework}"></script>
+    </body>
+  </html>`,
 });

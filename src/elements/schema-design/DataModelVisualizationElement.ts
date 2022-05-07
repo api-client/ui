@@ -10,6 +10,8 @@ import { DataModelLayout } from "../../visualization/plugin/positioning/DataMode
 import '../../define/viz-workspace.js';
 import '../../define/viz-association.js';
 import '../../define/api-icon.js';
+import { GroupSelection } from "../../visualization/plugin/group-selection/GroupSelection.js";
+import { DragAndDropPlugin } from "../../visualization/plugin/dnd/DragAndDropPlugin.js";
 
 interface VizModel {
   entity: DataEntity;
@@ -103,6 +105,39 @@ export default class DataModelVisualizationElement extends ApiElement {
   @state() protected _data?: VizModel[];
 
   @query('viz-workspace') protected _workspace?: VizWorkspaceElement;
+
+  protected groupSelectionPlugin?: GroupSelection;
+
+  protected dndPlugin?: DragAndDropPlugin;
+
+  firstUpdated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+    super.firstUpdated(cp);
+    const node = this._workspace!;
+    this.dndPlugin = new DragAndDropPlugin(node);
+    this.dndPlugin.connect();
+    this.groupSelectionPlugin = new GroupSelection(node);
+    this.groupSelectionPlugin.connect();
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    if (this.dndPlugin) {
+      this.dndPlugin.connect();
+    }
+    if (this.groupSelectionPlugin) {
+      this.groupSelectionPlugin.connect();
+    }
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    if (this.dndPlugin) {
+      this.dndPlugin.disconnect();
+    }
+    if (this.groupSelectionPlugin) {
+      this.groupSelectionPlugin.disconnect();
+    }
+  }
 
   protected willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     if (cp.has('key')) {
@@ -205,9 +240,29 @@ export default class DataModelVisualizationElement extends ApiElement {
     this._data = result;
   }
 
+  protected async _repositionHandler(e: CustomEvent): Promise<void> {
+    const node = e.target as HTMLElement;
+    const { key } = node.dataset;
+    if (!key) {
+      return;
+    }
+    const model = this._data?.find(i => i.entity.key === key);
+    if (!model) {
+      return;
+    }
+    const { dx, dy } = e.detail;
+    model.x += dx;
+    model.y += dy;
+    this.requestUpdate();
+    await this.updateComplete;
+    this._workspace?.edges.recalculate();
+  }
+
   protected render(): TemplateResult {
     return html`
-    <viz-workspace>${this._modelContents()}</viz-workspace>
+    <viz-workspace
+      @positionchange="${this._repositionHandler}"
+    >${this._modelContents()}</viz-workspace>
     `;
   }
 
@@ -226,7 +281,7 @@ export default class DataModelVisualizationElement extends ApiElement {
       transform: `translate(${x}px, ${y}px)`,
     };
     return html`
-    <div class="data-entity" data-key="${key}" data-type="${type}" data-selectable="true" style="${styleMap(styles)}">
+    <div class="data-entity" data-key="${key}" data-type="${type}" data-selectable="true" draggable="true" style="${styleMap(styles)}">
       <div class="content">
         <div class="title">
           <api-icon icon="schemaEntity"></api-icon>
