@@ -13,24 +13,30 @@ export class DataModelLayout extends WorkspaceLayout {
     this.readPositions = {};
     const g = this.initGraph();
 
+    const selfEntities = entities.map(i => i.key);
+    const addedEntities: string[] = [];
+
     // parents first
     entities.forEach((entity) => {
-      const position = this.readDimensions(entity.key);
-      if (!position) {
+      if (!this.ensureAddEntity(g, entity.key)) {
         return;
       }
-      this.addEntityNode(g, entity.key, position);
-      entity.getComputedParents().forEach(parent => {
-        this.ensureAddEntity(g, parent.key);
+      addedEntities.push(entity.key);
+      entity.parents.forEach((id) => {
+        if (selfEntities.includes(id) || addedEntities.includes(id) || g.node(id)) {
+          return;
+        }
+        this.ensureAddEntity(g, id);
         const config: EdgeConfig = {
           minLen: 1,
           weight: LayoutWeight.Parent,
         };
-        g.setEdge(entity.key, parent.key, config);
+        g.setEdge(entity.key, id, config);
       });
       entity.associations.forEach((item) => {
         if (item.target) {
           this.ensureAddEntity(g, item.target);
+          addedEntities.push(item.target);
         }
       });
     });
@@ -40,9 +46,10 @@ export class DataModelLayout extends WorkspaceLayout {
         if (!item.target) {
           return;
         }
+        const isSelf = (item.getTarget() === entity)
         const config: EdgeConfig = {
-          minLen: 1,
-          weight: LayoutWeight.Internal,
+          minLen: 2,
+          weight: isSelf ? LayoutWeight.Self : LayoutWeight.Internal,
         };
         g.setEdge(entity.key, item.target, config);
       });
@@ -78,14 +85,15 @@ export class DataModelLayout extends WorkspaceLayout {
     });
   }
 
-  ensureAddEntity(graph: Graph<GraphLabel, NodeConfig, EdgeConfig>, entityKey: string): void {
+  ensureAddEntity(graph: Graph<GraphLabel, NodeConfig, EdgeConfig>, entityKey: string): boolean {
     if (graph.node(entityKey)) {
-      return;
+      return false;
     }
     const position = this.readDimensions(entityKey);
     if (!position) {
-      return;
+      return false;
     }
     this.addEntityNode(graph, entityKey, position);
+    return true;
   }
 }

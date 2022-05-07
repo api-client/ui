@@ -1,5 +1,5 @@
 import { html, TemplateResult, CSSResult } from 'lit';
-import { DataNamespace, IDataNamespace, ApiError, Events as CoreEvents, IBackendEvent, DataNamespaceKind, IPatchRevision, DataEntityKind, DataModelKind, DataModel, DataEntity } from '@api-client/core/build/browser.js';
+import { DataNamespace, IDataNamespace, ApiError, Events as CoreEvents, IBackendEvent, DataNamespaceKind, IPatchRevision, DataEntityKind, DataModelKind } from '@api-client/core/build/browser.js';
 import { JsonPatch, Patch } from '@api-client/json';
 import { ApplicationScreen } from '../ApplicationScreen.js';
 import { query, reactive } from '../../lib/decorators.js';
@@ -17,8 +17,7 @@ import { randomString } from '../../lib/Random.js';
 import { ISelectDetail } from '../../elements/navigation/AppNavigationElement.js';
 import '../../define/schema-design-navigation.js';
 import '../../define/data-entity-editor.js';
-import '../../define/viz-workspace.js';
-import { DataModelLayout } from '../../visualization/plugin/positioning/DataModelLayout.js';
+import '../../define/data-model-visualization.js';
 
 export default class SchemaDesignerScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
@@ -74,8 +73,6 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
    */
   @reactive() selected?: string;
 
-  @reactive() current?: DataNamespace | DataModel | DataEntity;
-
   constructor() {
     super();
     this.menu = new SchemaDesignerContextMenu();
@@ -119,7 +116,6 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
   protected resetRoute(): void {
     this.page = undefined;
     this.selected = undefined;
-    this.current = undefined;
   }
 
   protected defaultRoute(): void {
@@ -155,31 +151,6 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
     const key = info.params.key as string;
     this.page = 'model';
     this.selected = key;
-    const { root } = this;
-    if (!root) {
-      return;
-    }
-    this.current = root.findDataModel(key);
-    await this.updateComplete;
-    requestAnimationFrame(() => {
-      this._positionDataModel();
-    });
-  }
-
-  protected _positionDataModel(): void {
-    const workspace = document.querySelector('viz-workspace');
-    if (!workspace || !this.current) {
-      return;
-    }
-    const layout = new DataModelLayout(workspace);
-    const result = layout.layout(this.current as DataModel);
-    result?.nodes.forEach((info) => {
-      const node = document.querySelector(`[data-key="${info.id}"]`) as HTMLElement;
-      if (node) {
-        node.style.transform = `translate(${info.node.x}px, ${info.node.y}px)`;
-      }
-    });
-    workspace.edges.recalculate()
   }
 
   protected entityRoute(info: IRouteResult): void {
@@ -406,55 +377,7 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
 
   protected _dataModelTemplate(): TemplateResult {
     return html`
-    <viz-workspace>${this._dataModelVisualizationContent()}</viz-workspace>
-    `;
-  }
-
-  protected _dataModelVisualizationContent(): TemplateResult | string {
-    const { selected, root } = this;
-    if (!selected || !root) {
-      return '';
-    }
-    const dm = root.findDataModel(selected);
-    if (!dm) {
-      return '';
-    }
-    const all = dm.entities;
-    all.forEach((item) => {
-      item.parents.forEach(id => {
-        if (all.some(i => i.key === id)) {
-          return;
-        }
-        const parent = dm.getParent()!.root!.definitions.entities.find(i => i.key === id);
-        if (parent) {
-          all.push(parent);
-        }
-      });
-      item.associations.forEach(assoc => {
-        if (!assoc.target) {
-          return;
-        }
-        if (all.some(i => i.key === assoc.target)) {
-          return;
-        }
-        const entity = assoc.getTarget();
-        if (entity) {
-          all.push(entity);
-        }
-      });
-    });
-
-    return html`
-    ${all.map(item => this._entityVisualization(item))}
-    `;
-  }
-
-  protected _entityVisualization(entity: DataEntity): TemplateResult {
-    return html`
-    <div class="entity" data-key="${entity.key}" style="width: 250px; height: 400px;    background-color: #03a9f46b;" data-selectable="true">
-      <div>${entity.info.renderLabel}</div>
-      ${entity.associations.map(assoc => html`<viz-association data-key="${assoc.key}" data-target="${assoc.target!}"></viz-association>`)}
-    </div>
+    <data-model-visualization .root="${this.root}" .key="${this.selected}"></data-model-visualization>
     `;
   }
 

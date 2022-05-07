@@ -4,7 +4,7 @@
 /* eslint-disable no-param-reassign */
 
 import * as TouchSupport from './TouchSupport.js';
-import { cancelEvent } from './Utils.js';
+// import { cancelEvent } from './Utils.js';
 import VizWorkspaceElement from '../elements/VizWorkspaceElement.js';
 import { TouchMoveResult } from './TouchSupport.js';
 
@@ -81,9 +81,9 @@ export class WorkspaceGestures {
   }
 
   connect(): void {
-    this.workspace.addEventListener('mousewheel', this.wheelHandler as EventListener);
-    this.workspace.addEventListener('touchstart', this.touchstartHandler, { capture: false });
-    this.workspace.addEventListener('touchmove', this.touchmoveHandler);
+    this.workspace.addEventListener('mousewheel', this.wheelHandler as EventListener, { passive: true });
+    this.workspace.addEventListener('touchstart', this.touchstartHandler, { capture: false, passive: true });
+    this.workspace.addEventListener('touchmove', this.touchmoveHandler, { passive: true });
     this.workspace.addEventListener('touchend', this.touchendHandler, { capture: false });
     this.workspace.addEventListener('touchcancel', this.touchendHandler);
     this.workspace.addEventListener('click', this.clickHandler as EventListener, { capture: false });
@@ -103,7 +103,7 @@ export class WorkspaceGestures {
    * Zooms in/out the workspace.
    */
   wheelHandler(e: WheelEvent): void {
-    cancelEvent(e);
+    // cancelEvent(e);
     if (e.ctrlKey || e.metaKey) {
       this.handleZoomEvent(e);
     } else {

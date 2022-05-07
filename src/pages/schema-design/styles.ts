@@ -10,12 +10,7 @@ schema-design-navigation {
   border-right: 1px var(--divider-color) solid
 }
 
-viz-workspace {
-  flex: 1;
+data-model-visualization {
   height: 100%;
-}
-
-[data-selectable][data-selected] {
-  border: 1px blue solid;
 }
 `;
