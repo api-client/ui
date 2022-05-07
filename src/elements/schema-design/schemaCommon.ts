@@ -11,6 +11,7 @@ export default css`
 .property-container {
   display: flex;
   align-items: flex-start;
+  flex: 1;
 }
 
 .property-container.simple {
@@ -324,6 +325,11 @@ export default css`
 .pill.warning {
   background-color: var(--pill-warning-background-color, #ffc107);
   color: var(--pill-warning-color, var(--primary-text-color, #000));
+}
+
+.pill.primary {
+  background-color: var(--pill-primary-background-color, #1565c0);
+  color: var(--pill-primary-color, #fff);
 }
 
 .pill:first-child {

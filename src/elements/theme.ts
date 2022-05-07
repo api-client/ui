@@ -34,4 +34,9 @@ export default css`
 .text-selectable {
   user-select: text;
 }
+
+/* For autocomplete */
+.highlight {
+  background-color: rgba(0, 0, 0, 0.12);
+}
 `;

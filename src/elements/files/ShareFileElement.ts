@@ -1,13 +1,12 @@
 /* eslint-disable class-methods-use-this */
 import { TemplateResult, html, CSSResult, css, PropertyValueMap, } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { AnypointDialogElement, AnypointListboxElement, AnypointDropdownElement } from '@anypoint-web-components/awc';
+import { AnypointDialogElement, AnypointListboxElement, AnypointDropdownElement, AnypointDialogStylesInternal } from '@anypoint-web-components/awc';
 import { 
   IFile, Events as CoreEvents, IUser, AccessOperation, IAccessAddOperation, PermissionRole, IPermission,
   IBackendEvent, ProjectKind, WorkspaceKind, IApplication, IPatchRevision,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
-import dialogStyles from '@anypoint-web-components/awc/dist/styles/AnypointDialogInternalStyles.js';
 import { Events } from '../../events/Events.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import { randomString } from '../../lib/Random.js';
@@ -50,7 +49,7 @@ function cancel(e: Event): void {
 export default class ShareFileElement extends AnypointDialogElement {
   static get styles(): CSSResult[] {
     return [
-      dialogStyles,
+      AnypointDialogStylesInternal,
       css`
       :host {
         max-width: 640px;

@@ -1,7 +1,6 @@
 import { TemplateResult, html, CSSResult, css, } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { AnypointDialogElement } from '@anypoint-web-components/awc';
-import dialogStyles from '@anypoint-web-components/awc/dist/styles/AnypointDialogInternalStyles.js';
+import { AnypointDialogElement, AnypointDialogStylesInternal } from '@anypoint-web-components/awc';
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '../../define/api-icon.js';
@@ -34,7 +33,7 @@ import '../../define/api-icon.js';
 export default class RenameDialogElement extends AnypointDialogElement {
   static get styles(): CSSResult[] {
     return [
-      dialogStyles,
+      AnypointDialogStylesInternal,
       css`
       :host {
         max-width: 480px;
@@ -122,8 +121,8 @@ export default class RenameDialogElement extends AnypointDialogElement {
           @input="${this._inputHandler}"
           @keydown="${this._inputKeydownHandler}"
           .value="${value}"
+          label="Enter new name"
         >
-          <label slot="label">Enter new name</label>
         </anypoint-input>
       </section>
       <div class="buttons">

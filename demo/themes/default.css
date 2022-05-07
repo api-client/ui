@@ -37,8 +37,13 @@ body {
   --disabled-text-color: rgba(0, 0, 0, var(--disabled-opacity));
 
   /* Lists */
+  /* when a list item is selected */
   --list-active-background: #e3f2fd;
+  /* when hovering over a list item  */
   --list-hover-background: rgba(0, 0, 0, 0.08);
+  /* when highlighting a list item  */
+  --list-highlight-background: rgba(0, 0, 0, 0.12);
+  /* when focusing within a list item  */
   --list-focus-background: rgba(0, 0, 0, 0.04);
   --list-item-height: 40px;
   --list-item-two-line-height: 72px;

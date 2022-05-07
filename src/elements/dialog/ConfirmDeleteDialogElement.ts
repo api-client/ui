@@ -1,6 +1,5 @@
 import { TemplateResult, html, CSSResult, css, } from 'lit';
-import { AnypointDialogElement } from '@anypoint-web-components/awc';
-import dialogStyles from '@anypoint-web-components/awc/dist/styles/AnypointDialogInternalStyles.js';
+import { AnypointDialogElement, AnypointDialogStylesInternal } from '@anypoint-web-components/awc';
 import { property } from 'lit/decorators.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '../../define/api-icon.js';
@@ -32,7 +31,7 @@ import '../../define/api-icon.js';
 export default class ConfirmDeleteDialogElement extends AnypointDialogElement {
   static get styles(): CSSResult[] {
     return [
-      dialogStyles,
+      AnypointDialogStylesInternal,
       css`
       :host {
         max-width: 480px;

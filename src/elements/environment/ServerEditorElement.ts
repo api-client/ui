@@ -165,17 +165,14 @@ export default class ServerEditorElement extends LitElement {
   protected _uriInputTemplate(): TemplateResult {
     return html`
     <div class="form-item">
-      <anypoint-input required name="uri" .value="${this.uri}" @input="${this._inputHandler}">
-        <label slot="label">URI</label>
-      </anypoint-input>
+      <anypoint-input required name="uri" .value="${this.uri}" @input="${this._inputHandler}" label="URI"></anypoint-input>
     </div>
     `;
   }
 
   protected _protocolInputTemplate(): TemplateResult {
     return html`<div class="form-item">
-      <anypoint-input name="protocol" .value="${this.protocol}" @input="${this._inputHandler}" id="protocolInput">
-        <label slot="label">Protocol (optional)</label>
+      <anypoint-input name="protocol" .value="${this.protocol}" @input="${this._inputHandler}" id="protocolInput" label="Protocol (optional)">
       </anypoint-input>
       <anypoint-autocomplete 
         .source="${DefaultProtocols}" 
@@ -188,8 +185,7 @@ export default class ServerEditorElement extends LitElement {
 
   protected _basePathInputTemplate(): TemplateResult {
     return html`<div class="form-item">
-      <anypoint-input name="basePath" .value="${this.basePath}" @input="${this._inputHandler}">
-        <label slot="label">Base path (optional)</label>
+      <anypoint-input name="basePath" .value="${this.basePath}" @input="${this._inputHandler}" label="Base path (optional)">
       </anypoint-input>
     </div>`;
   }
