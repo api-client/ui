@@ -196,6 +196,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     this[keyDownHandler] = this[keyDownHandler].bind(this);
     this[urlHistoryDeletedHandler] = this[urlHistoryDeletedHandler].bind(this);
     this[urlHistoryDestroyedHandler] = this[urlHistoryDestroyedHandler].bind(this);
+    this.addEventListener('keydown', this[keyDownHandler]);
   }
 
   _attachListeners(node: EventTarget): void {
@@ -203,7 +204,6 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     node.addEventListener(EventTypes.HttpProject.Request.State.urlChange, this[extValueChangeHandler]);
     node.addEventListener(EventTypes.AppData.Http.UrlHistory.State.delete, this[urlHistoryDeletedHandler]);
     node.addEventListener(EventTypes.AppData.Http.UrlHistory.State.clear, this[urlHistoryDestroyedHandler]);
-    this.addEventListener('keydown', this[keyDownHandler]);
   }
 
   _detachListeners(node: EventTarget): void {
@@ -211,7 +211,6 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     node.removeEventListener(EventTypes.HttpProject.Request.State.urlChange, this[extValueChangeHandler]);
     node.removeEventListener(EventTypes.AppData.Http.UrlHistory.State.delete, this[urlHistoryDeletedHandler]);
     node.removeEventListener(EventTypes.AppData.Http.UrlHistory.State.clear, this[urlHistoryDestroyedHandler]);
-    this.removeEventListener('keydown', this[keyDownHandler]);
   }
 
   protected updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
@@ -777,6 +776,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       .opened="${opened}"
       noAutofocus
       noCancelOnOutsideClick
+      scrollAction="lock"
       @resize="${this[autocompleteResizeHandler]}"
       @opened="${EventUtils.cancelEvent}"
       @closed="${this[autocompleteClosedHandler]}"
