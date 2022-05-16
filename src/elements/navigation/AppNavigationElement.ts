@@ -281,7 +281,7 @@ export default class AppNavigation extends LitElement {
         current.setAttribute('tabindex', '0');
       }
       current.focus();
-      current.scrollIntoView();
+      // current.scrollIntoView();
       // remove tabindex from self so when the user returns to this navigation it will focus directly on
       // this item.
       if (this.hasAttribute('tabindex')) {

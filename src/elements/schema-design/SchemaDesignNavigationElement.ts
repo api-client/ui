@@ -138,7 +138,7 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
     if (hasChildren) {
       return this._nsChildrenTemplate(item, indent);
     }
-    const label = item.info.name || 'Unnamed namespace';
+    const label = item.info.renderLabel;
     const content = this._itemContentTemplate('schemaNamespace', label);
     return this._listItemTemplate(item.key, item.kind, label, content, {
       indent: indent + 1,
@@ -147,7 +147,7 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
 
   protected _dataModelItemTemplate(current: DataModel, indent: number): TemplateResult {
     const hasChildren = !!current.entities.length;
-    const label = current.info.name || 'Unnamed data model';
+    const label = current.info.renderLabel;
     if (!hasChildren) {
       const content = this._itemContentTemplate('schemaModel', label);
       return this._listItemTemplate(current.key, current.kind, label, content, {
@@ -162,7 +162,7 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
   }
 
   protected _entityItemTemplate(item: DataEntity, indent: number): TemplateResult {
-    const label = item.info.name || 'Unnamed entity';
+    const label = item.info.renderLabel;
     const content = this._itemContentTemplate('schemaEntity', label);
     return this._listItemTemplate(item.key, item.kind, label, content, {
       indent: indent + 1,

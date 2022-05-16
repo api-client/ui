@@ -1,7 +1,7 @@
 import { css, CSSResult, html, PropertyValueMap, TemplateResult } from "lit";
 import { property, state } from "lit/decorators.js";
 import { DataEntity, DataNamespace, EventUtils } from "@api-client/core/build/browser.js";
-import { AnypointInputElement } from "@anypoint-web-components/awc";
+import { AnypointCheckboxElement, AnypointInputElement } from "@anypoint-web-components/awc";
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import ApiElement from "../ApiElement.js";
@@ -117,17 +117,33 @@ export default class EntityFormElement extends ApiElement {
     }
     const node = e.target as AnypointInputElement;
     const { name, value } = node;
-    if (!['name', 'description'].includes(name as string)) {
+    if (!['name', 'displayName', 'description'].includes(name as string)) {
       return;
     }
     if (name === 'name' && !value) {
       return;
     }
-    _entity.info[name as 'name' | 'description'] = value;
+    _entity.info[name as 'name' | 'description' | 'displayName'] = value;
     this._notifyChanged();
-    if (name === 'name') {
+    if (name === 'name' || name === 'displayName') {
       this.dispatchEvent(new Event('namechange'));
     }
+  }
+
+  protected _checkedHandler(e: Event): void {
+    const { _entity } = this;
+    if (!_entity) {
+      return;
+    }
+    const input = e.target as AnypointCheckboxElement;
+    const name = input.name as 'deprecated';
+    const { checked } = input;
+    if (_entity[name] === checked) {
+      return;
+    }
+    _entity[name] = checked;
+    this._notifyChanged();
+    this.requestUpdate();
   }
 
   protected _dragoverHandler(e: DragEvent): void {
@@ -178,11 +194,16 @@ export default class EntityFormElement extends ApiElement {
       return html``;
     }
 
-    const { info } = item;
+    const { info, deprecated = false } = item;
     return html`
     <form name="entity" @submit="${EventUtils.cancelEvent}" data-key="${item.key}">
       <anypoint-input class="input" name="name" .value="${info.name}" label="Entity name" @change="${this._infoChangeHandler}"></anypoint-input>
-      <anypoint-input class="input" name="description" .value="${info.description}" label="Entity description (optional)" @change="${this._infoChangeHandler}"></anypoint-input>
+      <anypoint-input class="input" name="displayName" .value="${info.displayName || ''}" label="Display name (optional)" @change="${this._infoChangeHandler}"></anypoint-input>
+      <anypoint-input class="input" name="description" .value="${info.description || ''}" label="Entity description (optional)" @change="${this._infoChangeHandler}"></anypoint-input>
+
+      <div class="checkbox-group">
+        <anypoint-checkbox name="deprecated" .checked="${deprecated}" title="Makes this entity deprecated." @change="${this._checkedHandler}">Deprecated</anypoint-checkbox>
+      </div>
 
       <div class="editor-separator"></div>
       ${this._parentsEditorTemplate(item)}

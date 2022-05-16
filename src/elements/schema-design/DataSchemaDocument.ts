@@ -1,7 +1,12 @@
 import { css, CSSResult, html, PropertyValueMap, TemplateResult, nothing } from "lit";
-import { DataAssociation, DataEntity, DataNamespace, DataProperty } from "@api-client/core/build/browser.js";
+import { DataAssociation, DataEntity, DataNamespace, DataProperty, DataEntityKind } from "@api-client/core/build/browser.js";
 import { property, state } from "lit/decorators.js";
 import { ClassInfo, classMap } from "lit/directives/class-map.js";
+import { AnypointRadioGroupElement } from "@anypoint-web-components/awc";
+import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-radio-button.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-radio-group.js';
 import ApiElement from "../ApiElement.js";
 import theme from '../theme.js';
 import schemaCommon from './schemaCommon.js';
@@ -14,6 +19,10 @@ import MarkdownStyles from '../highlight/MarkdownStyles.js';
  * WeakMap allows to GC the DataEntity when it is removed from the namespace (and also release the values).
  */
 const expandedState = new WeakMap<DataEntity, string[]>();
+
+const selectedUnions = new Map<string, string>();
+
+type UnionType = "anyOf" | "allOf" | "oneOf" | "not";
 
 /**
  * An element that renders a documentation view for a data entity.
@@ -54,8 +63,16 @@ export default class DataSchemaDocument extends ApiElement {
         background: var(--list-active-background);
       }
 
-      .tree-view {
-        position: relative;
+      /* .tree-view {
+        border: 4px transparent dotted;
+      } */
+
+      .tree-view.drop-active {
+        background: var(--association-drop-background, #e3f2fd);
+      }
+
+      .property-container.drag-over {
+        background: var(--association-drop-background, #e3f2fd);
       }
 
       .drop-zone {
@@ -106,6 +123,12 @@ export default class DataSchemaDocument extends ApiElement {
    */
   @property({ type: Boolean, reflect: true }) editable?: boolean;
 
+  /**
+   * When dragging an entity over an existing association this is the key
+   * of the association hovered.
+   */
+  @state() protected _dropAssociationTarget?: string;
+
   protected willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     if (cp.has('key')) {
       this._computeEntity();
@@ -122,7 +145,8 @@ export default class DataSchemaDocument extends ApiElement {
       this._entity = undefined;
       return;
     }
-    this._entity = root.definitions.entities.find(i => i.key === key);
+    const entity = root.definitions.entities.find(i => i.key === key);
+    this._entity = entity;
   }
 
   /**
@@ -132,13 +156,28 @@ export default class DataSchemaDocument extends ApiElement {
    * Note, we allow to create an association to self. Also note, an entity can have multiple associations to the same target.
    * 
    * @param foreignKey The key of the target entity to add.
+   * @param parentAssociation When set, it adds another target to an existing association.
    */
-  addAssociation(foreignKey: string): void {
+  addAssociation(foreignKey: string, parentAssociation?: string): void {
     const { _entity, editable } = this;
     if (!editable || !foreignKey || !_entity) {
       return;
     }
-    _entity.addTargetAssociation(foreignKey);
+    if (parentAssociation) {
+      const parent = _entity.associations.find(i => i.key === parentAssociation);
+      if (!parent) {
+        return;
+      }
+      parent.addTarget(foreignKey);
+    } else {
+      const created = _entity.addTargetAssociation(foreignKey);
+      this.dispatchEvent(new CustomEvent('edit', {
+        detail: {
+          type: 'association',
+          key: created.key,
+        }
+      }));
+    }
     this._notifyChanged();
   }
 
@@ -167,6 +206,12 @@ export default class DataSchemaDocument extends ApiElement {
     this.selectedProperty = created.key;
     this._notifyChanged();
     this.requestUpdate();
+    this.dispatchEvent(new CustomEvent('edit', {
+      detail: {
+        type: 'property',
+        key: created.key,
+      }
+    }));
   }
 
   removeProperty(key: string): void {
@@ -238,22 +283,65 @@ export default class DataSchemaDocument extends ApiElement {
     }
   }
 
-  protected _dragoverHandler(e: DragEvent): void {
-    e.preventDefault();
-    e.preventDefault();
-    e.dataTransfer!.dropEffect = "copy";
-  }
-
-  protected _dropHandler(e: DragEvent): void {
-    const node = e.target as HTMLElement;
-    const { type } = node.dataset;
-    if (type === 'association') {
+  protected _associationDragOver(e: DragEvent): void {
+    const dt = e.dataTransfer!;
+    if (!dt.types.includes(DataEntityKind.toLocaleLowerCase())) {
+      return;
+    }
+    const node = e.currentTarget as HTMLElement;
+    const { key } = node.dataset;
+    if (key) {
       e.preventDefault();
-      const key = e.dataTransfer!.getData('text/key');
-      this.addAssociation(key);
+      dt.effectAllowed = 'copy';
+      dt.dropEffect = 'copy';
+      this._dropAssociationTarget = key;
     }
   }
 
+  protected _associationDragLeave(e: DragEvent): void {
+    const dt = e.dataTransfer!;
+    if (!dt.types.includes(DataEntityKind.toLocaleLowerCase())) {
+      return;
+    }
+    this._dropAssociationTarget = undefined;
+  }
+
+  protected _associationDrop(e: DragEvent): void {
+    const dt = e.dataTransfer!;
+    if (!dt.types.includes(DataEntityKind.toLocaleLowerCase())) {
+      return;
+    }
+    const { _dropAssociationTarget } = this;
+    if (!_dropAssociationTarget) {
+      return;
+    }
+    e.preventDefault();
+    this._dropAssociationTarget = undefined; 
+    const key = e.dataTransfer!.getData('text/key');
+    this.addAssociation(key, _dropAssociationTarget);
+  }
+
+  protected _dragoverHandler(e: DragEvent): void {
+    if (e.defaultPrevented) {
+      return;
+    }
+    e.preventDefault();
+    e.dataTransfer!.dropEffect = "copy";
+    e.dataTransfer!.effectAllowed = "copy";
+  }
+
+  protected _dropHandler(e: DragEvent): void {
+    if (e.defaultPrevented) {
+      return;
+    }
+    e.preventDefault();
+    const key = e.dataTransfer!.getData('text/key');
+    this.addAssociation(key);
+  }
+
+  /**
+   * @returns the list of keys of properties that are expanded (children are rendered).
+   */
   protected _getExpandedKeys(): string[] {
     const { _entity } = this;
     if (!_entity) {
@@ -297,17 +385,36 @@ export default class DataSchemaDocument extends ApiElement {
     this.requestUpdate();
   }
 
+  protected _isRecursive(association: DataAssociation, target: string): boolean {
+    const entity = association.getParent();
+    return entity.hasClosedCycle(this.key!, target);
+  }
+
+  protected _unionSelectedHandler(e: Event): void {
+    const list = e.target as AnypointRadioGroupElement;
+    const { selected, dataset } = list;
+    const { association } = dataset;
+    if (!selected || !association || Number.isNaN(selected)) {
+      return;
+    }
+    selectedUnions.set(association, selected as string);
+    this.requestUpdate();
+  }
+
   protected render(): TemplateResult | typeof nothing {
     const { _entity } = this;
     if (!_entity) {
       return nothing;
     }
+    const treeClasses = {
+      'drop-active': !!this.associationDropZone && !this._dropAssociationTarget,
+      'tree-view': true,
+    }
     return html`
     ${this._headerTemplate(_entity)}
-    <div class="tree-view">
-      ${this._propertiesTemplate(_entity)}
+    <div class="${classMap(treeClasses)}" @dragover="${this._dragoverHandler}" @drop="${this._dropHandler}">
+      ${this._propertiesTemplate(_entity.properties, _entity.associations)}
       ${this._parentsProperties(_entity.getComputedParents())}
-      ${this._associationDropZoneTemplate()}
     </div>
     ${this._addButtonTemplate()}
     `;
@@ -318,26 +425,36 @@ export default class DataSchemaDocument extends ApiElement {
     return html`
     <div class="entity-header">
       <div class="label">${label}</div>
-      <div class="description">
-        ${entity.info.description ?
-        html`<marked-highlight sanitize .markdown="${entity.info.description}">
-        <div slot="markdown-html" class="markdown-body text-selectable"></div>
-      </marked-highlight>` :
-        html`<span class="no-description">No schema description provided.</span>`}
-      </div>
+      ${this._descriptionTemplate(entity)}
     </div>
     `;
   }
 
-  protected _propertiesTemplate(entity: DataEntity, readonly?: boolean): TemplateResult {
-    const { properties, associations } = entity;
+  protected _descriptionTemplate(entity: DataEntity): TemplateResult {
+    const { description } = entity.info;
+    if (description) {
+      return html`
+      <div class="description">
+        <marked-highlight sanitize .markdown="${description}">
+          <div slot="markdown-html" class="markdown-body text-selectable"></div>
+        </marked-highlight>
+      </div>`;
+    }
+    return html`
+    <div class="description">
+      <span class="no-description">No schema description provided.</span>
+    </div>
+    `;
+  }
+
+  protected _propertiesTemplate(properties: DataProperty[], associations: DataAssociation[], readonly?: boolean): TemplateResult {
     if (!properties.length && !associations.length) {
       // don't change the "div" to anything else. It's for the CSS to compute borders correctly.
       return html`<div class="no-properties">This entity has no properties or associations.</div>`;
     }
     return html`
     ${properties.map(p => this._propertyTemplate(p, readonly))}
-    ${associations.map(a => this._associationTemplate(a, entity, readonly))}
+    ${associations.map(a => this._associationTemplate(a, readonly))}
     `;
   }
 
@@ -362,11 +479,7 @@ export default class DataSchemaDocument extends ApiElement {
           ${this._pillTemplate('Primary', 'This property is the primary key for this entity.', primary, 'primary')}
         </div>
         <div class="description-column">  
-          <div class="api-description">
-            <marked-highlight sanitize .markdown="${info.description || 'No description'}">
-              <div slot="markdown-html" class="markdown-body text-selectable"></div>
-            </marked-highlight>
-          </div>
+          ${this._propertyDescriptionTemplate(info.description)}
         </div>
         <div class="details-column"></div>
       </div>
@@ -375,14 +488,38 @@ export default class DataSchemaDocument extends ApiElement {
     `;
   }
 
-  protected _associationTemplate(item: DataAssociation, parent: DataEntity, readonly=false): TemplateResult {
+  /**
+   * A template for the data association list item view.
+   * Depending on the number of targets of the association it renders the "empty target", single association, or a union association view.
+   * 
+   * @param item The association item to render.
+   * @param parent The parent entity of the association.
+   * @param readonly Whether to render the view as "read only" (no edit controls). We do not show controls for properties inherited from parents.
+   */
+  protected _associationTemplate(item: DataAssociation, readonly=false): TemplateResult {
+    const { targets=[] } = item;
+    if (!targets.length) {
+      return this._noTargetAssociationTemplate(item, readonly);
+    }
+    if (targets.length === 1) {
+      return this._singleAssociationTemplate(item, readonly);
+    }
+    return this._unionAssociationTemplate(item, readonly);
+  }
+
+  /**
+   * Renders the template for the an association that has one target. This is a classic association where a property 
+   * is associated with an object.
+   */
+  protected _singleAssociationTemplate(item: DataAssociation, readonly=false): TemplateResult {
     const { info, key, required, multiple } = item;
     const containerClasses = {
       'property-container': true,
       selected: this.selectedProperty === key,
+      'drag-over': this._dropAssociationTarget === key,
     };
-    const entity = item.getTarget();
-    const recursive = entity === this._entity || entity === parent;
+    const entity = item.getTargets()[0];
+    const recursive = this._isRecursive(item, entity.key) // entity === this._entity || entity === parent;
     let targetLabel: string;
     if (entity) {
       targetLabel = entity.info.renderLabel;
@@ -392,7 +529,7 @@ export default class DataSchemaDocument extends ApiElement {
     const list = this._getExpandedKeys();
     const expanded = !recursive && list.includes(key);
     return html`
-    <div class="${classMap(containerClasses)}" data-key="${key}">
+    <div class="${classMap(containerClasses)}" data-key="${key}" @dragover="${this._associationDragOver}" @dragleave="${this._associationDragLeave}" @drop="${this._associationDrop}">
       <div class="property-border"></div>
       <div class="property-value">
         <div class="property-headline">
@@ -408,11 +545,7 @@ export default class DataSchemaDocument extends ApiElement {
           ${this._pillTemplate('Multiple', 'Multiple instances of the value are possible.', multiple)}
         </div>
         <div class="description-column">  
-          <div class="api-description">
-            <marked-highlight sanitize .markdown="${info.description || 'No description'}">
-              <div slot="markdown-html" class="markdown-body text-selectable"></div>
-            </marked-highlight>
-          </div>
+          ${this._propertyDescriptionTemplate(info.description)}
         </div>
         <div class="details-column"></div>
       </div>
@@ -421,21 +554,222 @@ export default class DataSchemaDocument extends ApiElement {
     ${expanded ? html`
     <div class="shape-children">
       <div class="property-border"></div>
-      ${this._assocPropertiesTemplate(item)}
+      ${this._associationPropertiesTemplate(item)}
     </div>
     ` : ''}
     `;
   }
 
-  protected _assocPropertiesTemplate(item: DataAssociation): TemplateResult {
-    const entity = item.getTarget();
-    if (!entity) {
+  /**
+   * Renders the template for the an association that has multiple targets. This association represents
+   * an union of shapes. This means the property can be any, one of, or either of the union shapes.
+   */
+  protected _unionAssociationTemplate(item: DataAssociation, readonly=false): TemplateResult {
+    const { info, key, required, multiple } = item;
+    const containerClasses = {
+      'property-container': true,
+      selected: this.selectedProperty === key,
+      'drag-over': this._dropAssociationTarget === key,
+    };
+    const entities = item.getTargets();
+    const adapted = item.readAdapted();
+    // The `anyOf` and `oneOf` renders the same as this is a selection of one of the schemas
+    // The `allOf` renders properties for all shapes in the union.
+    // The not can potentially be a scalar shape and we don't have a concept of that in this tool so probably we gonna skip that.
+    let type: UnionType = 'anyOf';
+    if (adapted) {
+      if (adapted.schema && adapted.schema.unionType) {
+        type = adapted.schema.unionType;
+      }
+    }
+    let unionLabel = '';
+    if (!entities.length) {
+      // this will happen when all targets were removed from the namespace.
+      unionLabel = 'invalid targets';
+    } else if (type === 'anyOf') {
+      const names = entities.map(i => i.info.renderLabel).join(' or ');
+      unionLabel = `any of ${names}`;
+    } else if (type === 'oneOf') {
+      const names = entities.map(i => i.info.renderLabel).join(' or ');
+      unionLabel = `one of ${names}`;
+    } else {
+      const names = entities.map(i => i.info.renderLabel).join(' and ');
+      unionLabel = `all of ${names}`;
+    }
+    if (multiple) {
+      unionLabel = `list of ${unionLabel}`;
+    }
+    const list = this._getExpandedKeys();
+    const expanded = list.includes(key);
+    return html`
+    <div class="${classMap(containerClasses)}" data-key="${key}">
+      <div class="property-border"></div>
+      <div class="property-value">
+        <div class="property-headline">
+          <div class="property-decorator object" tabindex="0" data-id="${key}" @click="${this._expandHandler}" @keydown="${this._expandKeydownHandler}">
+            <hr>
+            <api-icon icon="chevronRight" class="object-toggle-icon ${expanded ? 'opened' : ''}"></api-icon>
+          </div>
+          ${this._assocNameTemplate(item)}
+          <span class="headline-separator"></span>
+          <div class="param-type text-selectable">${unionLabel}</div>
+          ${this._pillTemplate('Required', 'This association is required.', required)}
+          ${this._pillTemplate('Multiple', 'Multiple instances of the value are possible.', multiple)}
+          ${this._pillTemplate('Union', 'This association is an union.', true)}
+        </div>
+        <div class="description-column">
+          ${this._propertyDescriptionTemplate(info.description)}
+        </div>
+        <div class="details-column"></div>
+      </div>
+      ${this._propertyListActions('association', readonly)}
+    </div>
+    ${expanded ? html`
+    <div class="shape-children">
+      <div class="property-border"></div>
+      ${this._unionPropertiesTemplate(item, type)}
+    </div>
+    ` : ''}
+    `;
+  }
+
+  /**
+   * Renders the template for an association that has no target set.
+   */
+  protected _noTargetAssociationTemplate(item: DataAssociation, readonly=false): TemplateResult {
+    const { info, key, required, multiple } = item;
+    const containerClasses = {
+      'property-container': true,
+      selected: this.selectedProperty === key,
+      'drag-over': this._dropAssociationTarget === key,
+    };
+    return html`
+    <div class="${classMap(containerClasses)}" data-key="${key}">
+      <div class="property-border"></div>
+      <div class="property-value">
+        <div class="property-headline">
+          <div class="property-decorator object">
+            <hr>
+          </div>
+          ${this._assocNameTemplate(item)}
+          <span class="headline-separator"></span>
+          ${this._pillTemplate('No target', 'This association has no target.', true)}
+          ${this._pillTemplate('Required', 'This property is required.', required)}
+          ${this._pillTemplate('Multiple', 'Multiple instances of the value are possible.', multiple)}
+        </div>
+        <div class="description-column">
+          ${this._propertyDescriptionTemplate(info.description)}
+        </div>
+        <div class="details-column"></div>
+      </div>
+      ${this._propertyListActions('association', readonly)}
+    </div>
+    `;
+  }
+
+  protected _associationPropertiesTemplate(item: DataAssociation): TemplateResult {
+    const entities = item.getTargets();
+    if (!entities.length) {
       // don't change the "div" to anything else. It's for the CSS to compute borders correctly.
       return html`<div class="no-properties">Invalid entry. The target entity does not exist.</div>`;
     }
+    const [entity] = entities;
     return html`
     <div class="tree-view">
-      ${this._propertiesTemplate(entity, true)}
+      ${this._propertiesTemplate(entity.properties, entity.associations, true)}
+    </div>
+    `;
+  }
+
+  protected _unionPropertiesTemplate(item: DataAssociation, type: UnionType): TemplateResult {
+    const entities = item.getTargets();
+    if (!entities.length) {
+      // don't change the "div" to anything else. It's for the CSS to compute borders correctly.
+      return html`<div class="no-properties">Invalid entry. The target entity does not exist.</div>`;
+    }
+    if (type === 'allOf') {
+      let allProperties: DataProperty[] = [];
+      let allAssociations: DataAssociation[] = [];
+      entities.forEach((entity) => {
+        const { associations, properties } = entity;
+        allProperties = allProperties.concat(properties);
+        allAssociations = allAssociations.concat(associations);
+      });
+      return html`
+      <div class="tree-view">
+        ${this._unionSelector(item, type, entities)}
+        ${this._propertiesTemplate(allProperties, allAssociations, true)}
+      </div>`;
+    }
+
+    let selected = selectedUnions.get(item.key);
+    if (!selected) {
+      selected = entities[0].key;
+    }
+    const entity = entities.find(i => i.key === selected);
+    if (!entity) {
+      return html`
+      <div class="tree-view">
+        ${this._unionSelector(item, type, entities, selected)}
+        <p class="no-info">Invalid selection. Entity not found.</p>
+      </div>
+      `;
+    }
+    return html`
+    <div class="tree-view">
+      ${this._unionSelector(item, type, entities, selected)}
+      ${this._propertiesTemplate(entity.properties, entity.associations, true)}
+    </div>
+    `;
+  }
+
+  /**
+   * Depending on the union type, it renders the union type label and a selector of the union member.
+   * 
+   * This template is intended to use when multiple targets in association were detected.
+   * 
+   * @param item The association item
+   * @param type The read from the adapted entity association type.
+   * @param entities The list of association targets.
+   * @param selected The key of the currently selected association target
+   * @returns The template for the union selection in the list of properties.
+   */
+  protected _unionSelector(item: DataAssociation, type: UnionType, entities: DataEntity[], selected?: string): TemplateResult {
+    let label: string;
+    if (type === 'anyOf') {
+      label = 'Any (one or more) of the following schemas';
+    } else if (type === 'oneOf') {
+      label = 'One of the following schemas';
+    } else if (type === 'allOf') {
+      label = 'All properties of union schemas';
+    } else {
+      label = 'Not matching the schema';
+    }
+    const renderSelection = ['anyOf', 'oneOf'].includes(type);
+    return html`
+    <div class="union-options">
+      <label>${label}</label>
+      ${renderSelection ? html`
+      <anypoint-radio-group 
+        attrForSelected="data-value"
+        data-association="${item.key}"
+        .selected="${selected}"
+        @selected="${this._unionSelectedHandler}"
+      >
+        ${entities.map((entity) => 
+          html`<anypoint-radio-button class="union-toggle" name="unionValue" data-value="${entity.key}">${entity.info.renderLabel}</anypoint-radio-button>`)}
+      </anypoint-radio-group>
+      ` : nothing}
+    </div>
+    `;
+  }
+
+  protected _propertyDescriptionTemplate(description?: string): TemplateResult {
+    return html`
+    <div class="description">
+      <marked-highlight sanitize .markdown="${description || 'No description'}">
+        <div slot="markdown-html" class="markdown-body text-selectable"></div>
+      </marked-highlight>
     </div>
     `;
   }
@@ -531,7 +865,7 @@ export default class DataSchemaDocument extends ApiElement {
     // don't change the "div" to anything else. It's for the CSS to compute borders correctly.
     return parents.map(p => html`
     <div class="inheritance-label text-selectable">Properties inherited from <b>${p.info.name}</b>.</div>
-    ${this._propertiesTemplate(p, true)}
+    ${this._propertiesTemplate(p.properties, p.associations, true)}
     `);
   }
 
@@ -544,19 +878,5 @@ export default class DataSchemaDocument extends ApiElement {
       <anypoint-button emphasis="medium" @click="${this._addPropertyHandler}">Add property</anypoint-button>
     </div>
     `;
-  }
-
-  protected _associationDropZoneTemplate(): TemplateResult | typeof nothing {
-    if (!this.associationDropZone) {
-      return nothing;
-    }
-    return html`<div 
-      class="drop-zone" 
-      data-type="association" 
-      @dragover="${this._dragoverHandler}" 
-      @drop="${this._dropHandler}"
-    >
-      Drop the entity here to create an association.
-    </div>`;
   }
 }

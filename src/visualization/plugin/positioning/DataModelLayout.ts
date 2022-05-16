@@ -34,24 +34,38 @@ export class DataModelLayout extends WorkspaceLayout {
         g.setEdge(entity.key, id, config);
       });
       entity.associations.forEach((item) => {
-        if (item.target) {
-          this.ensureAddEntity(g, item.target);
-          addedEntities.push(item.target);
+        const targets = item.getTargets();
+        if (!targets.length) {
+          return;
+        }
+        if (targets.length === 1) {
+          // classic association
+          const [target] = targets;
+          this.ensureAddEntity(g, target.key);
+          addedEntities.push(target.key);
+          // TODO: Union layout.
         }
       });
     });
     // once all entities are set we can add edges
     entities.forEach((entity) => {
       entity.associations.forEach((item) => {
-        if (!item.target) {
+        const targets = item.getTargets();
+        if (!targets.length) {
           return;
         }
-        const isSelf = (item.getTarget() === entity)
-        const config: EdgeConfig = {
-          minLen: 2,
-          weight: isSelf ? LayoutWeight.Self : LayoutWeight.Internal,
-        };
-        g.setEdge(entity.key, item.target, config);
+        if (targets.length === 1) {
+          // classic association
+          const [target] = targets;
+          const isSelf = (target === entity);
+          const config: EdgeConfig = {
+            minLen: 2,
+            weight: isSelf ? LayoutWeight.Self : LayoutWeight.Internal,
+          };
+          g.setEdge(entity.key, target.key, config);
+        } else {
+          // TODO: Union layout.
+        }
       });
     });
 

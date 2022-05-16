@@ -208,6 +208,10 @@ export default css`
   margin: 12px 12px 12px 0;
 }
 
+.param-type:first-letter {
+  text-transform: uppercase;
+}
+
 .schema-property-item {
   display: flex;
   align-items: flex-start;
@@ -239,7 +243,7 @@ export default css`
 }
 
 .schema-example {
-  margin-bottom: 12px;
+  margin: 20px 12px 20px 0;
 }
 
 .schema-example pre {

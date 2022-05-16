@@ -14,6 +14,7 @@ import { GroupSelection } from "../../visualization/plugin/group-selection/Group
 import { DragAndDropPlugin } from "../../visualization/plugin/dnd/DragAndDropPlugin.js";
 
 interface VizModel {
+  id?: string;
   entity: DataEntity;
   type: 'parent' | 'association' | 'internal' | 'external' | 'self';
   x?: number;
@@ -219,22 +220,43 @@ export default class DataModelVisualizationElement extends ApiElement {
       });
 
       entity.associations.forEach((assoc) => {
-        if (!assoc.target) {
-          // ignore associations without a target
+        if (!assoc.targets.length) {
           return;
         }
-        if (result.some(i => i.entity.key === assoc.target) || dm.entities.some(i => i.key === assoc.target)) {
-          return;
-        }
-        const target = assoc.getTarget();
-        if (target) {
+        const targets = assoc.getTargets();
+        if (targets.length === 1) {
+          // classic association
+          const [target] = targets;
+          if (result.some(i => i.entity.key === target.key) || dm.entities.some(i => i.key === target.key)) {
+            return;
+          }
           const isSelf = entity === target;
           result.push({ 
             entity: target, 
             type: isSelf ? 'self' : 'association',
           });
+        } else {
+          // TODO: Union layout.
         }
       });
+
+      // entity.associations.forEach((assoc) => {
+      //   if (!assoc.target) {
+      //     // ignore associations without a target
+      //     return;
+      //   }
+      //   if (result.some(i => i.entity.key === assoc.target) || dm.entities.some(i => i.key === assoc.target)) {
+      //     return;
+      //   }
+      //   const target = assoc.getTarget();
+      //   if (target) {
+      //     const isSelf = entity === target;
+      //     result.push({ 
+      //       entity: target, 
+      //       type: isSelf ? 'self' : 'association',
+      //     });
+      //   }
+      // });
     });
 
     this._data = result;
@@ -251,8 +273,9 @@ export default class DataModelVisualizationElement extends ApiElement {
       return;
     }
     const { dx, dy } = e.detail;
-    model.x += dx;
-    model.y += dy;
+    const { x=0, y=0 } = model;
+    model.x = x + dx;
+    model.y = y + dy;
     this.requestUpdate();
     await this.updateComplete;
     this._workspace?.edges.recalculate();
@@ -320,15 +343,22 @@ export default class DataModelVisualizationElement extends ApiElement {
     `;
   }
 
-  protected _associationTemplate(item: DataAssociation): TemplateResult {
-    const { key, info, target } = item;
-    return html`<viz-association 
-      data-key="${key}" 
-      data-target="${ifDefined(target)}"
-      title="${info.renderLabel}"
-      data-selectable
-      data-marker-start="association"
-    ></viz-association>`;
+  protected _associationTemplate(item: DataAssociation): TemplateResult | typeof nothing {
+    const { key, info, targets } = item;
+    if (!targets.length) {
+      return nothing;
+    }
+    if (targets.length === 1) {
+      return html`<viz-association 
+        data-key="${key}" 
+        data-target="${targets[0]}"
+        title="${info.renderLabel}"
+        data-selectable
+        data-marker-start="association"
+      ></viz-association>`;
+    }
+    // TODO: Make union associations
+    return nothing;
   }
 
   protected _parentAssociationTemplate(id: string): TemplateResult {

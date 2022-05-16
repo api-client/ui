@@ -1,8 +1,11 @@
 import { css, CSSResult, html, TemplateResult } from "lit";
 import { property, query, state } from "lit/decorators.js";
 import { DataEntityKind, DataNamespace } from "@api-client/core/build/browser.js";
+import { AnypointCheckboxElement, AnypointRadioGroupElement } from "@anypoint-web-components/awc";
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-radio-button.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-radio-group.js';
 import ApiElement from "../ApiElement.js";
 import theme from '../theme.js';
 import schemaCommon from './schemaCommon.js';
@@ -53,6 +56,13 @@ export default class DataEntityEditorElement extends ApiElement {
         background: var(--data-editor-background, #fafafa);
         border-left: 1px var(--divider-color) solid;
       }
+
+      .mime-options {
+        padding: 12px 0px 12px 20px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+      }
       `,
     ];
   }
@@ -78,6 +88,14 @@ export default class DataEntityEditorElement extends ApiElement {
   @property({ type: String }) selectedAssociation?: string;
 
   @state() protected _highlightEntityDropZone?: boolean;
+
+  @state() protected _schemaExample?: string | number | boolean | null;
+
+  @state() protected _schemaMime: string = 'application/json';
+
+  @state() protected _schemaMock: boolean = true;
+
+  protected _schemaOpened?: boolean;
 
   @query('data-schema-document')
   protected _schemaDoc?: DataSchemaDocument;
@@ -125,6 +143,7 @@ export default class DataEntityEditorElement extends ApiElement {
     if (_schemaDoc) {
       _schemaDoc.requestUpdate();
     }
+    this._computeExampleSchemaIfNeeded();
   }
 
   protected _entityChangeHandler(): void {
@@ -133,11 +152,13 @@ export default class DataEntityEditorElement extends ApiElement {
     if (_schemaDoc) {
       _schemaDoc.requestUpdate();
     }
+    this._computeExampleSchemaIfNeeded();
   }
 
   protected _schemaEntityChangeHandler(): void {
     this._notifyChanged();
     this.requestUpdate();
+    this._computeExampleSchemaIfNeeded();
   }
 
   protected _schemaEntityEditHandler(e: CustomEvent): void {
@@ -149,16 +170,61 @@ export default class DataEntityEditorElement extends ApiElement {
       this.selectedProperty = undefined;
       this.selectedAssociation = key;
     }
+    this._computeExampleSchemaIfNeeded();
   }
 
   protected _entityNameHandler(): void {
     // just retarget
     this.dispatchEvent(new Event('namechange'));
+    this._computeExampleSchemaIfNeeded();
   }
 
   protected _cancelEditor(): void {
     this.selectedProperty = undefined;
     this.selectedAssociation = undefined;
+  }
+
+  protected _computeExampleSchema(): void {
+    const { selected, root } = this;
+    const entity = root?.definitions.entities.find(i => i.key === selected);
+    if (!entity) {
+      this._schemaExample = undefined;
+      return
+    }
+    this._schemaExample = entity.toExample(this._schemaMime, {
+      renderMocked: this._schemaMock,
+      renderExamples: true,
+      renderOptional: true,
+    });
+  }
+
+  protected _computeExampleSchemaIfNeeded(): void {
+    if (this._schemaOpened) {
+      this._computeExampleSchema();
+    }
+  }
+
+  protected _schemaOpenHandler(e: Event): void {
+    const details = e.target as HTMLDetailsElement;
+    this._schemaOpened = details.open;
+    this._computeExampleSchema();
+  }
+
+  protected _schemaMimeHandler(e: Event): void {
+    const list = e.target as AnypointRadioGroupElement;
+    const { selected } = list;
+    if (!selected) {
+      return;
+    }
+    this._schemaMime = selected as string;
+    this._computeExampleSchemaIfNeeded();
+  }
+
+  protected _mockSchemaValuesHandler(e: Event): void {
+    const input = e.target as AnypointCheckboxElement;
+    const { checked } = input;
+    this._schemaMock = checked;
+    this._computeExampleSchema();
   }
 
   protected render(): TemplateResult {
@@ -182,6 +248,7 @@ export default class DataEntityEditorElement extends ApiElement {
         @change="${this._schemaEntityChangeHandler}"
         @edit="${this._schemaEntityEditHandler}"
       ></data-schema-document>
+      ${this._schemaTemplate()}
     </div>
     `;
   }
@@ -244,5 +311,28 @@ export default class DataEntityEditorElement extends ApiElement {
       @namechange="${this._entityNameHandler}"
     ></data-entity-form>
     `;
+  }
+
+  protected _schemaTemplate(): TemplateResult {
+    return html`
+    <details class="schema-example" @toggle="${this._schemaOpenHandler}">
+      <summary>Example</summary>
+      <div class="example-content">
+        <div class="mime-options">
+          <label>Mime type</label>
+          <anypoint-radio-group 
+            attrForSelected="data-value"
+            .selected="${this._schemaMime}"
+            @selected="${this._schemaMimeHandler}"
+          >
+            <anypoint-radio-button class="mime-toggle" name="mimeValue" data-value="application/json">application/json</anypoint-radio-button>
+            <anypoint-radio-button class="mime-toggle" name="mimeValue" data-value="application/xml">application/xml</anypoint-radio-button>
+          </anypoint-radio-group>
+
+          <anypoint-checkbox .checked="${this._schemaMock}" @change="${this._mockSchemaValuesHandler}" title="Generates random values when examples are not defined.">Mock values</anypoint-checkbox>
+        </div>
+        <pre class="code-value text-selectable"><code>${this._schemaExample}</code></pre>
+      </div>
+    </details>`;
   }
 }
