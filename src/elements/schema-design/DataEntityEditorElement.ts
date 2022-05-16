@@ -1,4 +1,4 @@
-import { css, CSSResult, html, TemplateResult } from "lit";
+import { css, CSSResult, html, PropertyValueMap, TemplateResult } from "lit";
 import { property, query, state } from "lit/decorators.js";
 import { DataEntityKind, DataNamespace } from "@api-client/core/build/browser.js";
 import { AnypointCheckboxElement, AnypointRadioGroupElement } from "@anypoint-web-components/awc";
@@ -104,6 +104,13 @@ export default class DataEntityEditorElement extends ApiElement {
     super();
     this.addEventListener('dragenter', this._dragEnterHandler.bind(this));
     this.addEventListener('dragleave', this._dragLeaveHandler.bind(this));
+  }
+
+  protected willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+    super.willUpdate(cp);
+    if (cp.has('selected')) {
+      this._computeExampleSchemaIfNeeded();
+    }
   }
 
   protected _notifyChanged(): void {
