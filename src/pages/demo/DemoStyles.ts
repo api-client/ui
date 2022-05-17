@@ -33,6 +33,10 @@ header h1 {
   line-height: 32px;
 }
 
+#app {
+  height: 100%;
+}
+
 .spacer {
   flex: 1;
 }
@@ -67,7 +71,6 @@ ul {
 p {
   margin: 1.40em 0;
 }
-
 
 .centered {
   max-width: 800px;

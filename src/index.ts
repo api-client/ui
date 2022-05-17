@@ -40,3 +40,6 @@ export { PrismHighlighter } from './elements/highlight/PrismHighlighter.js';
 export { default as PrismStyles } from './elements/highlight/PrismStyles.js';
 export { default as MarkdownStyles } from './elements/highlight/MarkdownStyles.js';
 export * as PrismAutoDetect from './elements/highlight/PrismAutoDetect.js';
+
+// Monaco
+export * as MonacoLoader from './monaco/loader.js';

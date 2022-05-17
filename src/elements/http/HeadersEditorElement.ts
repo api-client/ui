@@ -14,7 +14,7 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 */
-import { html, LitElement, TemplateResult, CSSResult } from 'lit';
+import { html, LitElement, TemplateResult, CSSResult, css } from 'lit';
 import { property, query } from 'lit/decorators.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
@@ -24,7 +24,6 @@ import '@anypoint-web-components/awc/dist/define/anypoint-autocomplete.js';
 import { EventsTargetMixin, AnypointAutocompleteElement, AnypointInputElement, AnypointSwitchElement } from '@anypoint-web-components/awc';
 import { Events as CoreEvents, HttpDefinitions } from '@api-client/core/build/browser.js';
 import '../../define/api-icon.js';
-import elementStyles from './HeadersEditor.styles.js';
 import { HeadersArray, IHeader } from '../../lib/http/HeadersArray.js'
 import { EventTypes } from '../../events/EventTypes.js';
 
@@ -32,8 +31,86 @@ import { EventTypes } from '../../events/EventTypes.js';
  * An element that renders an editor that specializes in editing HTP headers.
  */
 export default class HeadersEditorElement extends EventsTargetMixin(LitElement) {
-  static get styles(): CSSResult {
-    return elementStyles;
+  static get styles(): CSSResult[] {
+    return [
+      css`
+      :host {
+        display: block;
+      }
+
+      .form-row {
+        display: flex;
+        align-items: center;
+        flex: 1;
+      }
+
+      .params-list {
+        margin: 12px 0;
+      }
+
+      .query-title {
+        font-size: .869rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        display: block;
+        margin-top: 12px;
+      }
+
+      .table-labels {
+        display: flex;
+        align-items: center;
+        font-size: .94rem;
+        font-weight: 500;
+        height: 48px;
+      }
+
+      .param-name-label {
+        margin-left: 52px;
+        /* inputs default size is 200 */
+        width: 200px;
+        display: block;
+      }
+
+      .param-switch {
+        margin: 0px 8px 0px 0px;
+      }
+
+      anypoint-input {
+        margin: 0;
+      }
+
+      .param-name {
+        margin-right: 4px;
+      }
+
+      .param-value {
+        flex: 1;
+      }
+
+      .dialog-actions {
+        display: flex;
+        align-items: center;
+        margin-top: 24px;
+      }
+
+      .close-button {
+        margin-left: auto;
+      }
+
+      .raw-editor {
+        white-space: pre-wrap;
+        padding: 4px;
+        outline: none;
+        color: var(--headers-editor-color, #3b548c);
+        background-color: var(--headers-editor-background-color, var(--primary-background-color, initial));
+      }
+
+      /* For autocomplete */
+      .highlight {
+        background-color: rgba(0, 0, 0, 0.12);
+      }
+      `,
+    ];
   }
 
   protected _value = '';
@@ -219,11 +296,15 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
    * Adds autocomplete support for the currently focused header.
    */
   protected _inputFocusHandler(e: Event): void {
-    const sc = this._autocompleteRef!;
+    const sc = this._autocompleteRef;
+    if (!sc) {
+      return;
+    }
     const node = e.target as HTMLInputElement;
     if (sc.target === node) {
       return;
     }
+    sc.target = node;
     const prop = node.dataset.property as string;
     let suggestions;
     if (prop === 'name') {
@@ -240,7 +321,7 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
     }
     sc.source = suggestions;
     if (suggestions) {
-      sc.target = node;
+      
       sc.renderSuggestions();
     }
   }

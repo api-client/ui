@@ -7,6 +7,7 @@ import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-switch.js';
 import '../../define/api-icon.js';
 import styles from './DemoStyles.js';
+import { MonacoLoader } from '../../index.js';
 
 /**
  * A base class for demo pages in the API Client ecosystem.
@@ -104,6 +105,13 @@ export abstract class DemoPage extends RenderableMixin(EventTarget) {
     } else {
       document.body.classList.remove('demo');
     }
+  }
+
+  async loadMonaco(): Promise<void> {
+    const base = new URL('/node_modules/monaco-editor/', window.location.href).toString();
+    MonacoLoader.createEnvironment(base);
+    await MonacoLoader.loadMonaco(base);
+    await MonacoLoader.monacoReady();
   }
 
   /**
