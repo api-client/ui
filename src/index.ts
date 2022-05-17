@@ -3,6 +3,7 @@
 export { default as ApiIconElement } from "./elements/icons/ApiIconElement.js";
 export { default as MarkedHighlightElement } from "./elements/highlight/MarkedHighlightElement.js";
 export { default as PrismHighlightElement } from "./elements/highlight/PrismHighlightElement.js";
+export { default as HarViewerElement } from "./elements/har/HarViewerElement.js";
 
 
 // Pages
