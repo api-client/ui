@@ -2,6 +2,7 @@
 import { css, CSSResult, html, PropertyValueMap, TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents, IProjectRunnerOptions, EventUtils, IHttpHistory, HttpHistoryKind, IRequestLog, IApplication } from '@api-client/core/build/browser.js';
+import { JsonPatchOperation } from '@api-client/json';
 import HttpRequestElement from '../http/HttpRequestElement.js';
 import { Events } from '../../events/Events.js';
 // eslint-disable-next-line import/no-duplicates
@@ -93,6 +94,15 @@ export default class ProjectRequestElement extends HttpRequestElement {
   protected willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.willUpdate(cp);
     if (cp.has('project') || cp.has('key')) {
+      this._processRequestChange();
+    }
+  }
+
+  applyPatch(info: JsonPatchOperation): void {
+    // "/definitions/requests/\d+/..."
+    const parts = info.path.split('/').slice(4);
+    const [root] = parts;
+    if (root === 'expects' || root === 'log') {
       this._processRequestChange();
     }
   }

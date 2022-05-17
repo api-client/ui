@@ -4,7 +4,7 @@ import {
   IEnvironment, EnvironmentKind, ApiError, IPatchRevision,
 } from '@api-client/core/build/browser.js';
 // import { ContextMenuExecuteDetail } from '@api-client/context-menu';
-import { Patch, JsonPatch } from '@api-client/json';
+import { Patch, JsonPatch, ApplyResult } from '@api-client/json';
 import { ApplicationScreen } from '../ApplicationScreen.js';
 import { reactive, query } from '../../lib/decorators.js';
 import { Events } from '../../events/Events.js';
@@ -24,6 +24,7 @@ import NavElement from '../../elements/project/ProjectNavigationElement.js';
 import { randomString } from '../../lib/Random.js';
 import { navigate } from '../../lib/route.js';
 import AppInfo from './AppInfo.js';
+import ProjectRequestElement from '../../elements/project/ProjectRequestElement.js';
 
 export default class HttpProjectScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
@@ -230,7 +231,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     if (info.kind !== HttpProjectKind || info.operation !== 'patch') {
       return;
     }
-    const iProject = JSON.parse(schema);
+    const iProject = JSON.parse(schema) as IHttpProject;
     const rev = info.data as IPatchRevision;
     const { id } = rev;
     const ownPatch = this.pendingPatches.get(id);
@@ -239,15 +240,41 @@ export default class HttpProjectScreen extends ApplicationScreen {
       this.pendingPatches.delete(id);
       return;
     }
-    const result = Patch.apply(iProject, rev.patch);
+    const result = Patch.apply(iProject, rev.patch) as ApplyResult<IHttpProject>;
     this.schema = JSON.stringify(result.doc);
     // this.project = new HttpProject(result.doc as IHttpProject);
-    this.project?.new(result.doc as IHttpProject);
+    this.project?.new(result.doc);
     this.render();
     const { nav } = this;
     if (nav) {
       nav.requestUpdate();
     }
+    this._applyRequestPatches(rev.patch);
+  }
+
+  protected _applyRequestPatches(patch: JsonPatch): void {
+    const { project } = this;
+    if (!project) {
+      return;
+    }
+    patch.forEach((info) => {
+      if (!info.path.startsWith('/definitions/requests/')) {
+        return;
+      }
+      const parts = info.path.replace('/definitions/requests/', '').split('/');
+      const index = Number(parts[0]);
+      if (Number.isNaN(index)) {
+        return;
+      }
+      const r = project.definitions.requests[index];
+      if (!r) {
+        return;
+      }
+      const panel = document.querySelector(`project-request[data-key="${r.key}"]`) as ProjectRequestElement | null;
+      if (panel) {
+        panel.applyPatch(info);
+      }
+    });
   }
 
   /**

@@ -255,13 +255,16 @@ export default class RequestHistoryBrowserElement extends LitElement {
 
   protected _computeHistory(): void {
     const { history } = this;
-    this._closedGroups = [];
-    this._selectedItem = undefined;
-    this._item = undefined;
-    this._focusedItem = undefined;
+    // this._closedGroups = [];
+    // this._selectedItem = undefined;
+    // this._focusedItem = undefined;
+    // this._item = undefined;
 
     if (!Array.isArray(history) || !history.length) {
       this._sortedHistory = undefined;
+      this._closedGroups = [];
+      this._selectedItem = undefined;
+      this._focusedItem = undefined;
       return;
     }
     const result: IHttpHistory[][] = [];
@@ -276,7 +279,8 @@ export default class RequestHistoryBrowserElement extends LitElement {
       }
     });
     this._sortedHistory = result;
-    if (result.length) {
+    this._computeSelectedItem();
+    if (result.length && !this._item) {
       this._selectedItem = result[0][0].key;
     }
   }
