@@ -8,18 +8,27 @@ import '@github/time-elements/dist/relative-time-element.js';
 import { Events } from '../../events/Events.js'
 import { EventTypes } from '../../events/EventTypes.js'
 import ConfigInitScreen from '../init/ConfigInitScreen.js';
-import { reactive, route, routeInitializer } from '../../lib/decorators.js';
-import { IRouteResult } from '../../lib/decorators/route.js';
+import { reactive } from '../../lib/decorators.js';
 import { buildRoute, navigate } from '../../lib/route.js';
 import { IConfigEnvironment, IEnvConfig, IConfigInit } from '../../lib/config/Config.js';
 import layout from '../styles/grid-hnmf.js';
 import styles from './StoreConfigScreenStyles.js';
 import '../../define/rename-file-dialog.js';
 import '../../define/confirm-delete-dialog.js';
+import { IRoute, IRouteResult } from '../../mixins/RouteMixin.js';
 
 export default class StoreConfigScreen extends ConfigInitScreen {
   static get styles(): CSSResult[] {
     return [...ConfigInitScreen.styles, layout, styles];
+  }
+
+  static get routes(): IRoute[] {
+    return [
+      { pattern: '/start', method: 'startRoute', fallback: true, name: 'Store welcome', title: 'Store Configuration Welcome' },
+      { pattern: '/store/(?<key>.*)', method: 'storeRoute', name: 'Store configuration', title: 'Store configuration' },
+      { pattern: '/new', method: 'newRoute', name: 'New store configuration', title: 'New store configuration' },
+      { pattern: '*', method: 'telemetryRoute' },
+    ];
   }
 
   /**
@@ -47,8 +56,10 @@ export default class StoreConfigScreen extends ConfigInitScreen {
    */
   @reactive() protected config?: IEnvConfig;
 
-  @routeInitializer()
   async initialize(): Promise<void> {
+    if (!await this.isPlatformSupported()) {
+      return;
+    }
     try {
       await this.initializeStore(false);
     } catch (e) {
@@ -57,6 +68,7 @@ export default class StoreConfigScreen extends ConfigInitScreen {
     await this.listEnvironments();
     this.listen();
     await super.initialize();
+    this.initializeRouting();
     this.initReason = 'add';
     this.initialized = true;
   }
@@ -89,13 +101,11 @@ export default class StoreConfigScreen extends ConfigInitScreen {
     window.addEventListener(EventTypes.Config.Environment.State.defaultChange, this._handleEnvDefault.bind(this));
   }
 
-  @route({ pattern: '/start', fallback: true, name: 'Store welcome', title: 'Store Configuration Welcome' })
   protected startRoute(): void {
     this.resetRoute();
     this.page = 'start';
   }
 
-  @route({ pattern: '/store/(?<key>.*)', name: 'Store configuration', title: 'Store configuration' })
   protected storeRoute(info: IRouteResult): void {
     if (!info.params || !info.params.key) {
       throw new Error(`Invalid route configuration. Missing parameters.`);
@@ -112,13 +122,11 @@ export default class StoreConfigScreen extends ConfigInitScreen {
     }
   }
 
-  @route({ pattern: '/new', name: 'New store configuration', title: 'New store configuration' })
   protected newRoute(): void {
     this.resetRoute();
     this.page = 'new';
   }
 
-  @route({ pattern: '*' })
   protected telemetryRoute(info: IRouteResult): void {
     CoreEvents.Telemetry.view(info.route.name || info.route.pattern || '/');
   }

@@ -217,8 +217,8 @@ export default class ConfigInitScreen extends ApplicationScreen {
         invalidMessage="The entered URL is invalid. Please, enter the address of the data store."
         required
         autoValidate
+        label="Store address"
       >
-        <label slot="label">Store address</label>
       </anypoint-input>
     </div>
     `;
