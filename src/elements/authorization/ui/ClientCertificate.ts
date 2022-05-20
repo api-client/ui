@@ -88,7 +88,7 @@ export default class ClientCertificate extends AuthUiBase {
     }
     this.querying = true;
     try {
-      const data = await CoreEvents.Model.ClientCertificate.list(this.target);
+      const data = await CoreEvents.Model.ClientCertificate.list(undefined, this.target);
       if (!data) {
         this.items = undefined;
         return;
@@ -141,32 +141,33 @@ export default class ClientCertificate extends AuthUiBase {
   }
 
   selectedHandler(e: Event): void {
+    const { items } = this;
     const selectedItem = (e.target as AnypointRadioGroupElement).selectedItem as AnypointRadioButtonElement;
-    if (!selectedItem) {
+    if (!selectedItem || !items) {
       return;
     }
     const { checked, dataset } = selectedItem;
     if (!checked || (this.certificate && this.certificate.key === dataset.id)) {
       return;
     }
-    const cert = this.items!.find(i => i.key === dataset.id);
+    const cert = items.find(i => i.key === dataset.id);
     this.certificate = cert;
     this.notifyChange();
 
-    CoreEvents.Telemetry.event(this.target, {
+    CoreEvents.Telemetry.event({
       category: 'Certificates',
       action: 'Authorization',
       label: 'selected-certificate'
-    });
+    }, this.target);
   }
 
   importHandler(): void {
     // ArcNavigationEvents.navigate(this.target, 'client-certificate-import');
-    CoreEvents.Telemetry.event(this.target, {
+    CoreEvents.Telemetry.event({
       category: 'Certificates',
       action: 'Authorization',
       label: 'navigate-import'
-    });
+    }, this.target);
   }
 
   render(): TemplateResult {
@@ -221,7 +222,7 @@ export default class ClientCertificate extends AuthUiBase {
     <anypoint-radio-button data-id="${item.key}">
       <div class="cert-meta">
         <span class="name">${item.name}</span>
-        <span class="created">Added: ${this.dateTimeTemplate(item.created!)}</span>
+        <span class="created">Added: ${this.dateTimeTemplate(item.created)}</span>
       </div>
     </anypoint-radio-button>`;
   }
@@ -230,7 +231,10 @@ export default class ClientCertificate extends AuthUiBase {
    * @param created The certificate created time.
    * @returns The template for the cert time element.
    */
-  dateTimeTemplate(created: number): TemplateResult {
+  dateTimeTemplate(created?: number): TemplateResult {
+    if (!created) {
+      return html`<span>Unknown</span>`;
+    }
     return html`<date-time
       .date="${created}"
       year="numeric"

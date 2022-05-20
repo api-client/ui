@@ -16,7 +16,7 @@ import { html, CSSResult, TemplateResult, PropertyValueMap } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { property, state, query } from 'lit/decorators.js';
-import { ValidatableElement, EventsTargetMixin, AnypointListboxElement } from '@anypoint-web-components/awc';
+import { ValidatableElement, EventsTargetMixin, AnypointListboxElement, AnypointDropdownElement } from '@anypoint-web-components/awc';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
@@ -153,7 +153,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
   }
 
   get [suggestionsList](): AnypointListboxElement {
-    const node = this.shadowRoot!.querySelector('.url-autocomplete anypoint-listbox') as AnypointListboxElement;
+    const node = this.shadowRoot?.querySelector('.url-autocomplete anypoint-listbox') as AnypointListboxElement;
     return node;
   }
 
@@ -312,7 +312,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       action: 'URL editor',
       label,
     }
-    CoreEvents.Telemetry.event(this, init);
+    CoreEvents.Telemetry.event(init, this);
   }
 
   /**
@@ -363,10 +363,10 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
    */
   _getValidity(): boolean {
     if (this.detailsOpened) {
-      const element = this.shadowRoot!.querySelector('url-params-editor') as UrlParamsEditorElement;
+      const element = this.shadowRoot?.querySelector('url-params-editor') as UrlParamsEditorElement;
       return element.checkValidity();
     }
-    const element = this.shadowRoot!.querySelector('.main-input') as HTMLInputElement;
+    const element = this.shadowRoot?.querySelector('.main-input') as HTMLInputElement | null;
     if (!element) {
       return true;
     }
@@ -444,7 +444,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     this[toggleSuggestions](true);
     this.requestUpdate();
     await this.updateComplete;
-    const node = this.shadowRoot!.querySelector('anypoint-dropdown')!;
+    const node = this.shadowRoot?.querySelector('anypoint-dropdown') as AnypointDropdownElement;
     node.refit();
     node.notifyResize();
     this[setSuggestionsWidth]();
@@ -452,7 +452,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
 
   [toggleSuggestions](opened: boolean): void {
     if (!opened && this[overlayOpenedValue]) {
-      const element = this.shadowRoot!.querySelector('.main-input') as HTMLInputElement;
+      const element = this.shadowRoot?.querySelector('.main-input') as HTMLInputElement;
       element.focus();
     }
     if (this[overlayOpenedValue] !== opened) {
@@ -471,8 +471,8 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     if (!this[overlayOpenedValue]) {
       return;
     }
-    const node = this.shadowRoot!.querySelector('.url-autocomplete')!;
-    const input = this.shadowRoot!.querySelector('.input-wrapper')!;
+    const node = this.shadowRoot?.querySelector('.url-autocomplete') as AnypointDropdownElement;
+    const input = this.shadowRoot?.querySelector('.input-wrapper') as HTMLElement;
     const rect1 = node.getBoundingClientRect();
     const rect2 = input.getBoundingClientRect();
     const total = rect1.height + rect2.height;
@@ -537,7 +537,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       if (!this.detailsOpened) {
         return;
       }
-      const input = this.shadowRoot!.querySelector('.input-wrapper')!;
+      const input = this.shadowRoot?.querySelector('.input-wrapper') as HTMLElement;
       const rect1 = node.getBoundingClientRect();
       const rect2 = input.getBoundingClientRect();
       const total = rect1.height + rect2.height;
@@ -694,9 +694,9 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     if (!this.withEnvironment) {
       return '';
     }
-    const { environments } = this;
-    const label = this.environmentLabel!;
-    const renderDropdown = environments!.length > 1;
+    const { environments=[] } = this;
+    const label = this.environmentLabel;
+    const renderDropdown = environments.length > 1;
     return html`
     <div 
       class="environment-selector" 
@@ -709,7 +709,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       <span class="environment-label">${label}</span>
       ${renderDropdown ? html`<api-icon icon="arrowDropDown" class="env-trigger"></api-icon>` : ''}
     </div>
-    ${renderDropdown ? this._environmentDropdownTemplate(environments!) : ''}
+    ${renderDropdown ? this._environmentDropdownTemplate(environments) : ''}
     `;
   }
 

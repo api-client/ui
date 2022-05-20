@@ -68,7 +68,7 @@ export default class StoreConfigScreen extends ConfigInitScreen {
       this.config = await Events.Config.Environment.list();
     } catch (e) {
       const err = e as Error;
-      CoreEvents.Telemetry.exception(window, err.message, true);
+      CoreEvents.Telemetry.exception(err.message, true);
       this.reportCriticalError('Unable to load the list of environments.');
     } finally {
       this.loadingEnvironments = false;
@@ -120,7 +120,7 @@ export default class StoreConfigScreen extends ConfigInitScreen {
 
   @route({ pattern: '*' })
   protected telemetryRoute(info: IRouteResult): void {
-    CoreEvents.Telemetry.view(this.eventTarget, info.route.name || info.route.pattern || '/');
+    CoreEvents.Telemetry.view(info.route.name || info.route.pattern || '/');
   }
 
   protected _handleEnvUpdated(init: Event): void {
@@ -198,7 +198,11 @@ export default class StoreConfigScreen extends ConfigInitScreen {
   }
 
   protected revalidateCurrent(id: string): void {
-    this.config!.current = id;
+    const { config } = this;
+    if (!config) {
+      throw new Error(`Config is not set.`);
+    }
+    config.current = id;
     if (this.env) {
       this.isDefault = this.env.key === id;
     }

@@ -101,7 +101,7 @@ export default class ProjectRunnerElement extends LitElement {
   /**
    * The currently rendered panel.
    */
-  @state() protected selected: string = 'config';
+  @state() protected selected = 'config';
 
   /**
    * Whether the element is currently running the project execution.
@@ -173,7 +173,7 @@ export default class ProjectRunnerElement extends LitElement {
     }
     this._running = true;
     try {
-      const result = await CoreEvents.Transport.Project.send(this, project.key, init);
+      const result = await CoreEvents.Transport.Project.send(project.key, init, this);
       if (!result) {
         this._lastError = 'The project execution event was not handled.';
       } else {

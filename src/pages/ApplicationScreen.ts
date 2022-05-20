@@ -265,7 +265,7 @@ export abstract class ApplicationScreen extends RouteMixin(RenderableMixin(Event
     try {
       this.user = await Events.Store.User.me();
     } catch (e) {
-      CoreEvents.Telemetry.exception(this.eventTarget || window, `Loading user: ${(e as Error).message}`);
+      CoreEvents.Telemetry.exception(`Loading user: ${(e as Error).message}`, undefined, this.eventTarget || window);
     } finally {
       this.loadingUser = false;
     }
@@ -354,7 +354,7 @@ export abstract class ApplicationScreen extends RouteMixin(RenderableMixin(Event
       await Events.Store.File.observeFiles();
     } catch (e) {
       const err = e as Error;
-      CoreEvents.Telemetry.exception(this.eventTarget, err.message, false);
+      CoreEvents.Telemetry.exception(err.message, false, this.eventTarget || window);
     }
   }
 
@@ -363,7 +363,7 @@ export abstract class ApplicationScreen extends RouteMixin(RenderableMixin(Event
       await Events.Store.File.unobserveFiles();
     } catch (e) {
       const err = e as Error;
-      CoreEvents.Telemetry.exception(this.eventTarget, err.message, false);
+      CoreEvents.Telemetry.exception(err.message, false, this.eventTarget || window);
     }
   }
 }

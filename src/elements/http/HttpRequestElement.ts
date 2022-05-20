@@ -10,8 +10,10 @@ import {
   HttpRequest,
   RequestUiMeta,
   SecurityProcessor,
+  IAuthorizationSettingsUnion
 } from '@api-client/core/build/browser.js';
 import { EventsTargetMixin, ResizableElement, AnypointTabsElement } from '@anypoint-web-components/awc';
+import { AuthorizationType } from '@api-client/core/build/src/models/Authorization.js';
 import "@anypoint-web-components/awc/dist/define/anypoint-dropdown.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-listbox.js";
 import "@anypoint-web-components/awc/dist/define/anypoint-icon-item.js";
@@ -249,7 +251,7 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
     node.addEventListener(EventTypes.HttpProject.Request.send, this[internalSendHandler]);
   }
 
-  firstUpdated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+  firstUpdated(changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>): void {
     super.firstUpdated(changedProperties);
     this._computeSnippetsRequest();
   }
@@ -276,7 +278,11 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
    * an URL which means scheme + something
    */
   validateUrl(): boolean {
-    const panel = this.shadowRoot!.querySelector('url-input-editor');
+    const { shadowRoot } = this;
+    if (!shadowRoot) {
+      return true;
+    }
+    const panel = shadowRoot.querySelector('url-input-editor');
     if (!panel) {
       return true;
     }
@@ -294,7 +300,7 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
     if (!oauth) {
       return false;
     }
-    const authMethod = this.shadowRoot!.querySelector('authorization-method[type="oauth 2"]') as AuthorizationMethodElement | null;
+    const authMethod = this.shadowRoot?.querySelector('authorization-method[type="oauth 2"]') as AuthorizationMethodElement | null;
     if (!authMethod) {
       return false;
     }
@@ -352,9 +358,11 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
       return;
     }
     if (this.requiresAuthorization()) {
-      const authMethod = this.shadowRoot!.querySelector('authorization-method[type="oauth 2"]') as AuthorizationMethodElement;
-      authMethod.authorize();
-      this._awaitingOAuth2authorization = true;
+      const authMethod = this.shadowRoot?.querySelector('authorization-method[type="oauth 2"]') as AuthorizationMethodElement | null;
+      if (authMethod) {
+        authMethod.authorize();
+        this._awaitingOAuth2authorization = true;
+      }
       return;
     }
     // store the URL in the history
@@ -366,10 +374,10 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
       return;
     }
     this._notifySend(request);
-    CoreEvents.Telemetry.event(this, {
+    CoreEvents.Telemetry.event({
       category: 'Request editor',
       action: 'Send request',
-    });
+    }, this);
   }
 
   protected _notifySend(request: IHttpRequest): void {
@@ -427,11 +435,11 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
     if (!this.isPayload && this.selectedTab === 1) {
       this.selectedTab = 0;
     }
-    CoreEvents.Telemetry.event(this, {
+    CoreEvents.Telemetry.event({
       category: 'Request editor',
       action: 'Method selected',
       label: selected,
-    });
+    }, this);
     this._computeSnippetsRequest();
   }
 
@@ -466,11 +474,11 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
     this.notifyRequestChanged();
     this.notifyChanged('ui', this.ui);
     const labels = ['Headers', 'Body', 'Authorization', 'Actions', 'Config', 'Code snippets'];
-    CoreEvents.Telemetry.event(this, {
+    CoreEvents.Telemetry.event({
       category: 'Request editor',
       action: 'Editor switched',
       label: labels[this.selectedTab],
-    });
+    }, this);
     await this.updateComplete;
     this.notifyResize();
   }
@@ -535,7 +543,7 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
     this.notifyChanged('ui', this.ui);
   }
 
-  protected _updatePayload(value: any): void {
+  protected _updatePayload(value: DeserializedPayload): void {
     this.payload = value;
     this.notifyRequestChanged();
     this.notifyChanged('payload', value);
@@ -549,14 +557,17 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
     e.preventDefault();
     const selector = e.target as AuthorizationSelectorElement;
     const { type, selected } = selector;
+    if (!type) {
+      return;
+    }
     const methods = selector.items as AuthorizationMethodElement[];
     const result: RequestAuthorization[] = [];
     methods.forEach((authMethod) => {
-      const { type: mType } = authMethod;
+      const { type: mType = '' } = authMethod;
       const config = (authMethod && authMethod.serialize) ? authMethod.serialize() : undefined;
       const valid = (authMethod && authMethod.validate) ? authMethod.validate() : true;
-      const enabled = type!.includes(mType!);
-      const auth = RequestAuthorization.fromTypedConfig(mType as any, config as any, valid);
+      const enabled = type.includes(mType);
+      const auth = RequestAuthorization.fromTypedConfig(mType as AuthorizationType, config as IAuthorizationSettingsUnion, valid);
       auth.enabled = enabled;
       result.push(auth);
     });
@@ -593,7 +604,7 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
    * @param type The property that changed. The resulting event type is the combination of this value and the `change` suffix.
    * @param value The value of the changed property
    */
-  notifyChanged(type: string, value: any): void {
+  notifyChanged(type: string, value: unknown): void {
     this.dispatchEvent(new CustomEvent(`${type}change`, {
       detail: {
         value
@@ -801,7 +812,7 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
       ui,
     } = this;
     const body = ui && ui.body;
-    const selected = body && body.selected as any;
+    const selected = body && body.selected as "file" | "raw" | "urlEncode" | "multipart";
     const model = body && body.model;
     
     return html`

@@ -76,11 +76,11 @@ export default class StartScreen extends ApplicationScreen {
     try {
       const type = await Events.Config.Local.get('view.list.type');
       if (type) {
-        this.viewType = type as any;
+        this.viewType = type as "grid" | "list" | undefined;
       }
     } catch (e) {
       const err = e as Error;
-      CoreEvents.Telemetry.exception(this.eventTarget, err.message, false);
+      CoreEvents.Telemetry.exception(err.message, false);
     }
   }
 
@@ -128,7 +128,7 @@ export default class StartScreen extends ApplicationScreen {
   }
 
   protected telemetryRoute(info: IRouteResult): void {
-    CoreEvents.Telemetry.view(this.eventTarget || window, info.route.name || info.route.pattern || '/');
+    CoreEvents.Telemetry.view(info.route.name || info.route.pattern || '/');
   }
 
   protected _fileOpenHandler(e: CustomEvent): void {

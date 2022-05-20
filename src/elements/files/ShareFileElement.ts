@@ -376,10 +376,13 @@ export default class ShareFileElement extends AnypointDialogElement {
 
   protected get fileId(): string {
     const { key, file } = this;
-    if (!key && !file) {
-      throw new Error(`Invalid state, file is not set.`);
+    if (key) {
+      return key;
     }
-    return key || file!.key;
+    if (file) {
+      return file.key;
+    }
+    throw new Error(`Invalid state, file is not set.`);
   }
 
   constructor() {
@@ -387,9 +390,13 @@ export default class ShareFileElement extends AnypointDialogElement {
     this._fileMetaHandler = this._fileMetaHandler.bind(this);
   }
 
-  protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
-    this.input = this.shadowRoot!.querySelector('#userInput') as HTMLInputElement;
-    this.suggestionsList = this.shadowRoot!.querySelector('.suggestions-list') as AnypointListboxElement;
+  protected firstUpdated(_changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>): void {
+    const { shadowRoot } = this;
+    if (!shadowRoot) {
+      return;
+    }
+    this.input = shadowRoot.querySelector('#userInput') as HTMLInputElement;
+    this.suggestionsList = shadowRoot.querySelector('.suggestions-list') as AnypointListboxElement;
     super.firstUpdated(_changedProperties);
   }
 
@@ -456,7 +463,7 @@ export default class ShareFileElement extends AnypointDialogElement {
     try {
       this.file = await Events.Store.File.read(key, false);
     } catch (e) {
-      CoreEvents.Telemetry.exception(this, (e as Error).message, true);
+      CoreEvents.Telemetry.exception((e as Error).message, true, this);
     } finally {
       this.loadingFile = false;
     }
@@ -468,7 +475,7 @@ export default class ShareFileElement extends AnypointDialogElement {
       const list = await Events.Store.File.listUsers(key);
       this.permissionUsers = list.data;
     } catch (e) {
-      CoreEvents.Telemetry.exception(this, (e as Error).message, true);
+      CoreEvents.Telemetry.exception((e as Error).message, true, this);
     } finally {
       this.loadingFileUsers = false;
     }
@@ -483,8 +490,10 @@ export default class ShareFileElement extends AnypointDialogElement {
   }
 
   protected _inputKeydown(e: KeyboardEvent): void {
-    const { suggestionsOpened } = this;
-    const list = this.suggestionsList!;
+    const { suggestionsOpened, suggestionsList: list } = this;
+    if (!list) {
+      return;
+    }
     const input = e.target as HTMLInputElement;
     if (suggestionsOpened && e.key === 'ArrowDown') {
       list.highlightNext();
@@ -495,7 +504,7 @@ export default class ShareFileElement extends AnypointDialogElement {
     } else if (suggestionsOpened && e.key === 'Enter') {
       const { highlightedItem } = list;
       if (highlightedItem) {
-        const index = Number(list.indexOf(list.highlightedItem!));
+        const index = Number(list.indexOf(highlightedItem));
         list.selected = index;
         e.preventDefault();
       }
@@ -520,10 +529,14 @@ export default class ShareFileElement extends AnypointDialogElement {
     if (Number.isNaN(selected)) {
       return;
     }
+    const { input, userSuggestions } = this;
+    if (!input || !userSuggestions) {
+      return;
+    }
     this.suggestionsOpened = false;
     list.selected = undefined;
-    this.input!.value = '';
-    const user = this.userSuggestions![selected];
+    input.value = '';
+    const user = userSuggestions[selected];
     if (!user) {
       return;
     }
@@ -541,7 +554,7 @@ export default class ShareFileElement extends AnypointDialogElement {
     if (!key) {
       return;
     }
-    const users = this.selectedUsers!
+    const { selectedUsers: users = [] } = this;
     const index = users.findIndex(u => u.key === key);
     if (index >= 0) {
       users.splice(index, 1);
@@ -634,7 +647,11 @@ export default class ShareFileElement extends AnypointDialogElement {
   }
 
   protected _shareHandler(): void {
-    const roleList = this.shadowRoot!.querySelector('.role-selector anypoint-listbox') as AnypointListboxElement;
+    const { shadowRoot } = this;
+    if (!shadowRoot) {
+      return;
+    }
+    const roleList = shadowRoot.querySelector('.role-selector anypoint-listbox') as AnypointListboxElement;
     const role = roleList.selected as PermissionRole;
     this.share(role);
   }
@@ -643,7 +660,7 @@ export default class ShareFileElement extends AnypointDialogElement {
     if (!role) {
       throw new Error(`Invalid state. Role is not selected.`);
     }
-    const { key, file, selectedUsers } = this;
+    const { selectedUsers } = this;
     if (!selectedUsers || !selectedUsers.length) {
       this._cancelShareUser();
       return;
@@ -652,7 +669,7 @@ export default class ShareFileElement extends AnypointDialogElement {
     if (!appInfo) {
       throw new Error(`The appInfo is not set on the <share-file> element.`);
     }
-    const id = key || file!.key;
+    const id = this.fileId;
     const ops: AccessOperation[] = selectedUsers.map(user => {
       const op: AccessOperation = {
         op: 'add',
@@ -667,7 +684,7 @@ export default class ShareFileElement extends AnypointDialogElement {
       this._cancelShareUser();
     } catch (e) {
       const cause = e as Error;
-      CoreEvents.Telemetry.exception(this, cause.message, false);
+      CoreEvents.Telemetry.exception(cause.message, false, this);
       throw cause;
     }
   }
@@ -694,7 +711,7 @@ export default class ShareFileElement extends AnypointDialogElement {
     if (!this.pendingPermissions) {
       this.pendingPermissions = [];
     }
-    const pending = this.pendingPermissions!;
+    const { pendingPermissions: pending = [] } = this;
     const index = pending.findIndex(i => i.id === userId);
     // removes prior selection
     if (index >= 0) {
@@ -739,13 +756,16 @@ export default class ShareFileElement extends AnypointDialogElement {
     if (!appInfo) {
       throw new Error(`The appInfo is not set on the <share-file> element.`);
     }
-    const id = key || file!.key;
+    const id = key || file && file.key;
+    if (!id) {
+      return;
+    }
     try {
       await Events.Store.File.patchUsers(id, randomString(), pendingPermissions, appInfo);
       this.pendingPermissions = undefined;
     } catch (e) {
       const cause = e as Error;
-      CoreEvents.Telemetry.exception(this, cause.message, false);
+      CoreEvents.Telemetry.exception(cause.message, false, this);
       throw cause;
     }
   }
@@ -869,7 +889,7 @@ export default class ShareFileElement extends AnypointDialogElement {
       return '';
     }
     return html`
-    ${this.selectedUsers!.map((user) => this.chipTemplate(user))}
+    ${(this.selectedUsers as IUser[]).map((user) => this.chipTemplate(user))}
     `;
   }
 
@@ -929,8 +949,9 @@ export default class ShareFileElement extends AnypointDialogElement {
     if (type === 'anyone') {
       return html`<p>TODO</p>`;
     }
+    const { permissionUsers=[] } = this;
     const userId = permission.owner as string;
-    const user = this.permissionUsers!.find(u => u.key === userId);
+    const user = permissionUsers.find(u => u.key === userId);
     if (!user) {
       // @TODO: should render something...
       return '';

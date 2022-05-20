@@ -164,12 +164,12 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
 
   _attachListeners(node: EventTarget): void {
     super._attachListeners(node);
-    node.addEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, this._contentTypeHandler as any);
+    node.addEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, this._contentTypeHandler as EventListener);
   }
 
   _detachListeners(node: EventTarget): void {
     super._detachListeners(node);
-    node.removeEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, this._contentTypeHandler as any);
+    node.removeEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, this._contentTypeHandler as EventListener);
   }
 
   /**
@@ -339,26 +339,22 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
     }
     button.disabled = true;
     if ('part' in button) {
-      // @ts-ignore
       button.part.add('content-action-button-disabled');
-      // @ts-ignore
       button.part.add('code-content-action-button-disabled');
     }
     setTimeout(() => this._resetCopyState(button), 1000);
-    CoreEvents.Telemetry.event(this, {
+    CoreEvents.Telemetry.event({
       category: 'Usage',
       action: 'Click',
       label: 'Headers editor clipboard copy',
-    });
+    }, this);
   }
 
   protected _resetCopyState(button: HTMLButtonElement): void {
     button.innerText = 'Copy';
     button.disabled = false;
     if ('part' in button) {
-      // @ts-ignore
       button.part.remove('content-action-button-disabled');
-      // @ts-ignore
       button.part.remove('code-content-action-button-disabled');
     }
   }
@@ -392,14 +388,19 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
    * Focuses on the last header name filed
    */
   _focusLastName(): void {
-    const row = this.shadowRoot!.querySelector('.params-list > :last-child');
+    const { shadowRoot } = this;
+    if (!shadowRoot) {
+      return;
+    }
+    const row = shadowRoot.querySelector('.params-list > :last-child');
     if (!row) {
       return;
     }
     try {
-      const node = row.querySelector('.param-name');
-      // @ts-ignore
-      node.focus();
+      const node = row.querySelector('.param-name') as HTMLElement;
+      if (node) {
+        node.focus();
+      }
     } catch (e) {
       // ...
     }

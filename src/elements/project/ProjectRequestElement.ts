@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { css, CSSResult, html, PropertyValueMap, TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents, IProjectRunnerOptions, EventUtils, IHttpHistory, HttpHistoryKind, IRequestLog, IApplication } from '@api-client/core/build/browser.js';
+import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents, IProjectRunnerOptions, EventUtils, IHttpHistory, HttpHistoryKind, IRequestLog, IApplication, DeserializedPayload } from '@api-client/core/build/browser.js';
 import { JsonPatchOperation } from '@api-client/json';
 import HttpRequestElement from '../http/HttpRequestElement.js';
 import { Events } from '../../events/Events.js';
@@ -206,11 +206,11 @@ export default class ProjectRequestElement extends HttpRequestElement {
     super._updateAuthorization(auth);
   }
 
-  protected _updatePayload(value: any): void {
+  protected _updatePayload(value: DeserializedPayload): void {
     this._updatePayloadAsync(value);
   }
 
-  protected async _updatePayloadAsync(value: any): Promise<void> {
+  protected async _updatePayloadAsync(value: DeserializedPayload): Promise<void> {
     const { expects } = this;
     if (!expects) {
       return;
@@ -262,13 +262,13 @@ export default class ProjectRequestElement extends HttpRequestElement {
       await Events.AppData.Http.Ui.HttpProject.HttpRequest.set(project.key, key, meta.toJSON(), this);
     } catch (e) {
       const cause = e as Error;
-      CoreEvents.Telemetry.exception(this, cause.message, false);
+      CoreEvents.Telemetry.exception(cause.message, false, this);
     }
   }
 
-  notifyChanged(type: string, value: any): void {
+  notifyChanged(type: string, value: unknown): void {
     if (type === 'ui') {
-      this._updateRequestUi(value);
+      this._updateRequestUi(value as RequestUiMeta);
     }
     super.notifyChanged(type, value);
   }
@@ -289,12 +289,14 @@ export default class ProjectRequestElement extends HttpRequestElement {
     };
     this.loading = true;
     try {
-      const result = await CoreEvents.Transport.Project.send(this, project.key, opts);
-      const report = result?.iterations[0]!.executed[0]!;
-      request.setLog(report);
-      this.notifyRequestChanged();
-      this.requestUpdate();
-      this._addHistory(report);
+      const result = await CoreEvents.Transport.Project.send(project.key, opts, this);
+      const report = result?.iterations[0]?.executed[0];
+      if (report) {
+        request.setLog(report);
+        this.notifyRequestChanged();
+        this.requestUpdate();
+        this._addHistory(report);
+      }
     } catch (e) {
       // 
     }
@@ -323,7 +325,7 @@ export default class ProjectRequestElement extends HttpRequestElement {
       this._history.splice(0, 0, item);
     }
     item.key = await Events.Store.History.create(item);
-    const element = this.shadowRoot!.querySelector('request-history-browser');
+    const element = this.shadowRoot?.querySelector('request-history-browser');
     if (element) {
       element.addHistory(item, true);
     }

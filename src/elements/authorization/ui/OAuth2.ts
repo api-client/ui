@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-this-alias */
 /* eslint-disable class-methods-use-this */
 import { html, TemplateResult } from "lit";
 import { IOAuth2Authorization, IOauth2GrantType, ITokenInfo, OAuth2DeliveryMethod, KnownGrants, Events as CoreEvents, AuthorizationUtils } from "@api-client/core/build/browser.js";
@@ -603,7 +604,7 @@ export default class OAuth2 extends AuthUiBase {
     detail.state = state;
     let tokenInfo: ITokenInfo | undefined;
     try {
-      tokenInfo = await CoreEvents.Authorization.OAuth2.authorize(this.target, detail);
+      tokenInfo = await CoreEvents.Authorization.OAuth2.authorize(detail, this.target);
       this.authorizing = false;
       this.requestUpdate();
       this.notifyChange();
@@ -742,6 +743,7 @@ export default class OAuth2 extends AuthUiBase {
   async _editRedirectUriHandler(): Promise<void> {
     this.editingRedirectUri = true;
     await this.requestUpdate();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const input = this.target.shadowRoot!.querySelector('.redirect-input') as HTMLElement;
     if (input) {
       input.focus();

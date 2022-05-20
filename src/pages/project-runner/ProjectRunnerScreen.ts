@@ -156,7 +156,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
         navigate('404');
         return false;
       }
-      CoreEvents.Telemetry.exception(window, cause.message, true);
+      CoreEvents.Telemetry.exception(cause.message, true);
       this.reportCriticalError(cause.message);
     }
     return true;

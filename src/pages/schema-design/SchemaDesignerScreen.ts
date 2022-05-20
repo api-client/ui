@@ -181,7 +181,7 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
         navigate('404');
         return false;
       }
-      CoreEvents.Telemetry.exception(window, cause.message, true);
+      CoreEvents.Telemetry.exception(cause.message, true);
       this.reportCriticalError(cause.message);
     }
     return true;
@@ -258,7 +258,7 @@ export default class SchemaDesignerScreen extends ApplicationScreen {
       this.schema = JSON.stringify(newSchema);
     } catch (e) {
       const cause = e as Error;
-      CoreEvents.Telemetry.exception(window, cause.message, true);
+      CoreEvents.Telemetry.exception(cause.message, true);
       this.reportCriticalError(cause.message);
     } finally {
       this.updatingSchema = false;

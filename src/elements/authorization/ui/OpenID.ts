@@ -25,7 +25,7 @@ export const ResponseTypeLabels: Record<string, string> = {
   id: 'ID token',
 };
 
-export const discoveryCache = new Map();
+export const discoveryCache = new Map<string, IOpenIdProviderMetadata>();
 
 /**
  * @returns The default grant types for OIDC
@@ -134,7 +134,7 @@ export default class OpenID extends OAuth2 {
     detail.state = state;
 
     try {
-      const tokens = await CoreEvents.Authorization.Oidc.authorize(this.target, detail);
+      const tokens = await CoreEvents.Authorization.Oidc.authorize(detail, this.target);
       this.authorizing = false;
       this.notifyChange();
       this.requestUpdate();
@@ -209,14 +209,16 @@ export default class OpenID extends OAuth2 {
     }
     this.lastErrorMessage = undefined;
     this.requestUpdate();
-    let info;
+    let info: IOpenIdProviderMetadata | undefined;
     const oidcUrl = this.buildIssuerUrl(issuerUri);
     if (discoveryCache.has(oidcUrl)) {
       info = discoveryCache.get(oidcUrl);
     } else {
       try {
         info = await this.transportDiscovery(oidcUrl);
-        discoveryCache.set(oidcUrl, info);
+        if (info) {
+          discoveryCache.set(oidcUrl, info);
+        }
       } catch (e) {
         this.lastErrorMessage = `Unable to read the discovery information.`;
       }
@@ -236,7 +238,7 @@ export default class OpenID extends OAuth2 {
    * First it dispatched ARC's HTTP transport event to avoid CORS issues.
    * When this fails then it tried native `fetch` API.
    */
-  async transportDiscovery(url: string): Promise<any> {
+  async transportDiscovery(url: string): Promise<IOpenIdProviderMetadata | undefined> {
     let result;
     // try {
     //   result = await this.transportArc(url);
@@ -256,7 +258,7 @@ export default class OpenID extends OAuth2 {
   //  * @param url The URL to request.
   //  * @returns The processed response as JSON.
   //  */
-  // async transportArc(url: string): Promise<any> {
+  // async transportArc(url: string): Promise<IOpenIdProviderMetadata | undefined> {
   //   const result = await TransportEvents.httpTransport(this.target, {
   //     method: 'GET',
   //     url,
@@ -282,7 +284,7 @@ export default class OpenID extends OAuth2 {
    * @param url The URL to request.
    * @returns The processed response as JSON.
    */
-  async transportNative(url: string): Promise<any> {
+  async transportNative(url: string): Promise<IOpenIdProviderMetadata | undefined> {
     const rsp = await fetch(url);
     return rsp.json();
   }
