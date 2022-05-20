@@ -52,6 +52,7 @@
     "lit": "^2.2.2",
     "marked": "^4.0.15",
     "monaco-editor": "^0.33.0",
+    "pouchdb": "^7.3.0",
     "prismjs": "^1.28.0"
   },
   "devDependencies": {
@@ -64,6 +65,7 @@
     "@types/d3": "^7.1.0",
     "@types/dompurify": "^2.3.3",
     "@types/marked": "^4.0.3",
+    "@types/pouchdb": "^6.4.0",
     "@types/prismjs": "^1.26.0",
     "@typescript-eslint/eslint-plugin": "^5.22.0",
     "@typescript-eslint/parser": "^5.22.0",
