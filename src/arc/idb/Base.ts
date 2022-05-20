@@ -96,6 +96,17 @@ export interface IARCEntityChangeRecord<T = unknown> {
   item?: T;
 }
 
+export declare interface IDeletedEntity {
+  /**
+   * Pouch DB datastore `_id`
+   */
+  id: string;
+  /**
+   * Pouch DB datastore revision of the deleted object
+   */
+  rev: string;
+}
+
 /**
  * A base class for all models.
  */

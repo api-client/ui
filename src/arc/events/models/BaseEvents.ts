@@ -62,7 +62,7 @@ export class ARCEntityDeletedEvent extends Event {
 /**
  * A base class for data store query events.
  */
-export class ARCEntityListEvent extends CustomEvent<IArcEventWithResult> {
+export class ARCEntityListEvent<T = unknown> extends CustomEvent<IArcEventWithResult<T>> {
   [limitValue]?: number;
 
   [nextPageTokenValue]?: string;

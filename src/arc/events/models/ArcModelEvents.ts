@@ -1,5 +1,6 @@
 import { ARCModelDeleteEvent, ARCModelStateDeleteEvent } from "./BaseEvents.js";
 import { AuthDataEvents } from './AuthDataEvents.js';
+import { CertificatesEvents } from './CertificatesEvents.js';
 
 export const ArcModelEvents = Object.freeze({
   /**
@@ -28,4 +29,5 @@ export const ArcModelEvents = Object.freeze({
   },
 
   AuthData: AuthDataEvents,
+  ClientCertificate: CertificatesEvents,
 });
