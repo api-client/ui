@@ -7,38 +7,28 @@ export const ArcModelEventTypes = Object.freeze({
     update: 'modelprojectchange',
     updateBulk: 'modelprojectupdatebulk',
     delete: 'modelprojectdelete',
+    deleteBulk: 'modelprojectdeletebulk',
+    undeleteBulk: 'modelprojectundeletebulk',
     list: 'modelprojectlist',
-    listAll: 'modelprojectlistall',
     State: Object.freeze({
       update: 'modelstateprojectchange',
       delete: 'modelstateprojectdelete',
     })
   }),
-  Request: Object.freeze({
-    read: 'modelrequestread',
-    readBulk: 'modelrequestreadbulk',
-    // updates metadata only
-    update: 'modelrequestchange',
-    updateBulk: 'modelrequestupdatebulk',
-    // updates metadata, transforms body, takes care of dependencies
-    store: 'modelrequeststore',
-    delete: 'modelrequestdelete',
-    deleteBulk: 'modelrequestdeletebulk',
-    undeleteBulk: 'modelrequestsundelete',
-    query: 'modelrequestquery',
-    list: 'modelrequestlist',
-    projectlist: 'modelrequestprojectlist',
+  History: Object.freeze({
+    read: 'modelhistoryread',
+    readBulk: 'modelhistoryreadbulk',
+    update: 'modelhistorychange',
+    updateBulk: 'modelhistoryupdatebulk',
+    delete: 'modelhistorydelete',
+    deleteBulk: 'modelhistorydeletebulk',
+    undeleteBulk: 'modelhistorysundelete',
+    query: 'modelhistoryquery',
+    list: 'modelhistorylist',
     State: Object.freeze({
-      update: 'modelstaterequestchange',
-      delete: 'modelstaterequestdelete',
+      update: 'modelstatehistorychange',
+      delete: 'modelstatehistorydelete',
     }),
-  }),
-  UrlIndexer: Object.freeze({
-    update: 'modelurlindexerupdate',
-    query: 'modelurlindexerquery',
-    State: Object.freeze({
-      finished: 'modelstateurlindexerfinished',
-    })
   }),
   AuthData: Object.freeze({
     query: 'modelauthdataquery',
@@ -47,10 +37,11 @@ export const ArcModelEventTypes = Object.freeze({
       update: 'modelstateauthdataupdate',
     }),
   }),
-  HostRules: Object.freeze({
+  Host: Object.freeze({
     update: 'modelhostrulesupdate',
     updateBulk: 'modelhostrulesupdatebulk',
     delete: 'modelhostrulesdelete',
+    deleteBulk: 'modelhostrulesdeletebulk',
     list: 'modelhostruleslist',
     State: Object.freeze({
       update: 'modelstatehostrulesupdate',

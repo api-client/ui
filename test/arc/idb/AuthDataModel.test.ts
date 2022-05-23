@@ -1,12 +1,10 @@
 import { fixture, assert, oneEvent } from '@open-wc/testing';
-import { ARCAuthData } from '@api-client/core/build/legacy.js';
+import { IAuthorizationData } from '@api-client/core/build/browser.js';
 import { normalizeUrl, computeKey, AuthDataModel } from  '../../../src/arc/idb/AuthDataModel.js';
-import { MockedStore } from  '../../../src/arc/idb/MockedStore.js';
 import { ArcModelEventTypes } from '../../../src/arc/events/models/ArcModelEventTypes.js';
+import { ArcModelEvents } from '../../../src/arc/events/models/ArcModelEvents.js';
 
 describe('AuthDataModel', () => {
-  const store = new MockedStore();
-  
   async function etFixture(): Promise<HTMLElement> {
     return fixture(`<div></div>`);
   }
@@ -58,92 +56,119 @@ describe('AuthDataModel', () => {
   });
 
   describe('update()', () => {
-    afterEach(() => store.destroyBasicAuth());
-
+    
     let element: AuthDataModel;
     let et: HTMLElement;
-    let dataObj: ARCAuthData;
-    const url = 'https://domain.com/path';
-    const method = 'ntlm';
-    const key = 'ntlm/https%3A%2F%2Fdomain.com%2Fpath';
+    let data: IAuthorizationData;
+    
     beforeEach(async () => {
       et = await etFixture();
       element = new AuthDataModel();
       element.listen(et);
-      dataObj = {
+      data = {
         username: 'uname-test',
         password: 'pwd-test',
         domain: 'some',
-      };
+        key: '',
+      }
     });
 
-    it('returns change record', async () => {
-      const record = await element.update(url, method, dataObj);
+    after(() => element.deleteModel());
+
+    it('returns the change record', async () => {
+      const url = 'https://domain.com/path';
+      const method = 'ntlm';
+      const record = await element.update(url, method, data);
       assert.typeOf(record, 'object', 'returns an object');
-      assert.typeOf(record.rev, 'string', 'revision is set');
-      assert.equal(record.id, key, 'id is set');
-      assert.typeOf(record.item, 'object', 'item is set');
+      assert.equal(record.key, computeKey(method, url), 'sets the key');
+      assert.typeOf(record.item, 'object', 'sets the item');
     });
 
     it('creates a new object in the datastore', async () => {
-      const result = await element.update(url, method, dataObj);
+      const url = 'https://api.com/';
+      const method = 'basic';
+
+      const result = await element.update(url, method, data);
       const { item } = result;
-      assert.typeOf(item._rev, 'string', '_rev is set');
-      assert.equal(item._id, key, '_id is set');
-      assert.equal(item.username, dataObj.username, 'username is set');
-      assert.equal(item.password, dataObj.password, 'password is set');
-      assert.equal(item.domain, dataObj.domain, 'username is set');
+      assert.equal(item.key, computeKey(method, url), 'sets the key');
+      assert.equal(item.username, data.username, 'username is set');
+      assert.equal(item.password, data.password, 'password is set');
+      assert.equal(item.domain, data.domain, 'username is set');
     });
 
-    it('Updates created object', async () => {
-      const result = await element.update(url, method, dataObj);
-      const originalRev = result.rev;
+    it('updates created object', async () => {
+      const url = 'https://api.com/';
+      const method = 'ntlm';
+
+      const result = await element.update(url, method, data);
+      
       result.item.username = 'test-2';
       const updated = await element.update(url, method, result.item);
-      assert.notEqual(updated.rev, originalRev, '_rev is regenerated');
-      assert.equal(updated.id, key, '_id is the same');
+
+      assert.equal(updated.item.key, computeKey(method, url), 'sets the key');
       assert.equal(updated.item.username, 'test-2', 'Name is set');
     });
 
-    it('dispatches change event', async () => {
-      element.update(url, method, dataObj);
+    it('dispatches the change event', async () => {
+      const url = 'https://api.com';
+      const method = 'ntlm';
+
+      element.update(url, method, data);
       await oneEvent(et, ArcModelEventTypes.AuthData.State.update);
+    });
+
+    it('sets the data through the event', async () => {
+      const url = 'https://dot.com/';
+      const method = 'ntlm';
+
+      const result = await ArcModelEvents.AuthData.update(url, method, data, et);
+      assert.typeOf(result, 'object', 'has the change record');
+      const { item } = result;
+      assert.equal(item.key, computeKey(method, url), 'sets the key');
     });
   });
 
   describe('query()', () => {
     const url = 'http://domain.com/auth';
     const method = 'x-ntlm';
+    let model: AuthDataModel;
+    let et: HTMLElement;
+
     before(async () => {
-      const et = await etFixture();
-      const element = new AuthDataModel();
-      element.listen(et);
-      return element.update(url, method, {
+      model = new AuthDataModel();
+      return model.update(url, method, {
         username: 'uname-test',
         password: 'pwd-test',
         domain: 'some',
+        key: '',
       });
     });
 
-    after(async () => store.destroyBasicAuth());
-
-    let element: AuthDataModel;
     beforeEach(async () => {
-      const et = await etFixture();
-      element = new AuthDataModel();
-      element.listen(et);
+      et = await etFixture();
+      model = new AuthDataModel();
+      model.listen(et);
     });
 
-    it('Returns existing data from the data store', async () => {
-      const result = await element.query(url, method);
+    after(() => model.deleteModel());
+    
+    it('returns the existing data from the data store', async () => {
+      const result = await model.query(url, method);
       assert.equal(result.username, 'uname-test');
       assert.equal(result.password, 'pwd-test');
       assert.equal(result.domain, 'some');
     });
 
-    it('Returns undefined if no data', async () => {
-      const result = await element.query('other', method);
+    it('returns undefined if no data', async () => {
+      const result = await model.query('other', method);
       assert.isUndefined(result);
+    });
+
+    it('queries for the data through the event', async () => {
+      const result = await ArcModelEvents.AuthData.query(url, method, et);
+      assert.equal(result.username, 'uname-test');
+      assert.equal(result.password, 'pwd-test');
+      assert.equal(result.domain, 'some');
     });
   });
 });

@@ -1,8 +1,6 @@
 /* eslint-disable max-classes-per-file */
-import { ARCAuthData } from '@api-client/core/build/legacy.js';
-import { IARCEntityChangeRecord } from '../../idb/Base.js';
+import { ContextChangeRecord, ContextEventDetailWithResult, IAuthorizationData } from '@api-client/core/build/browser.js';
 import { ArcModelEventTypes } from './ArcModelEventTypes.js';
-import { IArcEventWithResult } from './BaseEvents.js';
 
 export const urlValue = Symbol('urlValue');
 export const methodValue = Symbol('methodValue');
@@ -12,12 +10,12 @@ export const changeRecordValue = Symbol('changeRecordValue');
 /**
  * An event dispatched to the store to update an authorization data object.
  */
-export class ARCAuthDataUpdateEvent extends CustomEvent<IArcEventWithResult<IARCEntityChangeRecord<ARCAuthData>>> {
+export class ARCAuthDataUpdateEvent extends CustomEvent<ContextEventDetailWithResult<ContextChangeRecord<IAuthorizationData>>> {
   [urlValue]: string;
 
   [methodValue]: string;
 
-  [authDataValue]: ARCAuthData;
+  [authDataValue]: IAuthorizationData;
 
   /**
    * The URL of the request associated with the authorization method
@@ -36,7 +34,7 @@ export class ARCAuthDataUpdateEvent extends CustomEvent<IArcEventWithResult<IARC
   /**
    * The authorization data to store.
    */
-  get authData(): ARCAuthData {
+  get authData(): IAuthorizationData {
     return this[authDataValue];
   }
 
@@ -45,7 +43,7 @@ export class ARCAuthDataUpdateEvent extends CustomEvent<IArcEventWithResult<IARC
    * @param method The name of the authorization method
    * @param authData The authorization data to store.
    */
-  constructor(url: string, method: string, authData: ARCAuthData) {
+  constructor(url: string, method: string, authData: IAuthorizationData) {
     if (typeof url !== 'string') {
       throw new Error('Expected url argument as string.');
     }
@@ -72,7 +70,7 @@ export class ARCAuthDataUpdateEvent extends CustomEvent<IArcEventWithResult<IARC
 /**
  * An event dispatched to the store to query for the authorization data
  */
-export class ARCAuthDataQueryEvent extends CustomEvent<IArcEventWithResult<ARCAuthData | undefined>> {
+export class ARCAuthDataQueryEvent extends CustomEvent<ContextEventDetailWithResult<IAuthorizationData | undefined>> {
   [urlValue]: string;
 
   [methodValue]: string;
@@ -119,19 +117,19 @@ export class ARCAuthDataQueryEvent extends CustomEvent<IArcEventWithResult<ARCAu
  * An event dispatched from the store after updating an authorization data
  */
 export class ARCAuthDataUpdatedEvent extends Event {
-  [changeRecordValue]: IARCEntityChangeRecord<ARCAuthData>;
+  [changeRecordValue]: ContextChangeRecord<IAuthorizationData>;
 
   /**
    * The change record
    */
-  get changeRecord(): IARCEntityChangeRecord<ARCAuthData> {
+  get changeRecord(): ContextChangeRecord<IAuthorizationData> {
     return this[changeRecordValue];
   }
 
   /**
    * The AuthData change record.
    */
-  constructor(record: IARCEntityChangeRecord<ARCAuthData>) {
+  constructor(record: ContextChangeRecord<IAuthorizationData>) {
     if (!record) {
       throw new Error('Expected record argument as object.');
     }
@@ -153,7 +151,7 @@ export class AuthDataEvents {
    * @param authData The authorization data to store.
    * @returns Promise resolved to a the auth change record
    */
-  static async update(url: string, method: string, authData: ARCAuthData, target: EventTarget = window): Promise<IARCEntityChangeRecord<ARCAuthData> | undefined> {
+  static async update(url: string, method: string, authData: IAuthorizationData, target: EventTarget = window): Promise<ContextChangeRecord<IAuthorizationData> | undefined> {
     const e = new ARCAuthDataUpdateEvent(url, method, authData);
     target.dispatchEvent(e);
     return e.detail.result;
@@ -167,7 +165,7 @@ export class AuthDataEvents {
    * @param method The name of the authorization method
    * @returns Promise resolved to a Project model.
    */
-  static async query(url: string, method: string, target: EventTarget = window): Promise<ARCAuthData | undefined> {
+  static async query(url: string, method: string, target: EventTarget = window): Promise<IAuthorizationData | undefined> {
     const e = new ARCAuthDataQueryEvent(url, method);
     target.dispatchEvent(e);
     return e.detail.result;
@@ -180,7 +178,7 @@ export class AuthDataEvents {
      * @param target A node on which to dispatch the event.
      * @param record AuthData change record.
      */
-    static update(record: IARCEntityChangeRecord<ARCAuthData>, target: EventTarget = window): void {
+    static update(record: ContextChangeRecord<IAuthorizationData>, target: EventTarget = window): void {
       const e = new ARCAuthDataUpdatedEvent(record);
       target.dispatchEvent(e);
     }

@@ -1,6 +1,10 @@
 import { ARCModelDeleteEvent, ARCModelStateDeleteEvent } from "./BaseEvents.js";
 import { AuthDataEvents } from './AuthDataEvents.js';
 import { CertificatesEvents } from './CertificatesEvents.js';
+import { HistoryEvents } from './HistoryEvents.js';
+import { ProjectEvents } from './ProjectEvents.js';
+import { HostsEvents } from './HostsEvents.js';
+import { StoreName } from "../../idb/Base.js";
 
 export const ArcModelEvents = Object.freeze({
   /**
@@ -10,7 +14,7 @@ export const ArcModelEvents = Object.freeze({
    * @param target A node on which to dispatch the event.
    * @returns A promise resolved when all requested stores are deleted
    */
-  destroy: async (stores: string[], target: EventTarget = window): Promise<void> => {
+  destroy: async (stores: StoreName[], target: EventTarget = window): Promise<void> => {
     const e = new ARCModelDeleteEvent(stores);
     target.dispatchEvent(e);
     if (Array.isArray(e.detail.result)) {
@@ -23,11 +27,14 @@ export const ArcModelEvents = Object.freeze({
    * @param store The name of the deleted store
    * @param target A node on which to dispatch the event.
    */
-  destroyed: (store: string, target: EventTarget = window) => {
+  destroyed: (store: StoreName, target: EventTarget = window) => {
     const e = new ARCModelStateDeleteEvent(store);
     target.dispatchEvent(e);
   },
 
   AuthData: AuthDataEvents,
   ClientCertificate: CertificatesEvents,
+  History: HistoryEvents,
+  Project: ProjectEvents,
+  Host: HostsEvents,
 });

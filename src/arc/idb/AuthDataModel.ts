@@ -11,10 +11,10 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 */
-import { ARCAuthData } from '@api-client/core/build/legacy.js';
+import { ContextChangeRecord, IAuthorizationData } from '@api-client/core/build/browser.js';
 import { ArcModelEventTypes } from '../events/models/ArcModelEventTypes.js';
 import { ARCAuthDataQueryEvent, ARCAuthDataUpdateEvent } from '../events/models/AuthDataEvents.js';
-import { Base, IARCEntityChangeRecord } from './Base.js';
+import { Base } from './Base.js';
 import { ArcModelEvents } from '../events/models/ArcModelEvents.js';
 
 /**
@@ -64,9 +64,29 @@ export const updateHandler = Symbol('updateHandler');
  */
 export class AuthDataModel extends Base {
   constructor() {
-    super('auth-data');
+    super('AuthCache');
     this[queryHandler] = this[queryHandler].bind(this);
     this[updateHandler] = this[updateHandler].bind(this);
+  }
+
+  async put(value: IAuthorizationData): Promise<ContextChangeRecord<IAuthorizationData>> {
+    const result = await super.put(value) as ContextChangeRecord<IAuthorizationData>;
+    ArcModelEvents.AuthData.State.update(result, this.eventsTarget);
+    return result;
+  }
+
+  async putBulk(values: IAuthorizationData[]): Promise<ContextChangeRecord<IAuthorizationData>[]> {
+    const result = await super.putBulk(values) as ContextChangeRecord<IAuthorizationData>[];
+    result.forEach(record => ArcModelEvents.AuthData.State.update(record, this.eventsTarget));
+    return result;
+  }
+
+  async get(key: string): Promise<IAuthorizationData | undefined> {
+    return super.get(key) as Promise<IAuthorizationData | undefined>;
+  }
+
+  async getBulk(keys: string[]): Promise<(IAuthorizationData | undefined)[]> {
+    return super.getBulk(keys) as Promise<(IAuthorizationData | undefined)[]>;
   }
 
   listen(node: EventTarget): void {
@@ -99,18 +119,13 @@ export class AuthDataModel extends Base {
    * @param url The URL of the request
    * @param authMethod The Authorization method to restore data for.
    */
-  async query(url: string, authMethod: string): Promise<ARCAuthData | undefined> {
+  async query(url: string, authMethod: string): Promise<IAuthorizationData | undefined> {
     const parsedUrl = normalizeUrl(url);
     const key = computeKey(authMethod, parsedUrl);
     try {
-      return await this.db.get(key);
+      return await this.get(key);
     } catch (cause) {
-      const e = cause as PouchDB.Core.Error;
-      /* istanbul ignore else */
-      if (e && e.status === 404) {
-        return undefined;
-      }
-      throw cause;
+      return undefined;
     }
   }
 
@@ -132,35 +147,20 @@ export class AuthDataModel extends Base {
    * @param authData The authorization data to store. Schema depends on
    * the `authMethod` property. From model standpoint schema does not matter.
    */
-  async update(url: string, authMethod: string, authData: ARCAuthData): Promise<IARCEntityChangeRecord<ARCAuthData>> {
+  async update(url: string, authMethod: string, authData: IAuthorizationData): Promise<ContextChangeRecord<IAuthorizationData>> {
     const parsedUrl = normalizeUrl(url);
     const key = computeKey(authMethod, parsedUrl);
-    const { db } = this;
-    let stored;
+    let stored: IAuthorizationData | undefined;
     try {
-      stored = await db.get(key);
+      stored = await this.get(key);
     } catch (error) {
-      const e = error as PouchDB.Core.Error;
-      /* istanbul ignore else */
-      if (e.status === 404) {
-        stored = { _id: key };
-      } else {
-        this._handleException(error);
-      }
+      // ...
     }
-    const doc = { ...stored, ...authData } as ARCAuthData;
-    const result = await db.put(doc);
-    const oldRev = doc._rev;
-    doc._rev = result.rev;
-    const record: IARCEntityChangeRecord<ARCAuthData> = {
-      id: key,
-      rev: result.rev,
-      item: doc,
-      oldRev,
-    };
-    if (this.eventsTarget) {
-      ArcModelEvents.AuthData.State.update(record, this.eventsTarget);
+    if (!stored) {
+      stored = { key };
     }
-    return record;
+    const doc = { ...stored, ...authData, key } as IAuthorizationData;
+    const result = await this.put(doc) as ContextChangeRecord<IAuthorizationData>;
+    return result;
   }
 }

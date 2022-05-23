@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { assert } from '@open-wc/testing';
 import sinon from 'sinon';
-import { ARCAuthData } from '@api-client/core/build/legacy.js';
+import { ContextChangeRecord, IAuthorizationData } from '@api-client/core/build/browser.js';
 import {
   ARCAuthDataUpdateEvent,
   ARCAuthDataQueryEvent,
@@ -9,13 +9,12 @@ import {
   AuthDataEvents,
 } from  '../../../../src/arc/events/models/AuthDataEvents.js';
 import { ArcModelEventTypes } from '../../../../src/arc/events/models/ArcModelEventTypes.js';
-import { IARCEntityChangeRecord } from '../../../../src/arc/idb/Base.js';
 
 describe('AuthDataEvents', () => {
   describe('ARCAuthDataUpdateEvent', () => {
     const url = 'http://domain.com/auth';
     const method = 'x-ntlm';
-    const authData = { username: 'uname', password: 'other' };
+    const authData: IAuthorizationData = { username: 'uname', password: 'other', key: 'a' };
 
     it('throws when no url argument', () => {
       let e: ARCAuthDataUpdateEvent;
@@ -109,11 +108,9 @@ describe('AuthDataEvents', () => {
   });
 
   describe('ARCAuthDataUpdatedEvent', () => {
-    const record: IARCEntityChangeRecord<ARCAuthData> = {
-      id: 'test-id',
-      rev: 'test-rev',
-      oldRev: 'test-old-rev',
-      item: {},
+    const record: ContextChangeRecord<IAuthorizationData> = {
+      key: 'test-id',
+      item: { username: 'uname', password: 'other', key: 'a' },
     };
 
     it('throws when no url argument', () => {
@@ -138,7 +135,7 @@ describe('AuthDataEvents', () => {
   describe('update()', () => {
     const url = 'http://domain.com/auth';
     const method = 'x-ntlm';
-    const authData = { username: 'uname', password: 'other' };
+    const authData: IAuthorizationData = { username: 'uname', password: 'other', key: 'a' };
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
@@ -200,11 +197,9 @@ describe('AuthDataEvents', () => {
   });
 
   describe('State.update()', () => {
-    const record: IARCEntityChangeRecord<ARCAuthData> = {
-      id: 'test-id',
-      rev: 'test-rev',
-      oldRev: 'test-old-rev',
-      item: {},
+    const record: ContextChangeRecord<IAuthorizationData> = {
+      key: 'test-id',
+      item: { username: 'uname', password: 'other', key: 'a' },
     };
 
     it('dispatches the event on the default target', () => {

@@ -74,8 +74,8 @@ export default class ClientCertificate extends AuthUiBase {
       return;
     }
     const e = input as ContextStateDeleteEvent;
-    const { id } = e.detail;
-    const index = this.items.findIndex(i => i.key === id);
+    const { key } = e.detail;
+    const index = this.items.findIndex(i => i.key === key);
     if (index >= 0) {
       this.items.splice(index, 1);
       this.requestUpdate();

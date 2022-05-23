@@ -430,12 +430,12 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     }
     const { value = '' } = this;
     const q = String(value).toLowerCase();
-    const rendered = items.filter(i => i.url.toLowerCase().includes(q));
+    const rendered = items.filter(i => i.key.toLowerCase().includes(q));
     if (!rendered.length) {
       this[toggleSuggestions](false);
       return;
     }
-    if (rendered.length === 1 && rendered[0].url.toLowerCase() === q) {
+    if (rendered.length === 1 && rendered[0].key.toLowerCase() === q) {
       this[toggleSuggestions](false);
       return;
     }
@@ -494,7 +494,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
     if (!item) {
       return;
     }
-    this.value = item.url;
+    this.value = item.key;
     this[toggleSuggestions](false);
     this[notifyChange]();
   }
@@ -594,7 +594,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       return;
     }
     const url = (e as CustomEvent).detail;
-    const index = items.findIndex(i => i.url === url);
+    const index = items.findIndex(i => i.key === url);
     items.splice(index, 1);
     if (this[autocompleteOpened]) {
       this[filterSuggestions]();
@@ -813,15 +813,15 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
    * @returns The template for an URL suggestion item.
    */
   [suggestionItemTemplate](item: IUrl): TemplateResult {
-    const { url } = item;
+    const { key } = item;
     // this has a11y rule disabled because we are not planning to make this so complex to use
     // where you can switch between the list context to a button context.
     return html`
     <anypoint-item>
-      <div>${url}</div>
+      <div>${key}</div>
       <span 
         class="remove-suggestion" 
-        data-id="${url}" 
+        data-id="${key}" 
         @click="${this[removeSuggestionHandler]}"
       >Remove</span>
     </anypoint-item>`;

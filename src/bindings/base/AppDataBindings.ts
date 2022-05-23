@@ -45,8 +45,8 @@ export abstract class AppDataBindings extends PlatformBindings {
 
   protected deleteProjectUiHandler(e: ContextDeleteEvent): void {
     e.preventDefault();
-    const { id } = e.detail;
-    e.detail.result = this.deleteProjectUi(id);
+    const { key } = e.detail;
+    e.detail.result = this.deleteProjectUi(key);
   }
 
   protected setHttpRequestUiHandler(e: ContextUpdateEvent<IRequestUiInsertDetail, IRequestUiMeta>): void {
@@ -57,14 +57,14 @@ export abstract class AppDataBindings extends PlatformBindings {
 
   protected getHttpRequestUiHandler(e: ContextReadEvent<IRequestUiMeta>): void {
     e.preventDefault();
-    const { id, parent } = e.detail;
-    e.detail.result = this.getHttpRequestUi(parent!, id);
+    const { key, parent } = e.detail;
+    e.detail.result = this.getHttpRequestUi(parent!, key);
   }
 
   protected deleteHttpRequestUiHandler(e: ContextDeleteEvent): void {
     e.preventDefault();
-    const { id, parent } = e.detail;
-    e.detail.result = this.deleteHttpRequestUi(parent!, id);
+    const { key, parent } = e.detail;
+    e.detail.result = this.deleteHttpRequestUi(parent!, key);
   }
 
   /**
@@ -93,35 +93,35 @@ export abstract class AppDataBindings extends PlatformBindings {
   /**
    * Deletes an UI metadata for a project.
    * 
-   * @param id The id of the project to remove the meta for.
+   * @param key The key of the project to remove the meta for.
    * @returns The delete record
    */
-  abstract deleteProjectUi(id: string): Promise<ContextDeleteRecord>;
+  abstract deleteProjectUi(key: string): Promise<ContextDeleteRecord>;
 
   /**
    * Sets an UI state for an HTTP request in a project
    * 
-   * @param pid The project id.
-   * @param id The id of the request.
+   * @param pid The project key.
+   * @param key The key of the request.
    * @returns The created object
    */
-  abstract setHttpRequestUi(pid: string, id: string, meta: IRequestUiMeta): Promise<ContextChangeRecord<IRequestUiMeta>>;
+  abstract setHttpRequestUi(pid: string, key: string, meta: IRequestUiMeta): Promise<ContextChangeRecord<IRequestUiMeta>>;
 
   /**
    * Reads an UI state for an HTTP request in a project
    * 
-   * @param pid The project id.
-   * @param id The id of the request.
+   * @param pid The project key.
+   * @param key The key of the request.
    * @returns The meta object
    */
-  abstract getHttpRequestUi(pid: string, id: string): Promise<IRequestUiMeta>;
+  abstract getHttpRequestUi(pid: string, key: string): Promise<IRequestUiMeta>;
 
   /**
    * Deletes an UI state for an HTTP request in a project
    * 
-   * @param pid The project id.
-   * @param id The id of the request.
+   * @param pid The project key.
+   * @param key The key of the request.
    * @returns The delete record
    */
-  abstract deleteHttpRequestUi(pid: string, id: string): Promise<ContextDeleteRecord>;
+  abstract deleteHttpRequestUi(pid: string, key: string): Promise<ContextDeleteRecord>;
 }

@@ -37,7 +37,7 @@ export default class AppDataStore {
     const names = db.objectStoreNames;
     if (!names.contains('UrlHistory')) {
       // URL history
-      db.createObjectStore('UrlHistory', { keyPath: 'url' });
+      db.createObjectStore('UrlHistory', { keyPath: 'key' });
     }
     if (!names.contains('ProjectRequestUi')) {
       // HTTP Project request UI meta
@@ -75,7 +75,7 @@ export default class AppDataStore {
           data = {
             cnt: 1,
             time,
-            url,
+            key: url,
             midnight: midnight.getTime(),
           };
         }
@@ -162,7 +162,7 @@ export default class AppDataStore {
     return new Promise((resolve, reject) => {
       const keyRange = IDBKeyRange.bound(id, `${id}${HighChar}${HighChar}`, false, false);
       const tx = db.transaction(['ProjectRequestUi'], 'readwrite');
-      tx.oncomplete = (): void => resolve({ id });
+      tx.oncomplete = (): void => resolve({ key: id });
       tx.onerror = (): void => reject(new Error('Unable to clear project\'s UI data.'));
       const store = tx.objectStore("ProjectRequestUi");
       store.delete(keyRange);
@@ -203,7 +203,7 @@ export default class AppDataStore {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(['ProjectRequestUi'], 'readwrite');
       tx.oncomplete = (): void => resolve({
-        id,
+        key: id,
         parent: pid,
       });
       tx.onerror = (): void => reject(new Error('Unable to delete from the project request UI store.'));

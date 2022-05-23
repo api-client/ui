@@ -23,7 +23,6 @@ describe('ArcModelEventTypes', () => {
       ['updateBulk', 'modelprojectupdatebulk'],
       ['delete', 'modelprojectdelete'],
       ['list', 'modelprojectlist'],
-      ['listAll', 'modelprojectlistall'],
     ].forEach(([prop, value]) => {
       it(`has ${prop} property`, () => {
         assert.equal(ArcModelEventTypes.Project[prop], value);
@@ -51,94 +50,51 @@ describe('ArcModelEventTypes', () => {
     });
   });
 
-  describe('Request', () => {
-    it('has Request namespace', () => {
-      assert.typeOf(ArcModelEventTypes.Request, 'object');
+  describe('History', () => {
+    it('has the History namespace', () => {
+      assert.typeOf(ArcModelEventTypes.History, 'object');
     });
 
     it('is frozen', () => {
       assert.throws(() => {
         // @ts-ignore
-        ArcModelEventTypes.Request = { read: '' };
+        ArcModelEventTypes.History = { read: '' };
       });
     });
 
     [
-      ['read', 'modelrequestread'],
-      ['readBulk', 'modelrequestreadbulk'],
-      ['update', 'modelrequestchange'],
-      ['updateBulk', 'modelrequestupdatebulk'],
-      ['store', 'modelrequeststore'],
-      ['delete', 'modelrequestdelete'],
-      ['deleteBulk', 'modelrequestdeletebulk'],
-      ['undeleteBulk', 'modelrequestsundelete'],
-      ['query', 'modelrequestquery'],
-      ['list', 'modelrequestlist'],
-      ['projectlist', 'modelrequestprojectlist'],
+      ['read', 'modelhistoryread'],
+      ['readBulk', 'modelhistoryreadbulk'],
+      ['update', 'modelhistorychange'],
+      ['updateBulk', 'modelhistoryupdatebulk'],
+      ['delete', 'modelhistorydelete'],
+      ['deleteBulk', 'modelhistorydeletebulk'],
+      ['undeleteBulk', 'modelhistorysundelete'],
+      ['query', 'modelhistoryquery'],
+      ['list', 'modelhistorylist'],
     ].forEach(([prop, value]) => {
       it(`has ${prop} property`, () => {
-        assert.equal(ArcModelEventTypes.Request[prop], value);
+        assert.equal(ArcModelEventTypes.History[prop], value);
       });
     });
 
     it('has the State namespace', () => {
-      assert.typeOf(ArcModelEventTypes.Request.State, 'object');
+      assert.typeOf(ArcModelEventTypes.History.State, 'object');
     });
 
     it('has frozen State namespace', () => {
       assert.throws(() => {
         // @ts-ignore
-        ArcModelEventTypes.Request.State = { read: '' };
+        ArcModelEventTypes.History.State = { read: '' };
       });
     });
 
     [
-      ['update', 'modelstaterequestchange'],
-      ['delete', 'modelstaterequestdelete'],
+      ['update', 'modelstatehistorychange'],
+      ['delete', 'modelstatehistorydelete'],
     ].forEach(([prop, value]) => {
       it(`has ${prop} property`, () => {
-        assert.equal(ArcModelEventTypes.Request.State[prop], value);
-      });
-    });
-  });
-
-  describe('UrlIndexer', () => {
-    it('has UrlIndexer namespace', () => {
-      assert.typeOf(ArcModelEventTypes.UrlIndexer, 'object');
-    });
-
-    it('is frozen', () => {
-      assert.throws(() => {
-        // @ts-ignore
-        ArcModelEventTypes.UrlIndexer = { read: '' };
-      });
-    });
-
-    [
-      ['update', 'modelurlindexerupdate'],
-      ['query', 'modelurlindexerquery'],
-    ].forEach(([prop, value]) => {
-      it(`has ${prop} property`, () => {
-        assert.equal(ArcModelEventTypes.UrlIndexer[prop], value);
-      });
-    });
-
-    it('has the State namespace', () => {
-      assert.typeOf(ArcModelEventTypes.UrlIndexer.State, 'object');
-    });
-
-    it('has frozen State namespace', () => {
-      assert.throws(() => {
-        // @ts-ignore
-        ArcModelEventTypes.UrlIndexer.State = { read: '' };
-      });
-    });
-
-    [
-      ['finished', 'modelstateurlindexerfinished'],
-    ].forEach(([prop, value]) => {
-      it(`has ${prop} property`, () => {
-        assert.equal(ArcModelEventTypes.UrlIndexer.State[prop], value);
+        assert.equal(ArcModelEventTypes.History.State[prop], value);
       });
     });
   });
@@ -184,15 +140,15 @@ describe('ArcModelEventTypes', () => {
     });
   });
 
-  describe('HostRules', () => {
-    it('has HostRules namespace', () => {
-      assert.typeOf(ArcModelEventTypes.HostRules, 'object');
+  describe('Host', () => {
+    it('has Host namespace', () => {
+      assert.typeOf(ArcModelEventTypes.Host, 'object');
     });
 
     it('is frozen', () => {
       assert.throws(() => {
         // @ts-ignore
-        ArcModelEventTypes.HostRules = { read: '' };
+        ArcModelEventTypes.Host = { read: '' };
       });
     });
 
@@ -203,18 +159,18 @@ describe('ArcModelEventTypes', () => {
       ['list', 'modelhostruleslist'],
     ].forEach(([prop, value]) => {
       it(`has ${prop} property`, () => {
-        assert.equal(ArcModelEventTypes.HostRules[prop], value);
+        assert.equal(ArcModelEventTypes.Host[prop], value);
       });
     });
 
     it('has the State namespace', () => {
-      assert.typeOf(ArcModelEventTypes.HostRules.State, 'object');
+      assert.typeOf(ArcModelEventTypes.Host.State, 'object');
     });
 
     it('has frozen State namespace', () => {
       assert.throws(() => {
         // @ts-ignore
-        ArcModelEventTypes.HostRules.State = { read: '' };
+        ArcModelEventTypes.Host.State = { read: '' };
       });
     });
 
@@ -223,7 +179,7 @@ describe('ArcModelEventTypes', () => {
       ['delete', 'modelstatehostrulesdelete'],
     ].forEach(([prop, value]) => {
       it(`has ${prop} property`, () => {
-        assert.equal(ArcModelEventTypes.HostRules.State[prop], value);
+        assert.equal(ArcModelEventTypes.Host.State[prop], value);
       });
     });
   });
@@ -520,20 +476,12 @@ describe('ArcModelEventTypes', () => {
       ensureUnique('ModelingEventTypes.Project.State', ArcModelEventTypes.Project.State);
     });
 
-    it('has unique events for Request', () => {
-      ensureUnique('ModelingEventTypes.Request', ArcModelEventTypes.Request);
+    it('has unique events for History', () => {
+      ensureUnique('ModelingEventTypes.History', ArcModelEventTypes.History);
     });
 
-    it('has unique events for Request.State', () => {
-      ensureUnique('ModelingEventTypes.Request.State', ArcModelEventTypes.Request.State);
-    });
-
-    it('has unique events for UrlIndexer', () => {
-      ensureUnique('ModelingEventTypes.UrlIndexer', ArcModelEventTypes.UrlIndexer);
-    });
-
-    it('has unique events for UrlIndexer.State', () => {
-      ensureUnique('ModelingEventTypes.UrlIndexer.State', ArcModelEventTypes.UrlIndexer.State);
+    it('has unique events for History.State', () => {
+      ensureUnique('ModelingEventTypes.History.State', ArcModelEventTypes.History.State);
     });
 
     it('has unique events for AuthData', () => {
@@ -544,12 +492,12 @@ describe('ArcModelEventTypes', () => {
       ensureUnique('ModelingEventTypes.AuthData.State', ArcModelEventTypes.AuthData.State);
     });
 
-    it('has unique events for HostRules', () => {
-      ensureUnique('ModelingEventTypes.HostRules', ArcModelEventTypes.HostRules);
+    it('has unique events for Host', () => {
+      ensureUnique('ModelingEventTypes.Host', ArcModelEventTypes.Host);
     });
 
-    it('has unique events for HostRules.State', () => {
-      ensureUnique('ModelingEventTypes.HostRules.State', ArcModelEventTypes.HostRules.State);
+    it('has unique events for Host.State', () => {
+      ensureUnique('ModelingEventTypes.Host.State', ArcModelEventTypes.Host.State);
     });
 
     it('has unique events for ClientCertificate', () => {
