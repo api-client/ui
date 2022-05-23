@@ -61,6 +61,22 @@ export class WebAppDataBindings extends AppDataBindings {
     return this.invoke('clearUrlHistory');
   }
 
+  addWsHistory(url: string): Promise<void> {
+    return this.invoke('addWsHistory', url);
+  }
+
+  queryWsHistory(q: string): Promise<IUrl[]> {
+    return this.invoke('queryWsHistory', q);
+  }
+
+  deleteWsHistory(url: string): Promise<ContextDeleteRecord> {
+    return this.invoke('deleteWsHistory', url);
+  }
+  
+  clearWsHistory(): Promise<void> {
+    return this.invoke('clearWsHistory');
+  }
+
   deleteProjectUi(id: string): Promise<ContextDeleteRecord> {
     return this.invoke('deleteProjectUi', id);
   }

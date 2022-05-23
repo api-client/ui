@@ -13,6 +13,11 @@ export abstract class AppDataBindings extends PlatformBindings {
     window.addEventListener(EventTypes.AppData.Http.UrlHistory.delete, this.deleteUrlHistoryHandler.bind(this));
     window.addEventListener(EventTypes.AppData.Http.UrlHistory.clear, this.clearUrlHistoryHandler.bind(this));
 
+    window.addEventListener(EventTypes.AppData.Ws.UrlHistory.add, this.addWsHistoryHandler.bind(this));
+    window.addEventListener(EventTypes.AppData.Ws.UrlHistory.query, this.queryWsHistoryHandler.bind(this));
+    window.addEventListener(EventTypes.AppData.Ws.UrlHistory.delete, this.deleteWsHistoryHandler.bind(this));
+    window.addEventListener(EventTypes.AppData.Ws.UrlHistory.clear, this.clearWsHistoryHandler.bind(this));
+
     window.addEventListener(EventTypes.HttpProject.Ui.delete, this.deleteProjectUiHandler.bind(this) as EventListener);
     window.addEventListener(EventTypes.HttpProject.Ui.HttpRequest.set, this.setHttpRequestUiHandler.bind(this) as EventListener);
     window.addEventListener(EventTypes.HttpProject.Ui.HttpRequest.get, this.getHttpRequestUiHandler.bind(this) as EventListener);
@@ -43,6 +48,30 @@ export abstract class AppDataBindings extends PlatformBindings {
     e.detail.result = this.clearUrlHistory();
   }
 
+  protected addWsHistoryHandler(event: Event): void {
+    const e = event as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.addWsHistory(e.detail.url);
+  }
+
+  protected queryWsHistoryHandler(event: Event): void {
+    const e = event as ContextQueryEvent<IUrl>;
+    e.preventDefault();
+    e.detail.result = this.queryWsHistory(e.detail.term);
+  }
+
+  protected deleteWsHistoryHandler(event: Event): void {
+    const e = event as ContextDeleteEvent;
+    e.preventDefault();
+    e.detail.result = this.deleteWsHistory(e.detail.key);
+  }
+
+  protected clearWsHistoryHandler(event: Event): void {
+    const e = event as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.clearWsHistory();
+  }
+
   protected deleteProjectUiHandler(e: ContextDeleteEvent): void {
     e.preventDefault();
     const { key } = e.detail;
@@ -58,13 +87,13 @@ export abstract class AppDataBindings extends PlatformBindings {
   protected getHttpRequestUiHandler(e: ContextReadEvent<IRequestUiMeta>): void {
     e.preventDefault();
     const { key, parent } = e.detail;
-    e.detail.result = this.getHttpRequestUi(parent!, key);
+    e.detail.result = this.getHttpRequestUi(parent as string, key);
   }
 
   protected deleteHttpRequestUiHandler(e: ContextDeleteEvent): void {
     e.preventDefault();
     const { key, parent } = e.detail;
-    e.detail.result = this.deleteHttpRequestUi(parent!, key);
+    e.detail.result = this.deleteHttpRequestUi(parent as string, key);
   }
 
   /**
@@ -89,6 +118,29 @@ export abstract class AppDataBindings extends PlatformBindings {
    * Clears the URL history store.
    */
   abstract clearUrlHistory(): Promise<void>;
+
+  /**
+   * Adds a new object to the web sockets URL history.
+   * @param url The URL to add.
+   */
+  abstract addWsHistory(url: string): Promise<void>;
+
+  /**
+   * Queries the web sockets URL history for suggestions.
+   * @param q The part of URL to query for.
+   */
+  abstract queryWsHistory(q: string): Promise<IUrl[]>;
+
+  /**
+   * Deletes a single web sockets URL form the store.
+   * @param url The full URL to delete
+   */
+  abstract deleteWsHistory(url: string): Promise<ContextDeleteRecord>;
+
+  /**
+   * Clears the web sockets URL history store.
+   */
+  abstract clearWsHistory(): Promise<void>;
 
   /**
    * Deletes an UI metadata for a project.

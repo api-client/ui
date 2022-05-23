@@ -2,7 +2,7 @@
 import { ContextChangeRecord, ContextDeleteRecord, IRequestUiMeta, IUrl } from '@api-client/core/build/browser.js';
 import { openDB, DBSchema, IDBPDatabase } from 'idb/with-async-ittr';
 
-export type StoreName = 'UrlHistory' | 'ProjectRequestUi' | 'HttpRequestUi';
+export type StoreName = 'UrlHistory' | 'WsHistory' | 'ProjectRequestUi' | 'HttpRequestUi';
 
 interface IStoredRequestUiMeta extends IRequestUiMeta {
   key: string;
@@ -10,6 +10,10 @@ interface IStoredRequestUiMeta extends IRequestUiMeta {
 
 interface AppDataDB extends DBSchema {
   UrlHistory: {
+    key: string;
+    value: IUrl;
+  },
+  WsHistory: {
     key: string;
     value: IUrl;
   },
@@ -40,10 +44,10 @@ export default class AppDataStore {
     if (this._db) {
       return this._db;
     }
-    const dbResult = await openDB<AppDataDB>('ApiClientData', 6, {
+    const dbResult = await openDB<AppDataDB>('ApiClientData', 7, {
       upgrade(db) {
         const stores: StoreName[] = [
-          'UrlHistory', 'ProjectRequestUi', 'HttpRequestUi',
+          'UrlHistory', 'ProjectRequestUi', 'HttpRequestUi', 'WsHistory',
         ];
         const names = db.objectStoreNames;
         for (const name of stores) {
@@ -113,6 +117,58 @@ export default class AppDataStore {
   async clearUrlHistory(): Promise<void> {
     const db = await this.open();
     await db.clear('UrlHistory');
+  }
+
+  async addWsHistory(url: string): Promise<void> {
+    const db = await this.open();
+    const tx = db.transaction('WsHistory', 'readwrite');
+    const { store } = tx;
+    let item = await store.get(url);
+    const time = Date.now();
+    const midnight = new Date(time);
+    setMidnight(midnight);
+    if (item) {
+      item.cnt += 1;
+      item.time = time;
+      item.midnight = midnight.getTime();
+    } else {
+      item = {
+        cnt: 1,
+        time,
+        key: url,
+        midnight: midnight.getTime(),
+      };
+    }
+    await store.put(item);
+    await tx.done;
+  }
+
+  async queryWsHistory(query: string): Promise<IUrl[]> {
+    const q = String(query).toLowerCase();
+    const db = await this.open();
+    const tx = db.transaction('WsHistory', 'readonly');
+    const result: IUrl[] = [];
+    for await (const cursor of tx.store) {
+      const item = cursor.value;
+      const url = String(item.key).toLowerCase();
+      if (url.includes(q)) {
+        result.push(item);
+      }
+    }
+    return result;
+  }
+
+  async deleteWsHistory(url: string): Promise<ContextDeleteRecord> {
+    const db = await this.open();
+    await db.delete('WsHistory', url);
+    return {
+      key: url,
+    }
+  }
+
+  async clearWsHistory(): Promise<void> {
+    const db = await this.open();
+    await db.clear('WsHistory');
   }
 
   async deleteProjectUi(id: string): Promise<ContextDeleteRecord> {
