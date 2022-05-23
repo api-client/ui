@@ -41,9 +41,8 @@ export class HistoryModel extends Base {
     if (typeof (value as ArcHttpRequest).toJSON === 'function') {
       insert = (value as ArcHttpRequest).toJSON();
     } else {
-      insert = value as IArcHttpRequest;
+      insert = { ...value } as IArcHttpRequest;
     }
-
     const result = await super.put(insert) as ContextChangeRecord<IArcHttpRequest>;
     ArcModelEvents.History.State.update(result, this.eventsTarget);
     return result;
@@ -55,11 +54,13 @@ export class HistoryModel extends Base {
     }
     const inserts: IArcHttpRequest[] = [];
     values.forEach((i) => {
+      let value: IArcHttpRequest;
       if (typeof (i as ArcHttpRequest).toJSON === 'function') {
-        inserts.push((i as ArcHttpRequest).toJSON());
+        value = (i as ArcHttpRequest).toJSON();
       } else {
-        inserts.push(i as IArcHttpRequest);
+        value = { ...i } as IArcHttpRequest;
       }
+      inserts.push(value);
     });
 
     const result = await super.putBulk(inserts) as ContextChangeRecord<IArcHttpRequest>[];

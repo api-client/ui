@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { assert } from '@open-wc/testing';
+import { assert, aTimeout } from '@open-wc/testing';
 import { ContextStateUpdateEvent, IArcHttpRequest, ArcHttpRequest, ArcHttpRequestKind, ProjectMock, ContextStateDeleteEvent, ContextDeleteRecord } from '@api-client/core/build/browser.js';
 import sinon from 'sinon';
 import { HistoryModel } from  '../../../src/arc/idb/HistoryModel.js';
@@ -137,8 +137,8 @@ describe('HistoryModel', () => {
     before(async () => {
       instance = new HistoryModel();
       const data = mock.arc.arcRequest();
-      await instance.put(data);
-      id = data.key;
+      const record = await instance.put(data);
+      id = record.key;
     });
 
     after(async () => {
@@ -593,13 +593,17 @@ describe('HistoryModel', () => {
       instance = new HistoryModel();
       r1 = ArcHttpRequest.fromUrl('http://api.com/p1').toJSON();
       r1.info.name = 'Authorize user';
+      await aTimeout(0); // making sure the "created" time is different.
       r2 = ArcHttpRequest.fromUrl('http://dot.com/d1').toJSON();
       r2.info.name = undefined;
       r2.info.description = 'This is a very important request';
+      await aTimeout(0);
       r3 = ArcHttpRequest.fromUrl('http://sub.api.com').toJSON();
       r3.info.name = mock.lorem.words(2);
+      await aTimeout(0);
       r4 = ArcHttpRequest.fromUrl('http://api.com/index?a=b&token=123456qwerty').toJSON();
       r4.info.name = mock.lorem.words(2);
+      await aTimeout(0);
       r5 = ArcHttpRequest.fromUrl('http://random.eu/').toJSON();
       r5.info.name = mock.lorem.words(2);
       r5.expects.headers = `content-type: application/json\nauthorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuYXV0aDAuY29tLyIsImF1ZCI6Imh0dHBzOi8vYXBpLmV4YW1wbGUuY29tL2NhbGFuZGFyL3YxLyIsInN1YiI6InVzcl8xMjMiLCJpYXQiOjE0NTg3ODU3OTYsImV4cCI6MTQ1ODg3MjE5Nn0.CA7eaHjIHz5NxeIJoFK9krqaeZrPLwmMmgI_XiQiIkQ`;

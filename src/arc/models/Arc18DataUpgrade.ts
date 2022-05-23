@@ -176,7 +176,8 @@ export default class Arc18DataUpgrade {
       }
       const restored = LegacyBodyProcessor.restorePayload(Normalizer.normalizeRequest(old) as ARCHistoryRequest) as ARCHistoryRequest;
       const upgraded = await ArcHttpRequest.fromLegacy(restored) as ArcHttpRequest;
-      upgraded.key = item.key;
+      const date = new Date(upgraded.created);
+      upgraded.key = date.toJSON();
       return upgraded.toJSON();
     });
     const upgrades = (await Promise.all(upgradePromises)).filter(i => !!i) as IArcHttpRequest[];

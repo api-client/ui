@@ -15,7 +15,7 @@ the License.
 */
 
 import { ContextChangeRecord, ContextDeleteBulkEvent, ContextDeleteEvent, ContextDeleteRecord, ContextListEvent, ContextListOptions, ContextListResult, ContextReadBulkEvent, ContextReadEvent, ContextUpdateBulkEvent, ContextUpdateEvent, Events as CoreEvents, IArcHttpRequest, IArcProject, IAuthorizationData, ICertificate, IHostRule, IUrl } from '@api-client/core/build/browser.js';
-import { openDB, DBSchema, IDBPDatabase } from 'idb/with-async-ittr';
+import { openDB, DBSchema, IDBPDatabase, IDBPObjectStore } from 'idb/with-async-ittr';
 import { ArcModelEventTypes } from '../events/models/ArcModelEventTypes.js';
 import { ArcModelEvents } from '../events/models/ArcModelEvents.js';
 import { ARCModelDeleteEvent } from '../events/models/BaseEvents.js';
@@ -63,7 +63,6 @@ export interface IGetOptions {
 }
 
 interface ArcDB extends DBSchema {
-  // 'Certificates', 'Hosts', 'Environments'
   UrlHistory: {
     key: string;
     value: IStoredEntity<IUrl>;
@@ -71,11 +70,11 @@ interface ArcDB extends DBSchema {
   WsHistory: {
     key: string;
     value: IStoredEntity<IUrl>;
-    // indexes: { 'by-price': number };
   },
   History: {
     key: string;
     value: IStoredEntity<IArcHttpRequest>,
+    indexes: { 'day': string };
   },
   Projects: {
     key: string;
@@ -150,7 +149,11 @@ export class Base {
         const names = db.objectStoreNames;
         for (const name of stores) {
           if (!names.contains(name)) {
-            db.createObjectStore(name, { keyPath: 'data.key' });
+            const store = db.createObjectStore(name, { keyPath: 'data.key' });
+            if (name === 'History') {
+              const typed = store as IDBPObjectStore<ArcDB, ['History'], 'History', 'versionchange'>;
+              typed.createIndex('day', 'data.midnight', { unique: false });
+            }
           }
         }
       },
