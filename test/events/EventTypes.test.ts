@@ -1,0 +1,473 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { assert } from '@open-wc/testing';
+import { ensureUnique } from './EventsTestHelpers.js';
+import { EventTypes } from '../../src/events/EventTypes.js'
+
+describe('events', () => {
+  describe('EventTypes', () => {
+    describe('HttpClient', () => {
+      describe('Workspace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.HttpClient.Workspace, 'object');
+        });
+
+        it('has the State namespace', () => {
+          assert.typeOf(EventTypes.HttpClient.Workspace.State, 'object');
+        });
+
+        [
+          ['read', 'httpclientwsread'],
+          ['write', 'httpclientwswrite'],
+          ['append', 'httpclientwsappend'],
+          ['triggerWrite', 'httpclientwstriggerwrite'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.HttpClient.Workspace[prop], value);
+          });
+        });
+        
+        [
+          ['write', 'httpclientwsstatewrite'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.HttpClient.Workspace.State[prop], value);
+          });
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.HttpClient.Workspace', EventTypes.HttpClient.Workspace);
+        });
+
+        it('has unique events on the State namespace', () => {
+          ensureUnique('EventTypes.HttpClient.Workspace.State', EventTypes.HttpClient.Workspace.State);
+        });
+      });
+
+      describe('Model', () => {
+        describe('Project', () => {
+          it('has Project namespace', () => {
+            assert.typeOf(EventTypes.HttpClient.Model.Project, 'object');
+          });
+      
+          [
+            ['read', 'modelprojectread'],
+            ['readBulk', 'modelprojectreadbulk'],
+            ['update', 'modelprojectchange'],
+            ['updateBulk', 'modelprojectupdatebulk'],
+            ['delete', 'modelprojectdelete'],
+            ['deleteBulk', 'modelprojectdeletebulk'],
+            ['undeleteBulk', 'modelprojectundeletebulk'],
+            ['list', 'modelprojectlist'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.HttpClient.Model.Project[prop], value);
+            });
+          });
+      
+          it('has State namespace', () => {
+            assert.typeOf(EventTypes.HttpClient.Model.Project.State, 'object');
+          });
+      
+          [
+            ['update', 'modelstateprojectchange'],
+            ['delete', 'modelstateprojectdelete'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.HttpClient.Model.Project.State[prop], value);
+            });
+          });
+
+          it('has unique events', () => {
+            ensureUnique('EventTypes.HttpClient.Model.Project', EventTypes.HttpClient.Model.Project);
+          });
+  
+          it('has unique events on the State namespace', () => {
+            ensureUnique('EventTypes.HttpClient.Model.Project.State', EventTypes.HttpClient.Model.Project.State);
+          });
+        });
+      
+        describe('History', () => {
+          it('has the History namespace', () => {
+            assert.typeOf(EventTypes.HttpClient.Model.History, 'object');
+          });
+      
+          [
+            ['read', 'modelhistoryread'],
+            ['readBulk', 'modelhistoryreadbulk'],
+            ['update', 'modelhistorychange'],
+            ['updateBulk', 'modelhistoryupdatebulk'],
+            ['delete', 'modelhistorydelete'],
+            ['deleteBulk', 'modelhistorydeletebulk'],
+            ['undeleteBulk', 'modelhistorysundelete'],
+            ['query', 'modelhistoryquery'],
+            ['list', 'modelhistorylist'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.HttpClient.Model.History[prop], value);
+            });
+          });
+      
+          it('has the State namespace', () => {
+            assert.typeOf(EventTypes.HttpClient.Model.History.State, 'object');
+          });
+      
+          [
+            ['update', 'modelstatehistorychange'],
+            ['delete', 'modelstatehistorydelete'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.HttpClient.Model.History.State[prop], value);
+            });
+          });
+
+          it('has unique events', () => {
+            ensureUnique('EventTypes.HttpClient.Model.History', EventTypes.HttpClient.Model.History);
+          });
+  
+          it('has unique events on the State namespace', () => {
+            ensureUnique('EventTypes.HttpClient.Model.History.State', EventTypes.HttpClient.Model.History.State);
+          });
+        });
+      
+        describe('AuthData', () => {
+          it('has AuthData namespace', () => {
+            assert.typeOf(EventTypes.HttpClient.Model.AuthData, 'object');
+          });
+      
+          [
+            ['update', 'modelauthdataupdate'],
+            ['query', 'modelauthdataquery'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.HttpClient.Model.AuthData[prop], value);
+            });
+          });
+      
+          it('has the State namespace', () => {
+            assert.typeOf(EventTypes.HttpClient.Model.AuthData.State, 'object');
+          });
+      
+          [
+            ['update', 'modelstateauthdataupdate'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.HttpClient.Model.AuthData.State[prop], value);
+            });
+          });
+
+          it('has unique events', () => {
+            ensureUnique('EventTypes.HttpClient.Model.AuthData', EventTypes.HttpClient.Model.AuthData);
+          });
+  
+          it('has unique events on the State namespace', () => {
+            ensureUnique('EventTypes.HttpClient.Model.AuthData.State', EventTypes.HttpClient.Model.AuthData.State);
+          });
+        });
+      
+        describe('Host', () => {
+          it('has Host namespace', () => {
+            assert.typeOf(EventTypes.HttpClient.Model.Host, 'object');
+          });
+      
+          [
+            ['update', 'modelhostrulesupdate'],
+            ['updateBulk', 'modelhostrulesupdatebulk'],
+            ['delete', 'modelhostrulesdelete'],
+            ['deleteBulk', 'modelhostrulesdeletebulk'],
+            ['list', 'modelhostruleslist'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.HttpClient.Model.Host[prop], value);
+            });
+          });
+      
+          it('has the State namespace', () => {
+            assert.typeOf(EventTypes.HttpClient.Model.Host.State, 'object');
+          });
+      
+          [
+            ['update', 'modelstatehostrulesupdate'],
+            ['delete', 'modelstatehostrulesdelete'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.HttpClient.Model.Host.State[prop], value);
+            });
+          });
+
+          it('has unique events', () => {
+            ensureUnique('EventTypes.HttpClient.Model.Host', EventTypes.HttpClient.Model.Host);
+          });
+  
+          it('has unique events on the State namespace', () => {
+            ensureUnique('EventTypes.HttpClient.Model.Host.State', EventTypes.HttpClient.Model.Host.State);
+          });
+        });
+      
+        describe('Certificate', () => {
+          it('has Certificate namespace', () => {
+            assert.typeOf(EventTypes.HttpClient.Model.Certificate, 'object');
+          });
+      
+          [
+            ['read', 'modelclientcertificateread'],
+            ['list', 'modelclientcertificatelist'],
+            ['delete', 'modelclientcertificatedelete'],
+            ['update', 'modelclientcertificateupdate'],
+            ['insert', 'modelclientcertificateinsert'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.HttpClient.Model.Certificate[prop], value);
+            });
+          });
+      
+          it('has the State namespace', () => {
+            assert.typeOf(EventTypes.HttpClient.Model.Certificate.State, 'object');
+          });
+      
+          [
+            ['update', 'modelstateclientcertificateupdate'],
+            ['delete', 'modelstateclientcertificatedelete'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.HttpClient.Model.Certificate.State[prop], value);
+            });
+          });
+
+          it('has unique events', () => {
+            ensureUnique('EventTypes.HttpClient.Model.Certificate', EventTypes.HttpClient.Model.Certificate);
+          });
+  
+          it('has unique events on the State namespace', () => {
+            ensureUnique('EventTypes.HttpClient.Model.Certificate.State', EventTypes.HttpClient.Model.Certificate.State);
+          });
+        });
+      });
+    });
+
+    describe('SchemaDesign', () => {
+      it('has the namespace', () => {
+        assert.typeOf(EventTypes.SchemaDesign, 'object');
+      });
+
+      [
+        ['changed', 'schemadesignchange'],
+      ].forEach(([prop, value]) => {
+        it(`has ${prop} property`, () => {
+          assert.equal(EventTypes.SchemaDesign[prop], value);
+        });
+      });
+  
+      it('has State namespace', () => {
+        assert.typeOf(EventTypes.SchemaDesign.State, 'object');
+      });
+  
+      [
+        ['nameChanged', 'schemadesignnamechange'],
+      ].forEach(([prop, value]) => {
+        it(`has ${prop} property`, () => {
+          assert.equal(EventTypes.SchemaDesign.State[prop], value);
+        });
+      });
+
+      it('has unique events', () => {
+        ensureUnique('EventTypes.SchemaDesign', EventTypes.SchemaDesign);
+      });
+
+      it('has unique events on the State namespace', () => {
+        ensureUnique('EventTypes.SchemaDesign.State', EventTypes.SchemaDesign.State);
+      });
+    });
+
+    describe('AppData', () => {
+      describe('Http', () => {
+        describe('UrlHistory', () => {
+          it('has the namespace', () => {
+            assert.typeOf(EventTypes.AppData.Http.UrlHistory, 'object');
+          });
+    
+          [
+            ['add', 'appdatahttpurlhistoryadd'],
+            ['query', 'appdatahttpurlhistoryquery'],
+            ['delete', 'appdatahttpurlhistorydelete'],
+            ['clear', 'appdatahttpurlhistoryclear'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.AppData.Http.UrlHistory[prop], value);
+            });
+          });
+      
+          it('has State namespace', () => {
+            assert.typeOf(EventTypes.AppData.Http.UrlHistory.State, 'object');
+          });
+      
+          [
+            ['clear', 'appdatahttpurlhistorystateclear'],
+            ['delete', 'appdatahttpurlhistorystatedelete'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.AppData.Http.UrlHistory.State[prop], value);
+            });
+          });
+    
+          it('has unique events', () => {
+            ensureUnique('EventTypes.AppData.Http.UrlHistory', EventTypes.AppData.Http.UrlHistory);
+          });
+    
+          it('has unique events on the State namespace', () => {
+            ensureUnique('EventTypes.AppData.Http.UrlHistory.State', EventTypes.AppData.Http.UrlHistory.State);
+          });
+        });
+      });
+
+      describe('Ws', () => {
+        describe('UrlHistory', () => {
+          it('has the namespace', () => {
+            assert.typeOf(EventTypes.AppData.Ws.UrlHistory, 'object');
+          });
+    
+          [
+            ['add', 'appdatawsurlhistoryadd'],
+            ['query', 'appdatawsurlhistoryquery'],
+            ['delete', 'appdatawsurlhistorydelete'],
+            ['clear', 'appdatawsurlhistoryclear'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.AppData.Ws.UrlHistory[prop], value);
+            });
+          });
+      
+          it('has State namespace', () => {
+            assert.typeOf(EventTypes.AppData.Ws.UrlHistory.State, 'object');
+          });
+      
+          [
+            ['clear', 'appdatawsstateurlhistoryclear'],
+            ['delete', 'appdatawsstateurlhistorydelete'],
+          ].forEach(([prop, value]) => {
+            it(`has ${prop} property`, () => {
+              assert.equal(EventTypes.AppData.Ws.UrlHistory.State[prop], value);
+            });
+          });
+    
+          it('has unique events', () => {
+            ensureUnique('EventTypes.AppData.Ws.UrlHistory', EventTypes.AppData.Ws.UrlHistory);
+          });
+    
+          it('has unique events on the State namespace', () => {
+            ensureUnique('EventTypes.AppData.Ws.UrlHistory.State', EventTypes.AppData.Ws.UrlHistory.State);
+          });
+        });
+      });
+    });
+
+    describe('HttpProject', () => {
+      describe('namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.HttpProject, 'object');
+        });
+  
+        [
+          ['changed', 'httpprojectchange'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.HttpProject[prop], value);
+          });
+        });
+    
+        it('has State namespace', () => {
+          assert.typeOf(EventTypes.HttpProject.State, 'object');
+        });
+    
+        [
+          ['nameChanged', 'httpprojectnamechange'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.HttpProject.State[prop], value);
+          });
+        });
+  
+        it('has unique events', () => {
+          ensureUnique('EventTypes.HttpProject', EventTypes.HttpProject);
+        });
+  
+        it('has unique events on the State namespace', () => {
+          ensureUnique('EventTypes.HttpProject.State', EventTypes.HttpProject.State);
+        });
+      });
+
+      describe('Ui namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.HttpProject.Ui, 'object');
+        });
+  
+        [
+          ['delete', 'appdatauiprojectdelete'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.HttpProject.Ui[prop], value);
+          });
+        });
+    
+        it('has HttpRequest namespace', () => {
+          assert.typeOf(EventTypes.HttpProject.Ui.HttpRequest, 'object');
+        });
+    
+        [
+          ['set', 'appdatauiprojectrequestset'],
+          ['get', 'appdatauiprojectrequestget'],
+          ['delete', 'appdatauiprojectrequestdelete'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.HttpProject.Ui.HttpRequest[prop], value);
+          });
+        });
+  
+        it('has unique events', () => {
+          ensureUnique('EventTypes.HttpProject.Ui', EventTypes.HttpProject.Ui);
+        });
+  
+        it('has unique events on the State namespace', () => {
+          ensureUnique('EventTypes.HttpProject.Ui.HttpRequest', EventTypes.HttpProject.Ui.HttpRequest);
+        });
+      });
+    });
+
+    describe('Http', () => {
+      describe('Request namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Http.Request, 'object');
+        });
+  
+        [
+          ['send', 'requestsend'],
+          ['rename', 'requestrename'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.Http.Request[prop], value);
+          });
+        });
+    
+        it('has State namespace', () => {
+          assert.typeOf(EventTypes.Http.Request.State, 'object');
+        });
+    
+        [
+          ['urlChange', 'requeststateurlchange'],
+          ['contentTypeChange', 'requeststatecontenttypechange'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.Http.Request.State[prop], value);
+          });
+        });
+  
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Http.Request', EventTypes.Http.Request);
+        });
+  
+        it('has unique events on the State namespace', () => {
+          ensureUnique('EventTypes.Http.Request.State', EventTypes.Http.Request.State);
+        });
+      });
+    });
+  });
+});

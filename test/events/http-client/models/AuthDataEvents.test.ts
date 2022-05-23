@@ -7,8 +7,8 @@ import {
   ARCAuthDataQueryEvent,
   ARCAuthDataUpdatedEvent,
   AuthDataEvents,
-} from  '../../../../src/arc/events/models/AuthDataEvents.js';
-import { ArcModelEventTypes } from '../../../../src/arc/events/models/ArcModelEventTypes.js';
+} from  '../../../../src/events/http-client/models/AuthDataEvents.js';
+import { EventTypes } from '../../../../src/events/EventTypes.js';
 
 describe('AuthDataEvents', () => {
   describe('ARCAuthDataUpdateEvent', () => {
@@ -139,25 +139,25 @@ describe('AuthDataEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.AuthData.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.AuthData.update, spy);
       await AuthDataEvents.update(url, method, authData);
-      window.removeEventListener(ArcModelEventTypes.AuthData.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.AuthData.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.AuthData.update, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.AuthData.update, spy);
       await AuthDataEvents.update(url, method, authData, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.AuthData.update, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.AuthData.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.AuthData.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.AuthData.update, spy);
       await AuthDataEvents.update(url, method, authData);
-      window.removeEventListener(ArcModelEventTypes.AuthData.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.AuthData.update, spy);
       const e = spy.args[0][0] as ARCAuthDataUpdateEvent;
       assert.equal(e.url, url);
       assert.equal(e.method, method);
@@ -171,25 +171,25 @@ describe('AuthDataEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.AuthData.query, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.AuthData.query, spy);
       await AuthDataEvents.query(url, method);
-      window.removeEventListener(ArcModelEventTypes.AuthData.query, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.AuthData.query, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.AuthData.query, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.AuthData.query, spy);
       await AuthDataEvents.query(url, method, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.AuthData.query, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.AuthData.query, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.AuthData.query, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.AuthData.query, spy);
       await AuthDataEvents.query(url, method);
-      window.removeEventListener(ArcModelEventTypes.AuthData.query, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.AuthData.query, spy);
       const e = spy.args[0][0] as ARCAuthDataQueryEvent;
       assert.equal(e.url, url);
       assert.equal(e.method, method);
@@ -204,25 +204,25 @@ describe('AuthDataEvents', () => {
 
     it('dispatches the event on the default target', () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.AuthData.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.AuthData.State.update, spy);
       AuthDataEvents.State.update(record);
-      window.removeEventListener(ArcModelEventTypes.AuthData.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.AuthData.State.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.AuthData.State.update, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.AuthData.State.update, spy);
       AuthDataEvents.State.update(record, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.AuthData.State.update, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.AuthData.State.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.AuthData.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.AuthData.State.update, spy);
       AuthDataEvents.State.update(record);
-      window.removeEventListener(ArcModelEventTypes.AuthData.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.AuthData.State.update, spy);
       const e = spy.args[0][0] as ARCAuthDataUpdatedEvent;
       assert.deepEqual(e.changeRecord, record);
     });

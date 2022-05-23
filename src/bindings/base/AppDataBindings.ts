@@ -1,4 +1,4 @@
-import { IUrl, ContextDeleteEvent, ContextDeleteRecord, ContextUpdateEvent, IRequestUiMeta, ContextChangeRecord, ContextReadEvent } from '@api-client/core/build/browser.js';
+import { IUrl, ContextDeleteEvent, ContextDeleteRecord, ContextUpdateEvent, IRequestUiMeta, ContextChangeRecord, ContextReadEvent, ContextQueryEvent } from '@api-client/core/build/browser.js';
 import { PlatformBindings } from './PlatformBindings.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import { IRequestUiInsertDetail } from '../../events/AppDataEvents.js';
@@ -13,10 +13,10 @@ export abstract class AppDataBindings extends PlatformBindings {
     window.addEventListener(EventTypes.AppData.Http.UrlHistory.delete, this.deleteUrlHistoryHandler.bind(this));
     window.addEventListener(EventTypes.AppData.Http.UrlHistory.clear, this.clearUrlHistoryHandler.bind(this));
 
-    window.addEventListener(EventTypes.AppData.Ui.HttpProject.delete, this.deleteProjectUiHandler.bind(this) as EventListener);
-    window.addEventListener(EventTypes.AppData.Ui.HttpProject.HttpRequest.set, this.setHttpRequestUiHandler.bind(this) as EventListener);
-    window.addEventListener(EventTypes.AppData.Ui.HttpProject.HttpRequest.get, this.getHttpRequestUiHandler.bind(this) as EventListener);
-    window.addEventListener(EventTypes.AppData.Ui.HttpProject.HttpRequest.delete, this.deleteHttpRequestUiHandler.bind(this) as EventListener);
+    window.addEventListener(EventTypes.HttpProject.Ui.delete, this.deleteProjectUiHandler.bind(this) as EventListener);
+    window.addEventListener(EventTypes.HttpProject.Ui.HttpRequest.set, this.setHttpRequestUiHandler.bind(this) as EventListener);
+    window.addEventListener(EventTypes.HttpProject.Ui.HttpRequest.get, this.getHttpRequestUiHandler.bind(this) as EventListener);
+    window.addEventListener(EventTypes.HttpProject.Ui.HttpRequest.delete, this.deleteHttpRequestUiHandler.bind(this) as EventListener);
   }
 
   protected addUrlHistoryHandler(event: Event): void {
@@ -26,15 +26,15 @@ export abstract class AppDataBindings extends PlatformBindings {
   }
 
   protected queryUrlHistoryHandler(event: Event): void {
-    const e = event as CustomEvent;
+    const e = event as ContextQueryEvent<IUrl>;
     e.preventDefault();
-    e.detail.result = this.queryUrlHistory(e.detail.q);
+    e.detail.result = this.queryUrlHistory(e.detail.term);
   }
 
   protected deleteUrlHistoryHandler(event: Event): void {
-    const e = event as CustomEvent;
+    const e = event as ContextDeleteEvent;
     e.preventDefault();
-    e.detail.result = this.deleteUrlHistory(e.detail.url);
+    e.detail.result = this.deleteUrlHistory(e.detail.key);
   }
 
   protected clearUrlHistoryHandler(event: Event): void {
@@ -83,7 +83,7 @@ export abstract class AppDataBindings extends PlatformBindings {
    * Deletes a single URL form the store.
    * @param url The full URL to delete
    */
-  abstract deleteUrlHistory(url: string): Promise<void>;
+  abstract deleteUrlHistory(url: string): Promise<ContextDeleteRecord>;
 
   /**
    * Clears the URL history store.

@@ -87,8 +87,8 @@ export default class ProjectRequestElement extends HttpRequestElement {
   constructor() {
     super();
     this.eventsTarget = this;
-    this.addEventListener(EventTypes.HttpProject.Request.State.urlChange, EventUtils.cancelEvent);
-    this.addEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, EventUtils.cancelEvent);
+    this.addEventListener(EventTypes.Http.Request.State.urlChange, EventUtils.cancelEvent);
+    this.addEventListener(EventTypes.Http.Request.State.contentTypeChange, EventUtils.cancelEvent);
   }
 
   protected willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
@@ -221,7 +221,7 @@ export default class ProjectRequestElement extends HttpRequestElement {
 
   protected async _readRequestUi(pid: string, id: string): Promise<void> {
     try {
-      const data = await Events.AppData.Http.Ui.HttpProject.HttpRequest.get(pid, id, this);
+      const data = await Events.HttpProject.Ui.HttpRequest.get(pid, id, this);
       if (data) {
         this.ui = new RequestUiMeta(data);
       } else {
@@ -259,7 +259,7 @@ export default class ProjectRequestElement extends HttpRequestElement {
       return;
     }
     try {
-      await Events.AppData.Http.Ui.HttpProject.HttpRequest.set(project.key, key, meta.toJSON(), this);
+      await Events.HttpProject.Ui.HttpRequest.set(project.key, key, meta.toJSON(), this);
     } catch (e) {
       const cause = e as Error;
       CoreEvents.Telemetry.exception(cause.message, false, this);

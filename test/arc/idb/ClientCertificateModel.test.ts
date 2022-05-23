@@ -3,8 +3,8 @@ import { fixture, assert } from '@open-wc/testing';
 import sinon from 'sinon';
 import { IPemCertificate, ProjectMock, Certificate, ICertificateData, CertificateKind, ContextStateUpdateEvent, ICertificate } from '@api-client/core/build/browser.js';
 import { CertificateModel } from  '../../../src/arc/idb/CertificateModel.js';
-import { ArcModelEventTypes } from '../../../src/arc/events/models/ArcModelEventTypes.js';
-import { ArcModelEvents } from '../../../src/arc/events/models/ArcModelEvents.js';
+import { EventTypes } from '../../../src/events/EventTypes.js';
+import { Events } from '../../../src/events/Events.js';
 
 describe('ClientCertificateModel', () => {
   const mock = new ProjectMock();
@@ -105,7 +105,7 @@ describe('ClientCertificateModel', () => {
       });
 
       it('returns a query result for default parameters', async () => {
-        const result = await ArcModelEvents.ClientCertificate.list(undefined, et);
+        const result = await Events.HttpClient.Model.Certificate.list(undefined, et);
         assert.typeOf(result, 'object', 'result is an object');
         assert.typeOf(result.nextPageToken, 'string', 'has page token');
         assert.typeOf(result.items, 'array', 'has response items');
@@ -113,21 +113,21 @@ describe('ClientCertificateModel', () => {
       });
 
       it('respects the "limit" parameter', async () => {
-        const result = await ArcModelEvents.ClientCertificate.list({
+        const result = await Events.HttpClient.Model.Certificate.list({
           limit: 5,
         }, et);
         assert.lengthOf(result.items, 5);
       });
 
       it('respects the "nextPageToken" parameter', async () => {
-        const result1 = await ArcModelEvents.ClientCertificate.list({
+        const result1 = await Events.HttpClient.Model.Certificate.list({
           limit: 10,
         }, et);
-        const result2 = await ArcModelEvents.ClientCertificate.list({
+        const result2 = await Events.HttpClient.Model.Certificate.list({
           nextPageToken: result1.nextPageToken,
         }, et);
         assert.lengthOf(result2.items, 10);
-        const all = await ArcModelEvents.ClientCertificate.list({
+        const all = await Events.HttpClient.Model.Certificate.list({
           limit: 20,
         }, et);
         assert.deepEqual(all.items, result1.items.concat(result2.items), 'has both pages');
@@ -249,13 +249,13 @@ describe('ClientCertificateModel', () => {
       });
 
       it('reads the certificate through the event', async () => {
-        const result = await ArcModelEvents.ClientCertificate.read(id, et);
+        const result = await Events.HttpClient.Model.Certificate.read(id, et);
         assert.typeOf(result, 'object', 'has the result');
         assert.equal(result.kind, CertificateKind, 'has the certificate object');
       });
 
       it('returns undefined when no certificate', async () => {
-        const result = await ArcModelEvents.ClientCertificate.read('another', et);
+        const result = await Events.HttpClient.Model.Certificate.read('another', et);
         assert.isUndefined(result);
       });
     });
@@ -305,7 +305,7 @@ describe('ClientCertificateModel', () => {
 
     it('deletes the certificate through the event', async () => {
       instance.listen();
-      await ArcModelEvents.ClientCertificate.delete(id);
+      await Events.HttpClient.Model.Certificate.delete(id);
       const item = await instance.get(id);
       assert.isUndefined(item);
     });
@@ -363,7 +363,7 @@ describe('ClientCertificateModel', () => {
       instance.listen(et);
       const cert = mock.certificates.certificate();
       const spy = sinon.spy();
-      et.addEventListener(ArcModelEventTypes.ClientCertificate.State.update, spy);
+      et.addEventListener(EventTypes.HttpClient.Model.Certificate.State.update, spy);
       await instance.put(cert);
       instance.unlisten(et);
       instance.eventsTarget = window;
@@ -401,7 +401,7 @@ describe('ClientCertificateModel', () => {
     });
 
     it('clears the data through the event', async () => {
-      await ArcModelEvents.destroy(['Certificates'], et);
+      await Events.HttpClient.Model.destroy(['Certificates'], et);
       const all = await instance.list();
       assert.lengthOf(all.items, 0);
     });

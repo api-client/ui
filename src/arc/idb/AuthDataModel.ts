@@ -12,10 +12,10 @@ License for the specific language governing permissions and limitations under
 the License.
 */
 import { ContextChangeRecord, IAuthorizationData } from '@api-client/core/build/browser.js';
-import { ArcModelEventTypes } from '../events/models/ArcModelEventTypes.js';
-import { ARCAuthDataQueryEvent, ARCAuthDataUpdateEvent } from '../events/models/AuthDataEvents.js';
 import { Base } from './Base.js';
-import { ArcModelEvents } from '../events/models/ArcModelEvents.js';
+import { ARCAuthDataQueryEvent, ARCAuthDataUpdateEvent } from '../../events/http-client/models/AuthDataEvents.js';
+import { EventTypes } from '../../events/EventTypes.js';
+import { Events } from '../../events/Events.js';
 
 /**
  * Removes query parameters and the fragment part from the URL
@@ -71,13 +71,13 @@ export class AuthDataModel extends Base {
 
   async put(value: IAuthorizationData): Promise<ContextChangeRecord<IAuthorizationData>> {
     const result = await super.put(value) as ContextChangeRecord<IAuthorizationData>;
-    ArcModelEvents.AuthData.State.update(result, this.eventsTarget);
+    Events.HttpClient.Model.AuthData.State.update(result, this.eventsTarget);
     return result;
   }
 
   async putBulk(values: IAuthorizationData[]): Promise<ContextChangeRecord<IAuthorizationData>[]> {
     const result = await super.putBulk(values) as ContextChangeRecord<IAuthorizationData>[];
-    result.forEach(record => ArcModelEvents.AuthData.State.update(record, this.eventsTarget));
+    result.forEach(record => Events.HttpClient.Model.AuthData.State.update(record, this.eventsTarget));
     return result;
   }
 
@@ -91,14 +91,14 @@ export class AuthDataModel extends Base {
 
   listen(node: EventTarget): void {
     super.listen(node);
-    node.addEventListener(ArcModelEventTypes.AuthData.query, this[queryHandler] as EventListener);
-    node.addEventListener(ArcModelEventTypes.AuthData.update, this[updateHandler] as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.AuthData.query, this[queryHandler] as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.AuthData.update, this[updateHandler] as EventListener);
   }
 
   unlisten(node: EventTarget): void {
     super.unlisten(node);
-    node.removeEventListener(ArcModelEventTypes.AuthData.query, this[queryHandler] as EventListener);
-    node.removeEventListener(ArcModelEventTypes.AuthData.update, this[updateHandler] as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.AuthData.query, this[queryHandler] as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.AuthData.update, this[updateHandler] as EventListener);
   }
 
   [queryHandler](e: ARCAuthDataQueryEvent): void {

@@ -3,8 +3,8 @@ import { assert } from '@open-wc/testing';
 import { ContextStateUpdateEvent, ContextStateDeleteEvent, ContextDeleteRecord, ArcProject, ArcProjectKind, IArcProject } from '@api-client/core/build/browser.js';
 import sinon from 'sinon';
 import { ProjectModel } from  '../../../src/arc/idb/ProjectModel.js';
-import { ArcModelEventTypes } from '../../../src/arc/events/models/ArcModelEventTypes.js';
-import { ArcModelEvents } from '../../../src/arc/events/models/ArcModelEvents.js';
+import { EventTypes } from '../../../src/events/EventTypes.js';
+import { Events } from '../../../src/events/Events.js';
 
 describe('ProjectModel', () => {
   describe('put()', () => {
@@ -36,9 +36,9 @@ describe('ProjectModel', () => {
     it('dispatches the change event', async () => {
       const data = ArcProject.fromName('test').toJSON();
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Project.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Project.State.update, spy);
       await instance.put(data);
-      window.removeEventListener(ArcModelEventTypes.Project.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Project.State.update, spy);
 
       assert.isTrue(spy.called, 'Event was dispatched');
       const e = spy.args[0][0] as ContextStateUpdateEvent<IArcProject>;
@@ -52,7 +52,7 @@ describe('ProjectModel', () => {
     it('creates the object via the event', async () => {
       const data = ArcProject.fromName('test').toJSON();
       instance.listen();
-      const result = await ArcModelEvents.Project.update(data);
+      const result = await Events.HttpClient.Model.Project.update(data);
       instance.unlisten();
       assert.typeOf(result, 'object');
       assert.typeOf(result.key, 'string', 'has an key');
@@ -99,9 +99,9 @@ describe('ProjectModel', () => {
 
     it('dispatches the change event for each inserted object', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Project.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Project.State.update, spy);
       await instance.putBulk(data);
-      window.removeEventListener(ArcModelEventTypes.Project.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Project.State.update, spy);
 
       assert.equal(spy.callCount, 2, 'The event was dispatched twice');
       const e1 = spy.args[0][0] as ContextStateUpdateEvent<IArcProject>;
@@ -122,7 +122,7 @@ describe('ProjectModel', () => {
 
     it('creates the object via the event', async () => {
       instance.listen();
-      const result = await ArcModelEvents.Project.updateBulk(data);
+      const result = await Events.HttpClient.Model.Project.updateBulk(data);
       instance.unlisten();
       assert.typeOf(result, 'array');
       assert.lengthOf(result, 2);
@@ -267,16 +267,16 @@ describe('ProjectModel', () => {
 
     it('deletes the entity through the event', async () => {
       instance.listen();
-      await ArcModelEvents.Project.delete(id);
+      await Events.HttpClient.Model.Project.delete(id);
       const item = await instance.get(id);
       assert.isUndefined(item);
     });
 
     it('dispatches the change event', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Project.State.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Project.State.delete, spy);
       await instance.delete(id);
-      window.removeEventListener(ArcModelEventTypes.Project.State.delete, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Project.State.delete, spy);
 
       assert.isTrue(spy.called, 'Event was dispatched');
       const e = spy.args[0][0] as ContextStateDeleteEvent;
@@ -345,16 +345,16 @@ describe('ProjectModel', () => {
 
     it('deletes the entity through the event', async () => {
       instance.listen();
-      await ArcModelEvents.Project.deleteBulk([id]);
+      await Events.HttpClient.Model.Project.deleteBulk([id]);
       const item = await instance.get(id);
       assert.isUndefined(item);
     });
 
     it('dispatches the change event for each deleted', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Project.State.delete, spy);
-      await ArcModelEvents.Project.deleteBulk([id]);
-      window.removeEventListener(ArcModelEventTypes.Project.State.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Project.State.delete, spy);
+      await Events.HttpClient.Model.Project.deleteBulk([id]);
+      window.removeEventListener(EventTypes.HttpClient.Model.Project.State.delete, spy);
 
       assert.equal(spy.callCount, 1, 'the event was dispatched');
       const e = spy.args[0][0] as ContextStateDeleteEvent;
@@ -366,9 +366,9 @@ describe('ProjectModel', () => {
 
     it('does not dispatch event for invalid items', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Project.State.delete, spy);
-      await ArcModelEvents.Project.deleteBulk([id, 'other']);
-      window.removeEventListener(ArcModelEventTypes.Project.State.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Project.State.delete, spy);
+      await Events.HttpClient.Model.Project.deleteBulk([id, 'other']);
+      window.removeEventListener(EventTypes.HttpClient.Model.Project.State.delete, spy);
 
       assert.equal(spy.callCount, 1, 'the event was dispatched');
       const e = spy.args[0][0] as ContextStateDeleteEvent;
@@ -439,7 +439,7 @@ describe('ProjectModel', () => {
 
     it('restores the entity through the event', async () => {
       instance.listen();
-      await ArcModelEvents.Project.undeleteBulk(records);
+      await Events.HttpClient.Model.Project.undeleteBulk(records);
       instance.unlisten();
       const item = await instance.get(id);
       assert.typeOf(item, 'object');
@@ -447,9 +447,9 @@ describe('ProjectModel', () => {
 
     it('dispatches the change event for each deleted', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Project.State.update, spy);
-      await ArcModelEvents.Project.undeleteBulk(records);
-      window.removeEventListener(ArcModelEventTypes.Project.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Project.State.update, spy);
+      await Events.HttpClient.Model.Project.undeleteBulk(records);
+      window.removeEventListener(EventTypes.HttpClient.Model.Project.State.update, spy);
 
       assert.equal(spy.callCount, 1, 'the event was dispatched');
       const e = spy.args[0][0] as ContextStateUpdateEvent<IArcProject>;
@@ -462,9 +462,9 @@ describe('ProjectModel', () => {
 
     it('does not dispatch event for invalid items', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Project.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Project.State.update, spy);
       await instance.undeleteBulk([ ...records, { key: 'other' } ]);
-      window.removeEventListener(ArcModelEventTypes.Project.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Project.State.update, spy);
 
       assert.equal(spy.callCount, 1, 'the event was dispatched');
     });
@@ -560,7 +560,7 @@ describe('ProjectModel', () => {
 
 
       it('returns a query result for default parameters', async () => {
-        const result = await ArcModelEvents.Project.list(undefined);
+        const result = await Events.HttpClient.Model.Project.list(undefined);
         assert.typeOf(result, 'object', 'result is an object');
         assert.typeOf(result.nextPageToken, 'string', 'has page token');
         assert.typeOf(result.items, 'array', 'has response items');
@@ -568,21 +568,21 @@ describe('ProjectModel', () => {
       });
 
       it('respects the "limit" parameter', async () => {
-        const result = await ArcModelEvents.Project.list({
+        const result = await Events.HttpClient.Model.Project.list({
           limit: 5,
         });
         assert.lengthOf(result.items, 5);
       });
 
       it('respects the "nextPageToken" parameter', async () => {
-        const result1 = await ArcModelEvents.Project.list({
+        const result1 = await Events.HttpClient.Model.Project.list({
           limit: 10,
         });
-        const result2 = await ArcModelEvents.Project.list({
+        const result2 = await Events.HttpClient.Model.Project.list({
           nextPageToken: result1.nextPageToken,
         });
         assert.lengthOf(result2.items, 10);
-        const all = await ArcModelEvents.Project.list({
+        const all = await Events.HttpClient.Model.Project.list({
           limit: 20,
         });
         assert.deepEqual(all.items, result1.items.concat(result2.items), 'has both pages');
@@ -658,7 +658,7 @@ describe('ProjectModel', () => {
 
   //   it('queries via the event', async () => {
   //     instance.listen();
-  //     const result = await ArcModelEvents.Project.query({ term: '123456qwe' });
+  //     const result = await Events.HttpClient.Project.query({ term: '123456qwe' });
   //     instance.unlisten();
   //     assert.lengthOf(result, 1, 'has all matches');
   //     assert.deepEqual(result, [r4]);

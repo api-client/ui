@@ -53,7 +53,7 @@ export class WebAppDataBindings extends AppDataBindings {
     return this.invoke('queryUrlHistory', q);
   }
 
-  deleteUrlHistory(url: string): Promise<void> {
+  deleteUrlHistory(url: string): Promise<ContextDeleteRecord> {
     return this.invoke('deleteUrlHistory', url);
   }
 

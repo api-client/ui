@@ -14,9 +14,9 @@ License for the specific language governing permissions and limitations under
 the License.
 */
 import { IHostRule, HostRule, ContextChangeRecord, ContextDeleteRecord, ContextListOptions, ContextListResult } from '@api-client/core/build/browser.js';
-import { ArcModelEvents } from '../events/models/ArcModelEvents.js';
-import { ArcModelEventTypes } from '../events/models/ArcModelEventTypes.js';
 import { Base, IGetOptions } from './Base.js';
+import { EventTypes } from '../../events/EventTypes.js';
+import { Events } from '../../events/Events.js';
 
 
 /**
@@ -38,7 +38,7 @@ export class HostsModel extends Base {
       insert = value as IHostRule;
     }
     const result = await super.put(insert) as ContextChangeRecord<IHostRule>;
-    ArcModelEvents.Host.State.update(result, this.eventsTarget);
+    Events.HttpClient.Model.Host.State.update(result, this.eventsTarget);
     return result;
   }
 
@@ -56,7 +56,7 @@ export class HostsModel extends Base {
     });
 
     const result = await super.putBulk(inserts) as ContextChangeRecord<IHostRule>[];
-    result.forEach(record => ArcModelEvents.Host.State.update(record, this.eventsTarget));
+    result.forEach(record => Events.HttpClient.Model.Host.State.update(record, this.eventsTarget));
     return result;
   }
 
@@ -71,7 +71,7 @@ export class HostsModel extends Base {
   async delete(key: string): Promise<ContextDeleteRecord | undefined> {
     const result = await super.delete(key);
     if (result) {
-      ArcModelEvents.Host.State.delete(result, this.eventsTarget);
+      Events.HttpClient.Model.Host.State.delete(result, this.eventsTarget);
     }
     return result;
   }
@@ -80,7 +80,7 @@ export class HostsModel extends Base {
     const result = await super.deleteBulk(keys);
     result.forEach((record) => {
       if (record) {
-        ArcModelEvents.Host.State.delete(record, this.eventsTarget);
+        Events.HttpClient.Model.Host.State.delete(record, this.eventsTarget);
       }
     });
     return result;
@@ -98,7 +98,7 @@ export class HostsModel extends Base {
     const result = await super.restoreBulk(ids) as (ContextChangeRecord<IHostRule> | undefined)[];
     result.forEach((record) => {
       if (record) {
-        ArcModelEvents.Host.State.update(record, this.eventsTarget)
+        Events.HttpClient.Model.Host.State.update(record, this.eventsTarget)
       }
     });
     return result;
@@ -110,19 +110,19 @@ export class HostsModel extends Base {
 
   listen(node: EventTarget = window): void {
     super.listen(node);
-    node.addEventListener(ArcModelEventTypes.Host.update, this._updateHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Host.updateBulk, this._updateBulkHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Host.delete, this._deleteHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Host.deleteBulk, this._deleteBulkHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Host.list, this._listHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Host.update, this._updateHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Host.updateBulk, this._updateBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Host.delete, this._deleteHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Host.deleteBulk, this._deleteBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Host.list, this._listHandler as EventListener);
   }
 
   unlisten(node: EventTarget = window): void {
     super.unlisten(node);
-    node.removeEventListener(ArcModelEventTypes.Host.update, this._updateHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Host.updateBulk, this._updateBulkHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Host.delete, this._deleteHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Host.deleteBulk, this._deleteBulkHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Host.list, this._listHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Host.update, this._updateHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Host.updateBulk, this._updateBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Host.delete, this._deleteHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Host.deleteBulk, this._deleteBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Host.list, this._listHandler as EventListener);
   }
 }

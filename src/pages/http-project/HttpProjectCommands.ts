@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { ContextMenuCommand } from '@api-client/context-menu';
 import { EnvironmentKind, HttpProject, ProjectFolderKind, ProjectRequestKind } from '@api-client/core/build/browser.js';
 import { folder, rename, deleteFile, environment, request, close } from '../../elements/icons/Icons.js';
@@ -265,7 +266,7 @@ const commands: ContextMenuCommand[] = [
         const event = ev as CustomEvent;
         const { canceled, confirmed, value } = event.detail;
         if (!canceled && confirmed && value) {
-          Events.HttpProject.Request.rename(key, value);
+          Events.Http.Request.rename(key, value);
         }
       });
     }

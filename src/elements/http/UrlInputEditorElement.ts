@@ -201,14 +201,14 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
 
   _attachListeners(node: EventTarget): void {
     super._attachListeners(node);
-    node.addEventListener(EventTypes.HttpProject.Request.State.urlChange, this[extValueChangeHandler]);
+    node.addEventListener(EventTypes.Http.Request.State.urlChange, this[extValueChangeHandler]);
     node.addEventListener(EventTypes.AppData.Http.UrlHistory.State.delete, this[urlHistoryDeletedHandler]);
     node.addEventListener(EventTypes.AppData.Http.UrlHistory.State.clear, this[urlHistoryDestroyedHandler]);
   }
 
   _detachListeners(node: EventTarget): void {
     super._detachListeners(node);
-    node.removeEventListener(EventTypes.HttpProject.Request.State.urlChange, this[extValueChangeHandler]);
+    node.removeEventListener(EventTypes.Http.Request.State.urlChange, this[extValueChangeHandler]);
     node.removeEventListener(EventTypes.AppData.Http.UrlHistory.State.delete, this[urlHistoryDeletedHandler]);
     node.removeEventListener(EventTypes.AppData.Http.UrlHistory.State.clear, this[urlHistoryDestroyedHandler]);
   }
@@ -275,7 +275,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
    * A handler that is called on input
    */
   [notifyChange](): void {
-    Events.HttpProject.Request.State.urlChange(this.value, this);
+    Events.Http.Request.State.urlChange(this.value, this);
     this.dispatchEvent(new Event('change'));
   }
 
@@ -334,7 +334,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
       return;
     }
     if (!this[autocompleteOpened] && ['Enter', 'NumpadEnter'].includes(e.code)) {
-      Events.HttpProject.Request.send(this);
+      Events.Http.Request.send(this);
     } else if (this[autocompleteOpened] && target.classList.contains('main-input')) {
       const { code } = e;
       if (code === 'ArrowUp') {
@@ -348,7 +348,7 @@ export default class UrlInputEditorElement extends EventsTargetMixin(Validatable
         const node = this[suggestionsList];
         const { highlightedItem } = node;
         if (!highlightedItem) {
-          Events.HttpProject.Request.send(this);
+          Events.Http.Request.send(this);
           this[toggleSuggestions](false);
         } else {
           const index = node.indexOf(highlightedItem);

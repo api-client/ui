@@ -4,7 +4,7 @@ import { ILayoutPanelState } from "../../elements/layout/LayoutManager.js";
 
 export const Kind = 'ARC#HttpWorkspace';
 
-interface IWorkspaceItem {
+export interface IWorkspaceItem {
   /**
    * The kind of the rendered item.
    */
@@ -26,6 +26,25 @@ interface IWorkspaceItem {
    * Item's data. Format depends on the kind.
    */
   data: unknown;
+}
+
+export interface IWorkspaceState {
+  /**
+   * Settings for the application navigation
+   */
+  navigation?: INavigationState;
+
+  /**
+   * The layout configuration for the workspace.
+   */
+  layout?: ILayoutPanelState;
+}
+
+export interface INavigationState {
+  /**
+   * The index of currently selected navigation rail.
+   */
+  selected?: number;
 }
 
 export interface IArcWorkspace {
@@ -51,9 +70,9 @@ export interface IArcWorkspace {
    */
   items?: IWorkspaceItem[];
   /**
-   * The layout configuration for the workspace.
+   * The workspace UI state.
    */
-  layout?: ILayoutPanelState;
+  state?: IWorkspaceState;
 }
 
 export class ArcWorkspace {
@@ -84,9 +103,9 @@ export class ArcWorkspace {
   items: IWorkspaceItem[] = [];
 
   /**
-   * The layout configuration for the workspace.
+   * The workspace UI state.
    */
-  layout?: ILayoutPanelState;
+  state?: IWorkspaceState
 
   constructor(input?: string | IArcWorkspace) {
     let init: IArcWorkspace;
@@ -113,7 +132,7 @@ export class ArcWorkspace {
     if (!ArcWorkspace.isWorkspace(init)) {
       throw new Error(`Not an HTTP Client workspace.`);
     }
-    const { environments, info, items, key = uuidV4(), layout, } = init;
+    const { environments, info, items, key = uuidV4(), state, } = init;
     this.kind = Kind;
     this.key = key;
 
@@ -133,10 +152,10 @@ export class ArcWorkspace {
     } else {
       this.items = [];
     }
-    if (layout) {
-      this.layout = layout;
+    if (state) {
+      this.state = JsonCore.clone(state);
     } else {
-      this.layout = undefined;
+      this.state = undefined;
     }
   }
 
@@ -157,8 +176,8 @@ export class ArcWorkspace {
       key: this.key,
       info: this.info.toJSON(),
     };
-    if (this.layout) {
-      result.layout = JsonCore.clone(this.layout);
+    if (this.state) {
+      result.state = JsonCore.clone(this.state);
     }
     if (Array.isArray(this.environments)) {
       result.environments = this.environments.map(i => i.toJSON());

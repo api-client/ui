@@ -1,3 +1,5 @@
+import { ContextDeleteEvent, ContextReadEvent, ContextUpdateEvent, IRequestUiMeta, ContextChangeRecord, ContextDeleteRecord } from '@api-client/core/build/browser.js';
+import { IRequestUiInsertDetail } from './AppDataEvents.js';
 import { EventTypes } from './EventTypes.js';
 
 export const HttpProjectEvents = {
@@ -37,64 +39,63 @@ export const HttpProjectEvents = {
     },
   }),
 
-  Request: Object.freeze({
+  Ui: Object.freeze({
     /**
-     * Requests the application to send a project request
-     * @param target Optional events target.
+     * Triggered when a project is removed from a space.
+     * Cleans the UI state for all data stored under the project.
+     * 
+     * @param id The project id.
+     * @param target Optional events target
      */
-    send: (target = document.body): void => {
-      const e = new Event(EventTypes.HttpProject.Request.send, {
-        bubbles: true,
-        composed: true,
-        cancelable: true,
-      });
+    delete: async (id: string, target: EventTarget=document.body): Promise<ContextDeleteRecord | undefined> => {
+      const e = new ContextDeleteEvent(EventTypes.HttpProject.Ui.delete, id);
       target.dispatchEvent(e);
+      return e.detail.result;
     },
-    /**
-     * Dispatches an event requesting to change a name of a request in a Project.
-     * @param key The request key.
-     * @param name The new name to set
-     * @param target Optional events target.
-     */
-    rename: (key: string, name: string, target = document.body): void => {
-      const e = new CustomEvent(EventTypes.HttpProject.Request.rename, {
-        bubbles: true,
-        composed: true,
-        cancelable: true,
-        detail: {
-          key, name,
-        },
-      });
-      target.dispatchEvent(e);
-    },
-    State: Object.freeze({
+    HttpRequest: Object.freeze({
       /**
-       * Dispatches an event that informs the HTTP project's request that the url has changed.
-       * @param value The value of the request url
+       * Sets an UI state for an HTTP request in a project
+       * 
+       * @param pid The project id.
+       * @param id The id of the request.
        * @param target Optional events target
+       * @returns The created object or undefined when the context store was not initialized.
        */
-      urlChange: (value: string, target = document.body): void => {
-        const e = new CustomEvent(EventTypes.HttpProject.Request.State.urlChange, {
-          bubbles: true,
-          composed: true,
-          cancelable: true,
-          detail: { value },
+      set: async (pid: string, id: string, meta: IRequestUiMeta, target: EventTarget=document.body): Promise<ContextChangeRecord<IRequestUiMeta> | undefined> => {
+        const e = new ContextUpdateEvent<IRequestUiInsertDetail, IRequestUiMeta>(EventTypes.HttpProject.Ui.HttpRequest.set, { 
+          item: {
+            id,
+            pid,
+            meta,
+          },
+          parent: pid,
         });
         target.dispatchEvent(e);
+        return e.detail.result;
       },
       /**
-       * Dispatches an event that informs the HTTP project's request that a content type header has changed.
-       * @param value The value of the content-type header
+       * Reads an UI state for an HTTP request in a project
+       * 
+       * @param pid The project id.
+       * @param id The id of the request.
        * @param target Optional events target
        */
-      contentTypeChange: (value: string, target = document.body): void => {
-        const e = new CustomEvent(EventTypes.HttpProject.Request.State.contentTypeChange, {
-          bubbles: true,
-          composed: true,
-          cancelable: true,
-          detail: { value },
-        });
+      get: async (pid: string, id: string, target: EventTarget=document.body): Promise<IRequestUiMeta | undefined> => {
+        const e = new ContextReadEvent<IRequestUiMeta>(EventTypes.HttpProject.Ui.HttpRequest.get, id, pid);
         target.dispatchEvent(e);
+        return e.detail.result;
+      },
+      /**
+       * Deletes an UI state for an HTTP request in a project
+       * 
+       * @param pid The project id.
+       * @param id The id of the request.
+       * @param target Optional events target
+       */
+      delete: async (pid: string, id: string, target: EventTarget=document.body): Promise<ContextDeleteRecord | undefined> => {
+        const e = new ContextDeleteEvent(EventTypes.HttpProject.Ui.HttpRequest.delete, id, pid);
+        target.dispatchEvent(e);
+        return e.detail.result;
       },
     }),
   }),

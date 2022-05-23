@@ -535,7 +535,7 @@ export default class BodyEditorElement extends ResizableElement {
     } else if (selected === 'multipart') {
       updated = 'multipart/form-data';
     }
-    Events.HttpProject.Request.State.contentTypeChange(updated, this);
+    Events.Http.Request.State.contentTypeChange(updated, this);
   }
 
   /**
@@ -547,7 +547,7 @@ export default class BodyEditorElement extends ResizableElement {
     if (this[mimeValue] === id) {
       return;
     }
-    Events.HttpProject.Request.State.contentTypeChange(id, this);
+    Events.Http.Request.State.contentTypeChange(id, this);
   }
 
   async [dropHandler](e: DragEvent): Promise<void> {
@@ -576,7 +576,7 @@ export default class BodyEditorElement extends ResizableElement {
       this.value = payload.data;
       const { type } = file;
       if (type) {
-        Events.HttpProject.Request.State.contentTypeChange(type, this);
+        Events.Http.Request.State.contentTypeChange(type, this);
       }
     }
     this[notifyInput]();

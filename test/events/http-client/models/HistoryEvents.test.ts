@@ -7,8 +7,8 @@ import {
 } from '@api-client/core/build/browser.js';
 import {
   HistoryEvents,
-} from '../../../../src/arc/events/models/HistoryEvents.js';
-import { ArcModelEventTypes } from '../../../../src/arc/events/models/ArcModelEventTypes.js';
+} from '../../../../src/events/http-client/models/HistoryEvents.js';
+import { EventTypes } from '../../../../src/events/EventTypes.js';
 
 describe('HistoryEvents', () => {
   describe('read()', () => {
@@ -16,25 +16,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.read, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.read, spy);
       await HistoryEvents.read(key);
-      window.removeEventListener(ArcModelEventTypes.History.read, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.read, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.read, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.read, spy);
       await HistoryEvents.read(key, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.read, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.read, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.read, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.read, spy);
       await HistoryEvents.read(key);
-      window.removeEventListener(ArcModelEventTypes.History.read, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.read, spy);
       const e = spy.args[0][0] as ContextReadEvent<IArcHttpRequest>;
       assert.equal(e.detail.key, key);
     });
@@ -45,25 +45,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.readBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.readBulk, spy);
       await HistoryEvents.readBulk(keys);
-      window.removeEventListener(ArcModelEventTypes.History.readBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.readBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.readBulk, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.readBulk, spy);
       await HistoryEvents.readBulk(keys, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.readBulk, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.readBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.readBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.readBulk, spy);
       await HistoryEvents.readBulk(keys);
-      window.removeEventListener(ArcModelEventTypes.History.readBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.readBulk, spy);
       const e = spy.args[0][0] as ContextReadBulkEvent<IArcHttpRequest>;
       assert.equal(e.detail.keys, keys);
     });
@@ -74,25 +74,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.update, spy);
       await HistoryEvents.update(item);
-      window.removeEventListener(ArcModelEventTypes.History.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.update, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.update, spy);
       await HistoryEvents.update(item, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.update, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.update, spy);
       await HistoryEvents.update(item);
-      window.removeEventListener(ArcModelEventTypes.History.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.update, spy);
       const e = spy.args[0][0] as ContextUpdateEvent<IArcHttpRequest>;
       assert.deepEqual(e.detail.item, item);
     });
@@ -103,25 +103,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.updateBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.updateBulk, spy);
       await HistoryEvents.updateBulk(items);
-      window.removeEventListener(ArcModelEventTypes.History.updateBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.updateBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.updateBulk, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.updateBulk, spy);
       await HistoryEvents.updateBulk(items, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.updateBulk, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.updateBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.updateBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.updateBulk, spy);
       await HistoryEvents.updateBulk(items);
-      window.removeEventListener(ArcModelEventTypes.History.updateBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.updateBulk, spy);
       const e = spy.args[0][0] as ContextUpdateBulkEvent<IArcHttpRequest>;
       assert.deepEqual(e.detail.items, items);
     });
@@ -132,25 +132,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.delete, spy);
       await HistoryEvents.delete(key);
-      window.removeEventListener(ArcModelEventTypes.History.delete, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.delete, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.delete, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.delete, spy);
       await HistoryEvents.delete(key, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.delete, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.delete, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.delete, spy);
       await HistoryEvents.delete(key);
-      window.removeEventListener(ArcModelEventTypes.History.delete, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.delete, spy);
       const e = spy.args[0][0] as ContextDeleteEvent;
       assert.equal(e.detail.key, key);
     });
@@ -161,25 +161,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.deleteBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.deleteBulk, spy);
       await HistoryEvents.deleteBulk(keys);
-      window.removeEventListener(ArcModelEventTypes.History.deleteBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.deleteBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.deleteBulk, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.deleteBulk, spy);
       await HistoryEvents.deleteBulk(keys, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.deleteBulk, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.deleteBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.deleteBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.deleteBulk, spy);
       await HistoryEvents.deleteBulk(keys);
-      window.removeEventListener(ArcModelEventTypes.History.deleteBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.deleteBulk, spy);
       const e = spy.args[0][0] as ContextDeleteBulkEvent;
       assert.equal(e.detail.keys, keys);
     });
@@ -190,25 +190,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.undeleteBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.undeleteBulk, spy);
       await HistoryEvents.undeleteBulk(records);
-      window.removeEventListener(ArcModelEventTypes.History.undeleteBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.undeleteBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.undeleteBulk, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.undeleteBulk, spy);
       await HistoryEvents.undeleteBulk(records, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.undeleteBulk, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.undeleteBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.undeleteBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.undeleteBulk, spy);
       await HistoryEvents.undeleteBulk(records);
-      window.removeEventListener(ArcModelEventTypes.History.undeleteBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.undeleteBulk, spy);
       const e = spy.args[0][0] as ContextRestoreEvent<IArcHttpRequest>;
       assert.equal(e.detail.records, records);
     });
@@ -219,25 +219,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.list, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.list, spy);
       await HistoryEvents.list(opts);
-      window.removeEventListener(ArcModelEventTypes.History.list, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.list, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.list, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.list, spy);
       await HistoryEvents.list(opts, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.list, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.list, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.list, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.list, spy);
       await HistoryEvents.list(opts);
-      window.removeEventListener(ArcModelEventTypes.History.list, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.list, spy);
       const e = spy.args[0][0] as ContextListEvent<IArcHttpRequest>;
       assert.equal(e.detail.limit, opts.limit);
       assert.equal(e.detail.nextPageToken, opts.nextPageToken);
@@ -249,25 +249,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.query, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.query, spy);
       await HistoryEvents.query(opts);
-      window.removeEventListener(ArcModelEventTypes.History.query, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.query, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.query, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.query, spy);
       await HistoryEvents.query(opts, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.query, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.query, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.query, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.query, spy);
       await HistoryEvents.query(opts);
-      window.removeEventListener(ArcModelEventTypes.History.query, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.query, spy);
       const e = spy.args[0][0] as ContextQueryEvent<IArcHttpRequest>;
       assert.equal(e.detail.term, opts.term);
     });
@@ -281,25 +281,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
       HistoryEvents.State.update(record);
-      window.removeEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.State.update, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
       HistoryEvents.State.update(record, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.State.update, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
       HistoryEvents.State.update(record);
-      window.removeEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
       const e = spy.args[0][0] as ContextStateUpdateEvent<IArcHttpRequest>;
       assert.deepEqual(e.detail.key, record.key);
       assert.deepEqual(e.detail.item, record.item);
@@ -313,25 +313,25 @@ describe('HistoryEvents', () => {
 
     it('dispatches the event on the default target', () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
       HistoryEvents.State.delete(record);
-      window.removeEventListener(ArcModelEventTypes.History.State.delete, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.History.State.delete, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
       HistoryEvents.State.delete(record, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.History.State.delete, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
       HistoryEvents.State.delete(record);
-      window.removeEventListener(ArcModelEventTypes.History.State.delete, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
       const e = spy.args[0][0] as ContextStateDeleteEvent;
       assert.equal(e.detail.key, record.key);
     });

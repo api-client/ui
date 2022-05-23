@@ -8,8 +8,8 @@ import {
 } from '@api-client/core/build/browser.js';
 import {
   HostsEvents,
-} from '../../../../src/arc/events/models/HostsEvents.js';
-import { ArcModelEventTypes } from '../../../../src/arc/events/models/ArcModelEventTypes.js';
+} from '../../../../src/events/http-client/models/HostsEvents.js';
+import { EventTypes } from '../../../../src/events/EventTypes.js';
 
 describe('HostsEvents', () => {
   describe('update()', () => {
@@ -17,25 +17,25 @@ describe('HostsEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.update, spy);
       await HostsEvents.update(item);
-      window.removeEventListener(ArcModelEventTypes.Host.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.Host.update, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.Host.update, spy);
       await HostsEvents.update(item, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.Host.update, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.Host.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.update, spy);
       await HostsEvents.update(item);
-      window.removeEventListener(ArcModelEventTypes.Host.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.update, spy);
       const e = spy.args[0][0] as ContextUpdateEvent<IHostRule>;
       assert.deepEqual(e.detail.item, item);
     });
@@ -46,25 +46,25 @@ describe('HostsEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.updateBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.updateBulk, spy);
       await HostsEvents.updateBulk(items);
-      window.removeEventListener(ArcModelEventTypes.Host.updateBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.updateBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.Host.updateBulk, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.Host.updateBulk, spy);
       await HostsEvents.updateBulk(items, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.Host.updateBulk, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.Host.updateBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.updateBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.updateBulk, spy);
       await HostsEvents.updateBulk(items);
-      window.removeEventListener(ArcModelEventTypes.Host.updateBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.updateBulk, spy);
       const e = spy.args[0][0] as ContextUpdateBulkEvent<IHostRule>;
       assert.deepEqual(e.detail.items, items);
     });
@@ -75,25 +75,25 @@ describe('HostsEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.delete, spy);
       await HostsEvents.delete(key);
-      window.removeEventListener(ArcModelEventTypes.Host.delete, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.delete, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.Host.delete, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.Host.delete, spy);
       await HostsEvents.delete(key, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.Host.delete, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.Host.delete, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.delete, spy);
       await HostsEvents.delete(key);
-      window.removeEventListener(ArcModelEventTypes.Host.delete, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.delete, spy);
       const e = spy.args[0][0] as ContextDeleteEvent;
       assert.equal(e.detail.key, key);
     });
@@ -104,25 +104,25 @@ describe('HostsEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.deleteBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.deleteBulk, spy);
       await HostsEvents.deleteBulk(keys);
-      window.removeEventListener(ArcModelEventTypes.Host.deleteBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.deleteBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.Host.deleteBulk, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.Host.deleteBulk, spy);
       await HostsEvents.deleteBulk(keys, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.Host.deleteBulk, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.Host.deleteBulk, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.deleteBulk, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.deleteBulk, spy);
       await HostsEvents.deleteBulk(keys);
-      window.removeEventListener(ArcModelEventTypes.Host.deleteBulk, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.deleteBulk, spy);
       const e = spy.args[0][0] as ContextDeleteBulkEvent;
       assert.equal(e.detail.keys, keys);
     });
@@ -133,25 +133,25 @@ describe('HostsEvents', () => {
 
     it('dispatches the event on the default target', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.list, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.list, spy);
       await HostsEvents.list(opts);
-      window.removeEventListener(ArcModelEventTypes.Host.list, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.list, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', async () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.Host.list, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.Host.list, spy);
       await HostsEvents.list(opts, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.Host.list, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.Host.list, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.list, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.list, spy);
       await HostsEvents.list(opts);
-      window.removeEventListener(ArcModelEventTypes.Host.list, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.list, spy);
       const e = spy.args[0][0] as ContextListEvent<IHostRule>;
       assert.equal(e.detail.limit, opts.limit);
       assert.equal(e.detail.nextPageToken, opts.nextPageToken);
@@ -166,25 +166,25 @@ describe('HostsEvents', () => {
 
     it('dispatches the event on the default target', () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.State.update, spy);
       HostsEvents.State.update(record);
-      window.removeEventListener(ArcModelEventTypes.Host.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.State.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.Host.State.update, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.Host.State.update, spy);
       HostsEvents.State.update(record, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.Host.State.update, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.Host.State.update, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.State.update, spy);
       HostsEvents.State.update(record);
-      window.removeEventListener(ArcModelEventTypes.Host.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.State.update, spy);
       const e = spy.args[0][0] as ContextStateUpdateEvent<IHostRule>;
       assert.deepEqual(e.detail.key, record.key);
       assert.deepEqual(e.detail.item, record.item);
@@ -198,25 +198,25 @@ describe('HostsEvents', () => {
 
     it('dispatches the event on the default target', () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.State.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.State.delete, spy);
       HostsEvents.State.delete(record);
-      window.removeEventListener(ArcModelEventTypes.Host.State.delete, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.State.delete, spy);
       assert.isTrue(spy.called);
     });
 
     it('dispatches the event on the passed target', () => {
       const spy = sinon.spy();
-      document.body.addEventListener(ArcModelEventTypes.Host.State.delete, spy);
+      document.body.addEventListener(EventTypes.HttpClient.Model.Host.State.delete, spy);
       HostsEvents.State.delete(record, document.body);
-      document.body.removeEventListener(ArcModelEventTypes.Host.State.delete, spy);
+      document.body.removeEventListener(EventTypes.HttpClient.Model.Host.State.delete, spy);
       assert.isTrue(spy.called);
     });
 
     it('has the passed data', () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.Host.State.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.Host.State.delete, spy);
       HostsEvents.State.delete(record);
-      window.removeEventListener(ArcModelEventTypes.Host.State.delete, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.Host.State.delete, spy);
       const e = spy.args[0][0] as ContextStateDeleteEvent;
       assert.equal(e.detail.key, record.key);
     });

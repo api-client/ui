@@ -1,8 +1,8 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable class-methods-use-this */
 import { ContextReadEvent, ContextUpdateEvent } from "@api-client/core/build/browser.js";
-import { IArcWorkspace } from "../../models/ArcWorkspace.js";
-import { ArcEventTypes } from "../ArcEventTypes.js";
+import { EventTypes } from "../../EventTypes.js";
+import { IArcWorkspace } from "../../../arc/models/ArcWorkspace.js";
 
 export interface IWorkspaceAppendDetail {
   /**
@@ -25,7 +25,7 @@ export class WorkspaceEvents {
    * The data is recognized by the key and kind.
    */
   static append(key: string, kind: string, parent?: string, target: EventTarget = window): void {
-    const e = new CustomEvent<IWorkspaceAppendDetail>(ArcEventTypes.Workspace.append, {
+    const e = new CustomEvent<IWorkspaceAppendDetail>(EventTypes.HttpClient.Workspace.append, {
       bubbles: true,
       composed: true,
       detail: { key, kind, parent },
@@ -39,7 +39,7 @@ export class WorkspaceEvents {
    * @param key The key of the workspace.
    */
   static async read(key: string, target: EventTarget = window): Promise<IArcWorkspace | undefined> {
-    const e = new ContextReadEvent<IArcWorkspace | undefined>(ArcEventTypes.Workspace.read, key);
+    const e = new ContextReadEvent<IArcWorkspace | undefined>(EventTypes.HttpClient.Workspace.read, key);
     target.dispatchEvent(e);
     return e.detail.result;
   }
@@ -48,7 +48,7 @@ export class WorkspaceEvents {
    * @param contents The workspace contents.
    */
   static async write(key: string, contents: IArcWorkspace, target: EventTarget = window): Promise<void> {
-    const e = new ContextUpdateEvent(ArcEventTypes.Workspace.write, { item: contents, parent: key });
+    const e = new ContextUpdateEvent(EventTypes.HttpClient.Workspace.write, { item: contents, parent: key });
     target.dispatchEvent(e);
     await e.detail.result;
   }
@@ -57,7 +57,7 @@ export class WorkspaceEvents {
    * Triggers workspace save action remotely. This is handled by the workspace itself.
    */
   static triggerWrite(target: EventTarget = window): void {
-    const e = new Event(ArcEventTypes.Workspace.triggerWrite, {
+    const e = new Event(EventTypes.HttpClient.Workspace.triggerWrite, {
       bubbles: true,
       composed: true,
     });
@@ -69,7 +69,7 @@ export class WorkspaceEvents {
      * Informs the application that the workspace state is now committed to the store.
      */
     static write(target: EventTarget = window): void {
-      const e = new Event(ArcEventTypes.Workspace.State.write, {
+      const e = new Event(EventTypes.HttpClient.Workspace.State.write, {
         bubbles: true,
         composed: true,
       });

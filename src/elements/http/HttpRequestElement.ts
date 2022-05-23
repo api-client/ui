@@ -243,12 +243,12 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
 
   _attachListeners(node: EventTarget): void {
     super._attachListeners(node);
-    node.addEventListener(EventTypes.HttpProject.Request.send, this[internalSendHandler]);
+    node.addEventListener(EventTypes.Http.Request.send, this[internalSendHandler]);
   }
 
   _detachListeners(node: EventTarget): void {
     super._attachListeners(node);
-    node.addEventListener(EventTypes.HttpProject.Request.send, this[internalSendHandler]);
+    node.addEventListener(EventTypes.Http.Request.send, this[internalSendHandler]);
   }
 
   firstUpdated(changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>): void {

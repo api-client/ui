@@ -1,8 +1,8 @@
 import { fixture, assert, oneEvent } from '@open-wc/testing';
 import { IAuthorizationData } from '@api-client/core/build/browser.js';
 import { normalizeUrl, computeKey, AuthDataModel } from  '../../../src/arc/idb/AuthDataModel.js';
-import { ArcModelEventTypes } from '../../../src/arc/events/models/ArcModelEventTypes.js';
-import { ArcModelEvents } from '../../../src/arc/events/models/ArcModelEvents.js';
+import { EventTypes } from '../../../src/events/EventTypes.js';
+import { Events } from '../../../src/events/Events.js';
 
 describe('AuthDataModel', () => {
   async function etFixture(): Promise<HTMLElement> {
@@ -114,14 +114,14 @@ describe('AuthDataModel', () => {
       const method = 'ntlm';
 
       element.update(url, method, data);
-      await oneEvent(et, ArcModelEventTypes.AuthData.State.update);
+      await oneEvent(et, EventTypes.HttpClient.Model.AuthData.State.update);
     });
 
     it('sets the data through the event', async () => {
       const url = 'https://dot.com/';
       const method = 'ntlm';
 
-      const result = await ArcModelEvents.AuthData.update(url, method, data, et);
+      const result = await Events.HttpClient.Model.AuthData.update(url, method, data, et);
       assert.typeOf(result, 'object', 'has the change record');
       const { item } = result;
       assert.equal(item.key, computeKey(method, url), 'sets the key');
@@ -165,7 +165,7 @@ describe('AuthDataModel', () => {
     });
 
     it('queries for the data through the event', async () => {
-      const result = await ArcModelEvents.AuthData.query(url, method, et);
+      const result = await Events.HttpClient.Model.AuthData.query(url, method, et);
       assert.equal(result.username, 'uname-test');
       assert.equal(result.password, 'pwd-test');
       assert.equal(result.domain, 'some');

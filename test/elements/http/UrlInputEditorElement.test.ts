@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-template-curly-in-string */
 import { fixture, html, assert, nextFrame, aTimeout } from '@open-wc/testing';
 import sinon from 'sinon';
-import { ProjectMock, EventTypes as CoreEventTypes, IUrl } from '@api-client/core/build/browser.js';
+import { ProjectMock, EventTypes as CoreEventTypes, IUrl, ContextDeleteEvent } from '@api-client/core/build/browser.js';
 import { AnypointButtonElement, AnypointDropdownElement, AnypointInputElement, AnypointListboxElement } from '@anypoint-web-components/awc';
 import '../../../src/define/url-input-editor.js';
 import {
@@ -50,7 +51,7 @@ describe('UrlInputEditorElement', () => {
       const input = element.shadowRoot!.querySelector('.main-input') as AnypointInputElement;
       input.value = value;
       const spy = sinon.spy();
-      element.addEventListener(EventTypes.HttpProject.Request.State.urlChange, spy);
+      element.addEventListener(EventTypes.Http.Request.State.urlChange, spy);
       input.dispatchEvent(new Event('input'));
       assert.isTrue(spy.called, 'The event is dispatched')
       assert.equal(spy.args[0][0].detail.value, value);
@@ -71,7 +72,7 @@ describe('UrlInputEditorElement', () => {
 
     it(`skips the main input change event`, () => {
       const spy = sinon.spy();
-      element.addEventListener(EventTypes.HttpProject.Request.State.urlChange, spy);
+      element.addEventListener(EventTypes.Http.Request.State.urlChange, spy);
       const input = element.shadowRoot!.querySelector('.main-input') as AnypointInputElement;
       input.value = 'https://mulesoft.com/';
       input.dispatchEvent(new Event('input'));
@@ -79,7 +80,7 @@ describe('UrlInputEditorElement', () => {
     });
 
     it(`skips URL change event`, () => {
-      Events.HttpProject.Request.State.urlChange('https://other.com')
+      Events.Http.Request.State.urlChange('https://other.com')
       assert.notEqual(element.value, 'https://other.com');
     });
   });
@@ -109,28 +110,28 @@ describe('UrlInputEditorElement', () => {
 
     it('ignores events dispatched by self', async () => {
       const element = await basicFixture();
-      Events.HttpProject.Request.State.urlChange(newValue, element);
+      Events.Http.Request.State.urlChange(newValue, element);
       assert.notEqual(element.value, newValue);
     });
 
     it('sets the new value', async () => {
       const element = await basicFixture();
-      Events.HttpProject.Request.State.urlChange(newValue);
+      Events.Http.Request.State.urlChange(newValue);
       assert.equal(element.value, newValue);
     });
 
     it('does nothing when value is already set', async () => {
       const element = await basicFixture();
       element.value = newValue;
-      Events.HttpProject.Request.State.urlChange(newValue);
+      Events.Http.Request.State.urlChange(newValue);
       assert.equal(element.value, newValue);
     });
 
     it('does not dispatch the change event', async () => {
       const element = await basicFixture();
       const spy = sinon.spy();
-      element.addEventListener(EventTypes.HttpProject.Request.State.urlChange, spy);
-      Events.HttpProject.Request.State.urlChange(newValue);
+      element.addEventListener(EventTypes.Http.Request.State.urlChange, spy);
+      Events.Http.Request.State.urlChange(newValue);
       assert.isFalse(spy.called);
     });
   });
@@ -258,7 +259,7 @@ describe('UrlInputEditorElement', () => {
 
     it('does nothing when target is not an input', () => {
       const spy = sinon.spy();
-      element.addEventListener(EventTypes.HttpProject.Request.send, spy);
+      element.addEventListener(EventTypes.Http.Request.send, spy);
       const div = element.shadowRoot!.querySelector('.content-shadow');
       const e = new KeyboardEvent('keydown', {
         code: 'Enter',
@@ -273,7 +274,7 @@ describe('UrlInputEditorElement', () => {
 
     it('dispatches the send event for the Enter key', () => {
       const spy = sinon.spy();
-      element.addEventListener(EventTypes.HttpProject.Request.send, spy);
+      element.addEventListener(EventTypes.Http.Request.send, spy);
       const input = element.shadowRoot!.querySelector('.main-input');
       const e = new KeyboardEvent('keydown', {
         code: 'Enter',
@@ -288,7 +289,7 @@ describe('UrlInputEditorElement', () => {
 
     it('dispatches the send event for the NumpadEnter key', () => {
       const spy = sinon.spy();
-      element.addEventListener(EventTypes.HttpProject.Request.send, spy);
+      element.addEventListener(EventTypes.Http.Request.send, spy);
       const input = element.shadowRoot!.querySelector('.main-input');
       const e = new KeyboardEvent('keydown', {
         code: 'NumpadEnter',
@@ -402,7 +403,7 @@ describe('UrlInputEditorElement', () => {
         const label = listItems[0].querySelector('div');
         const sorted = [...items];
         sortUrls(sorted, 'http');
-        assert.equal(label.textContent.trim(), sorted[0].url, 'item has rendered label');
+        assert.equal(label.textContent.trim(), sorted[0].key, 'item has rendered label');
       });
 
       it('renders the remove button', async () => {
@@ -410,7 +411,7 @@ describe('UrlInputEditorElement', () => {
         assert.ok(button, 'an item has the button');
         const sorted = [...items];
         sortUrls(sorted, 'http');
-        assert.equal(button.dataset.id, sorted[0].url, 'the button has the data-id');
+        assert.equal(button.dataset.id, sorted[0].key, 'the button has the data-id');
       });
 
       it('renders the remove all button', async () => {
@@ -436,7 +437,7 @@ describe('UrlInputEditorElement', () => {
       });
 
       it('queries for suggestions, filters by the url, case insensitive', async () => {
-        items[0].url = 'https://abcdef'
+        items[0].key = 'https://abcdef'
         element[previousValue] = undefined;
         element.value = 'https://AbCd';
         await element[filterSuggestions]();
@@ -445,7 +446,7 @@ describe('UrlInputEditorElement', () => {
 
       it('ignores rendering when filtered is a one item with the same value as input', async () => {
         element[previousValue] = undefined;
-        element.value = items[0].url.toUpperCase();
+        element.value = items[0].key.toUpperCase();
         await element[filterSuggestions]();
         assert.isFalse(element[autocompleteOpened], 'autocomplete is not rendered');
       });
@@ -491,7 +492,7 @@ describe('UrlInputEditorElement', () => {
         await nextFrame();
         const sorted = [...items];
         sortUrls(sorted, 'http');
-        assert.equal(element.value, sorted[0].url);
+        assert.equal(element.value, sorted[0].key);
       });
 
       it('closes the list after selection', async () => {
@@ -503,7 +504,7 @@ describe('UrlInputEditorElement', () => {
 
       it('dispatches the change event', async () => {
         const spy = sinon.spy();
-        element.addEventListener(EventTypes.HttpProject.Request.State.urlChange, spy);
+        element.addEventListener(EventTypes.Http.Request.State.urlChange, spy);
         const item = element.shadowRoot!.querySelector('anypoint-item');
         item.click();
         await nextFrame();
@@ -562,7 +563,7 @@ describe('UrlInputEditorElement', () => {
         assert.isTrue(e.defaultPrevented, 'the event is cancelled');
         await nextFrame();
         const rendered = element[renderedSuggestions];
-        assert.equal(element.value, rendered[0].url, 'updates the url');
+        assert.equal(element.value, rendered[0].key, 'updates the url');
       });
 
       it('does not send the send request event when accepting selection', async () => {
@@ -575,7 +576,7 @@ describe('UrlInputEditorElement', () => {
           code: 'ArrowDown',
         }));
         const spy = sinon.spy();
-        element.addEventListener(EventTypes.HttpProject.Request.send, spy);
+        element.addEventListener(EventTypes.Http.Request.send, spy);
         // send enter
         const e = new KeyboardEvent('keydown', {
           composed: true,
@@ -591,7 +592,7 @@ describe('UrlInputEditorElement', () => {
       it('sends the request when has no highlighted item', async () => {
         const input = element.shadowRoot!.querySelector('.main-input') as AnypointInputElement;
         const spy = sinon.spy();
-        element.addEventListener(EventTypes.HttpProject.Request.send, spy);
+        element.addEventListener(EventTypes.Http.Request.send, spy);
         // send enter
         const e = new KeyboardEvent('keydown', {
           composed: true,
@@ -621,9 +622,9 @@ describe('UrlInputEditorElement', () => {
         const button = element.shadowRoot!.querySelector('anypoint-item .remove-suggestion') as HTMLElement;
         button.click();
         await nextFrame();
-        assert.isTrue(spy.calledOnce, 'the event is dispatched');
-        const e = spy.args[0][0] as CustomEvent;
-        assert.equal(e.detail.url, button.dataset.id, 'has the id of the item');
+        assert.isTrue(spy.called, 'the event is dispatched');
+        const e = spy.args[0][0] as ContextDeleteEvent;
+        assert.equal(e.detail.key, button.dataset.id, 'has the id of the item');
       });
 
       it('removes an item from the list when deleted from the store', async () => {

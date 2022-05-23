@@ -12,9 +12,9 @@ License for the specific language governing permissions and limitations under
 the License.
 */
 import { ICertificate, Certificate, ContextChangeRecord, ContextDeleteRecord, ContextListOptions, ContextListResult } from '@api-client/core/build/browser.js';
-import { ArcModelEvents } from '../events/models/ArcModelEvents.js';
-import { ArcModelEventTypes } from '../events/models/ArcModelEventTypes.js';
 import { Base, IGetOptions } from './Base.js';
+import { EventTypes } from '../../events/EventTypes.js';
+import { Events } from '../../events/Events.js';
 
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-param-reassign */
@@ -38,7 +38,7 @@ export class CertificateModel extends Base {
       insert = value as ICertificate;
     }
     const result = await super.put(insert) as ContextChangeRecord<ICertificate>;
-    ArcModelEvents.ClientCertificate.State.update(result, this.eventsTarget);
+    Events.HttpClient.Model.Certificate.State.update(result, this.eventsTarget);
     return result;
   }
 
@@ -55,7 +55,7 @@ export class CertificateModel extends Base {
       }
     });
     const result = await super.putBulk(inserts) as ContextChangeRecord<ICertificate>[];
-    result.forEach(record => ArcModelEvents.ClientCertificate.State.update(record, this.eventsTarget));
+    result.forEach(record => Events.HttpClient.Model.Certificate.State.update(record, this.eventsTarget));
     return result;
   }
 
@@ -70,7 +70,7 @@ export class CertificateModel extends Base {
   async delete(key: string): Promise<ContextDeleteRecord | undefined> {
     const result = await super.delete(key);
     if (result) {
-      ArcModelEvents.ClientCertificate.State.delete(result, this.eventsTarget);
+      Events.HttpClient.Model.Certificate.State.delete(result, this.eventsTarget);
     }
     return result;
   }
@@ -79,7 +79,7 @@ export class CertificateModel extends Base {
     const result = await super.deleteBulk(keys);
     result.forEach(record => {
       if (record) {
-        ArcModelEvents.ClientCertificate.State.delete(record, this.eventsTarget);
+        Events.HttpClient.Model.Certificate.State.delete(record, this.eventsTarget);
       }
     })
     return result;
@@ -91,17 +91,17 @@ export class CertificateModel extends Base {
 
   listen(node: EventTarget = window): void {
     super.listen(node);
-    node.addEventListener(ArcModelEventTypes.ClientCertificate.list, this._listHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.ClientCertificate.read, this._readHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.ClientCertificate.delete, this._deleteHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.ClientCertificate.insert, this._updateHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Certificate.list, this._listHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Certificate.read, this._readHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Certificate.delete, this._deleteHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Certificate.insert, this._updateHandler as EventListener);
   }
 
   unlisten(node: EventTarget = window): void {
     super.unlisten(node);
-    node.removeEventListener(ArcModelEventTypes.ClientCertificate.list, this._listHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.ClientCertificate.read, this._readHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.ClientCertificate.delete, this._deleteHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.ClientCertificate.insert, this._updateHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Certificate.list, this._listHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Certificate.read, this._readHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Certificate.delete, this._deleteHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Certificate.insert, this._updateHandler as EventListener);
   }
 }

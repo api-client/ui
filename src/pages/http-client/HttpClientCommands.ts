@@ -41,7 +41,7 @@ const commands: ContextMenuCommand[] = [
         const event = ev as CustomEvent;
         const { canceled, confirmed, value } = event.detail;
         if (!canceled && confirmed && value) {
-          Events.HttpProject.Request.rename(key, value);
+          Events.Http.Request.rename(key, value);
         }
       });
     }

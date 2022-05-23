@@ -100,16 +100,18 @@ export const EventTypes = Object.freeze({
     State: Object.freeze({
       nameChanged: 'httpprojectnamechange',
     }),
-    Request: Object.freeze({
-      send: 'requestsend',
-      rename: 'projectrequestrename',
-      State: Object.freeze({
-        urlChange: 'requeststateurlchange',
-        contentTypeChange: 'requeststatecontenttypechange',
+    Ui: Object.freeze({
+      // HTTP project's UI data
+      delete: 'appdatauiprojectdelete',
+      HttpRequest: Object.freeze({
+        set: 'appdatauiprojectrequestset',
+        get: 'appdatauiprojectrequestget',
+        delete: 'appdatauiprojectrequestdelete',
       }),
     }),
   }),
   AppData: Object.freeze({
+    // shared HTTP data
     Http: Object.freeze({
       UrlHistory: Object.freeze({
         add: 'appdatahttpurlhistoryadd',
@@ -122,13 +124,15 @@ export const EventTypes = Object.freeze({
         }),
       }),
     }),
-    Ui: Object.freeze({
-      HttpProject: Object.freeze({
-        delete: 'appdatauiprojectdelete',
-        HttpRequest: Object.freeze({
-          set: 'appdatauiprojectrequestset',
-          get: 'appdatauiprojectrequestget',
-          delete: 'appdatauiprojectrequestdelete',
+    Ws: Object.freeze({
+      UrlHistory: Object.freeze({
+        add: 'appdatawsurlhistoryadd',
+        query: 'appdatawsurlhistoryquery',
+        delete: 'appdatawsurlhistorydelete',
+        clear: 'appdatawsurlhistoryclear',
+        State: Object.freeze({
+          clear: 'appdatawsstateurlhistoryclear',
+          delete: 'appdatawsstateurlhistorydelete',
         }),
       }),
     }),
@@ -138,5 +142,129 @@ export const EventTypes = Object.freeze({
     State: Object.freeze({
       nameChanged: 'schemadesignnamechange',
     })
+  }),
+  // HTTP Client's application data
+  HttpClient: Object.freeze({
+    Workspace: Object.freeze({
+      read: 'httpclientwsread',
+      write: 'httpclientwswrite',
+      append: 'httpclientwsappend',
+      triggerWrite: 'httpclientwstriggerwrite',
+      State: Object.freeze({
+        write: 'httpclientwsstatewrite'
+      }),
+    }),
+    Model: Object.freeze({
+      destroy: 'modeldestroy',
+      destroyed: 'modeldestroyed',
+      Project: Object.freeze({
+        read: 'modelprojectread',
+        readBulk: 'modelprojectreadbulk',
+        update: 'modelprojectchange',
+        updateBulk: 'modelprojectupdatebulk',
+        delete: 'modelprojectdelete',
+        deleteBulk: 'modelprojectdeletebulk',
+        undeleteBulk: 'modelprojectundeletebulk',
+        list: 'modelprojectlist',
+        State: Object.freeze({
+          update: 'modelstateprojectchange',
+          delete: 'modelstateprojectdelete',
+        })
+      }),
+      History: Object.freeze({
+        read: 'modelhistoryread',
+        readBulk: 'modelhistoryreadbulk',
+        update: 'modelhistorychange',
+        updateBulk: 'modelhistoryupdatebulk',
+        delete: 'modelhistorydelete',
+        deleteBulk: 'modelhistorydeletebulk',
+        undeleteBulk: 'modelhistorysundelete',
+        query: 'modelhistoryquery',
+        list: 'modelhistorylist',
+        State: Object.freeze({
+          update: 'modelstatehistorychange',
+          delete: 'modelstatehistorydelete',
+        }),
+      }),
+      AuthData: Object.freeze({
+        query: 'modelauthdataquery',
+        update: 'modelauthdataupdate',
+        State: Object.freeze({
+          update: 'modelstateauthdataupdate',
+        }),
+      }),
+      Host: Object.freeze({
+        update: 'modelhostrulesupdate',
+        updateBulk: 'modelhostrulesupdatebulk',
+        delete: 'modelhostrulesdelete',
+        deleteBulk: 'modelhostrulesdeletebulk',
+        list: 'modelhostruleslist',
+        State: Object.freeze({
+          update: 'modelstatehostrulesupdate',
+          delete: 'modelstatehostrulesdelete',
+        }),
+      }),
+      Certificate: Object.freeze({
+        read: 'modelclientcertificateread',
+        list: 'modelclientcertificatelist',
+        delete: 'modelclientcertificatedelete',
+        update: 'modelclientcertificateupdate',
+        insert: 'modelclientcertificateinsert',
+        State: Object.freeze({
+          update: 'modelstateclientcertificateupdate',
+          delete: 'modelstateclientcertificatedelete',
+        }),
+      }),
+      // Environment: Object.freeze({
+      //   read: 'modelenvironmentread',
+      //   update: 'modelenvironmentupdate',
+      //   delete: 'modelenvironmentdelete',
+      //   list: 'modelenvironmentlist',
+      //   current: 'modelenvironmentcurrent',
+      //   select: 'modelenvironmentselect',
+      //   State: Object.freeze({
+      //     update: 'modelstateenvironmentupdate',
+      //     delete: 'modelstateenvironmentdelete',
+      //     select: 'modelstateenvironmentselect'
+      //   }),
+      // }),
+      // Variable: Object.freeze({
+      //   update: 'modelvariableupdate',
+      //   delete: 'modelvariabledelete',
+      //   list: 'modelvariablelist',
+      //   set: 'modelvariableset',
+      //   State: Object.freeze({
+      //     update: 'modelstatevariableupdate',
+      //     delete: 'modelstatevariabledelete',
+      //   }),
+      // }),
+      // RestApi: Object.freeze({
+      //   list: 'modelrestapilist',
+      //   read: 'modelrestapiread',
+      //   dataRead: 'modelrestapidataread',
+      //   update: 'modelrestapiupdate',
+      //   dataUpdate: 'modelrestapidataupdate',
+      //   updateBulk: 'modelrestapiupdatebulk',
+      //   delete: 'modelrestapidelete',
+      //   versionDelete: 'modelrestapiversiondelete',
+      //   State: Object.freeze({
+      //     update: 'modelstaterestapiupdate',
+      //     dataUpdate: 'modelstaterestapidataupdate',
+      //     delete: 'modelstaterestapidelete',
+      //     versionDelete: 'modelstaterestapiversiondelete',
+      //   }),
+      // }),
+    }),
+  }),
+  // common events for HTTP editors
+  Http: Object.freeze({
+    Request: Object.freeze({
+      send: 'requestsend',
+      rename: 'requestrename',
+      State: Object.freeze({
+        urlChange: 'requeststateurlchange',
+        contentTypeChange: 'requeststatecontenttypechange',
+      }),
+    }),
   }),
 });

@@ -16,9 +16,9 @@ the License.
 
 import { ContextChangeRecord, ContextDeleteBulkEvent, ContextDeleteEvent, ContextDeleteRecord, ContextListEvent, ContextListOptions, ContextListResult, ContextReadBulkEvent, ContextReadEvent, ContextUpdateBulkEvent, ContextUpdateEvent, Events as CoreEvents, IArcHttpRequest, IArcProject, IAuthorizationData, ICertificate, IHostRule, IUrl } from '@api-client/core/build/browser.js';
 import { openDB, DBSchema, IDBPDatabase, IDBPObjectStore } from 'idb/with-async-ittr';
-import { ArcModelEventTypes } from '../events/models/ArcModelEventTypes.js';
-import { ArcModelEvents } from '../events/models/ArcModelEvents.js';
-import { ARCModelDeleteEvent } from '../events/models/BaseEvents.js';
+import { EventTypes } from '../../events/EventTypes.js';
+import { Events } from '../../events/Events.js';
+import { ARCModelDeleteEvent } from '../../events/http-client/models/BaseEvents.js';
 
 /* eslint-disable class-methods-use-this */
 
@@ -160,33 +160,7 @@ export class Base {
     });
     this._db = dbResult;
     return dbResult;
-    // return new Promise((resolve, reject) => {
-    //   const request = globalThis.indexedDB.open("AdvancedRestClient", 1);
-    //   request.onerror = (): void => {
-    //     reject(new Error('Unable to open URL master database.'));
-    //   };
-    //   request.onsuccess = (): void => {
-    //     const db = request.result;
-    //     this._db = db;
-    //     resolve(db);
-    //   };
-
-    //   request.onupgradeneeded = this._versionchange.bind(this);
-    // });
   }
-
-  // protected _versionchange(e: IDBVersionChangeEvent): void {
-  //   const db = (e.target as IDBOpenDBRequest).result;
-  //   const stores: StoreName[] = [
-  //     'UrlHistory', 'WsHistory', 'History', 'Projects', 'AuthCache', 'Certificates', 'Hosts', 'Environments',
-  //   ];
-  //   const names = db.objectStoreNames;
-  //   for (const name of stores) {
-  //     if (!names.contains(name)) {
-  //       db.createObjectStore(name, { keyPath: 'data.key' });
-  //     }
-  //   }
-  // }
 
   /**
    * Database query options for pagination.
@@ -203,14 +177,14 @@ export class Base {
    */
   listen(node: EventTarget = window): void {
     this.eventsTarget = node;
-    node.addEventListener(ArcModelEventTypes.destroy, this[deleteModelHandler] as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.destroy, this[deleteModelHandler] as EventListener);
   }
 
   /**
    * Removes the DOM event listeners.
    */
   unlisten(node: EventTarget = window): void {
-    node.removeEventListener(ArcModelEventTypes.destroy, this[deleteModelHandler] as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.destroy, this[deleteModelHandler] as EventListener);
   }
 
   /**
@@ -244,18 +218,6 @@ export class Base {
     const { store } = tx;
     await store.clear();
     await tx.done;
-
-    // return new Promise((resolve, reject) => {
-    //   const { name } = this;
-    //   const tx = db.transaction([name], 'readwrite');
-    //   tx.oncomplete = (): void => {
-    //     this[notifyDestroyed](name);
-    //     resolve();
-    //   };
-    //   tx.onerror = (): void => reject(new Error(`Unable to clear the ${this.name} store.`));
-    //   const store = tx.objectStore(name);
-    //   store.clear();
-    // });
   }
 
   /**
@@ -265,7 +227,7 @@ export class Base {
    */
   [notifyDestroyed](store: StoreName): void {
     if (this.eventsTarget) {
-      ArcModelEvents.destroyed(store, this.eventsTarget);
+      Events.HttpClient.Model.destroyed(store, this.eventsTarget);
     }
   }
 
@@ -407,50 +369,6 @@ export class Base {
       }
     }
     return items;
-    
-    // let keyFound = false;
-    // return new Promise((resolve, reject) => {
-    //   const items: unknown[] = [];
-    //   const tx = db.transaction([storeName], 'readonly');
-    //   tx.oncomplete = (): void => resolve(items);
-    //   tx.onerror = (): void => reject(new Error(`Unable to query for the ${store} store.`));
-    //   const store = tx.objectStore(storeName);
-    //   const dir = descending === true ? 'prev' : 'next';
-    //   store.openCursor(null, dir).onsuccess = (e: Event): void => {
-    //     const cursor = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
-    //     if (!cursor) {
-    //       return;
-    //     }
-
-    //     const info = cursor.value as IStoredEntity;
-    //     const { meta, data } = info;
-    //     const { key } = data as { key: string };
-    //     if (!key) {
-    //       cursor.continue();
-    //       return;
-    //     }
-    //     if (startKey && !keyFound) {
-    //       if (key !== startKey) {
-    //         cursor.continue();
-    //         return;
-    //       }
-    //       keyFound = true;
-    //     }
-    //     if (adv) {
-    //       cursor.advance(adv);
-    //       adv = 0;
-    //       return;
-    //     }
-    //     if (meta && meta.deleted) {
-    //       cursor.continue();
-    //       return;
-    //     }
-    //     items.push(data);
-    //     if (items.length < limit) {
-    //       cursor.continue();
-    //     }
-    //   };
-    // });
   }
 
   async put(value: unknown): Promise<ContextChangeRecord<unknown>> {
@@ -472,21 +390,6 @@ export class Base {
       result.kind = typed.kind;
     }
     return result;
-    // return new Promise((resolve, reject) => {
-    //   const { name } = this;
-    //   const result: ContextChangeRecord<unknown> = {
-    //     key: typed.key,
-    //     item: { ...typed },
-    //   }
-    //   if (typed.kind) {
-    //     result.kind = typed.kind;
-    //   }
-    //   const tx = db.transaction([name], 'readwrite');
-    //   tx.oncomplete = (): void => resolve(result);
-    //   tx.onerror = (): void => reject(new Error(`Unable to insert into the ${name} store.`));
-    //   const store = tx.objectStore(name);
-    //   store.put(entity);
-    // });
   }
 
   async putBulk(values: unknown[]): Promise<ContextChangeRecord<unknown>[]> {
@@ -525,14 +428,6 @@ export class Base {
     await Promise.all(entities.map(e => store.put(e)));
     await tx.done;
     return result;
-    // return new Promise((resolve, reject) => {
-    //   const { name } = this;
-    //   const tx = db.transaction([name], 'readwrite');
-    //   tx.oncomplete = (): void => resolve(result);
-    //   tx.onerror = (): void => reject(new Error(`Unable to insert into the ${name} store.`));
-    //   const store = tx.objectStore(name);
-    //   entities.forEach(e => store.put(e));
-    // });
   }
 
   async get(key: string, opts: IGetOptions = {}): Promise<unknown | undefined> {
@@ -548,26 +443,6 @@ export class Base {
       return undefined;
     }
     return value.data;
-
-    // return new Promise((resolve, reject) => {
-    //   const { name } = this;
-    //   const tx = db.transaction([name], 'readonly');
-    //   tx.onerror = (): void => reject(new Error(`Unable to read from the ${name} store.`));
-    //   const store = tx.objectStore(name);
-    //   const request = store.get(key);
-    //   request.onsuccess = (): void => {
-    //     const data = request.result as IStoredEntity | undefined;
-    //     if (data) {
-    //       if (data.meta.deleted && !opts.deleted) {
-    //         resolve(undefined);
-    //       } else {
-    //         resolve(data.data);
-    //       }
-    //     } else {
-    //       resolve(undefined);
-    //     }
-    //   };
-    // });
   }
 
   async getBulk(keys: string[], opts: IGetOptions = {}): Promise<(unknown | undefined)[]> {
@@ -591,25 +466,6 @@ export class Base {
       return item.data;
     });
     return result;
-    // return new Promise((resolve, reject) => {
-    //   const { name } = this;
-    //   const result: (unknown | undefined)[] = [];
-    //   const tx = db.transaction([name], 'readonly');
-    //   tx.oncomplete = (): void => resolve(result);
-    //   tx.onerror = (): void => reject(new Error(`Unable to read from the ${name} store.`));
-    //   const store = tx.objectStore(name);
-    //   keys.forEach((key) => {
-    //     const request = store.get(key);
-    //     request.onsuccess = (): void => {
-    //       const data = request.result as IStoredEntity | undefined;
-    //       if (data) {
-    //         result.push(data.data);
-    //       } else {
-    //         result.push(undefined);
-    //       }
-    //     };
-    //   });
-    // });
   }
 
   async delete(key: string): Promise<ContextDeleteRecord | undefined> {
@@ -634,30 +490,6 @@ export class Base {
     }
     await tx.done;
     return result;
-    // return new Promise((resolve, reject) => {
-    //   const { name } = this;
-    //   let result: ContextDeleteRecord | undefined;
-
-    //   const tx = db.transaction([name], 'readwrite');
-    //   tx.oncomplete = (): void => resolve(result);
-    //   tx.onerror = (): void => reject(new Error(`Unable to delete from the ${name} store.`));
-    //   const store = tx.objectStore(name);
-    //   const request = store.get(key);
-    //   request.onsuccess = (): void => {
-    //     const data = request.result as IStoredEntity | undefined;
-    //     if (data) {
-    //       data.meta.deleted = true;
-    //       result = {
-    //         key,
-    //       };
-    //       const typed = data.data as any;
-    //       if (typed.kind) {
-    //         result.kind = typed.kind;
-    //       }
-    //       store.put(data);
-    //     }
-    //   };
-    // });
   }
 
   async deleteBulk(keys: string[]): Promise<(ContextDeleteRecord | undefined)[]> {
@@ -696,37 +528,6 @@ export class Base {
     await Promise.all(ps);
     await tx.done;
     return result;
-
-    // return new Promise((resolve, reject) => {
-    //   const { name } = this;
-    //   const result: (ContextDeleteRecord | undefined)[] = [];
-
-    //   const tx = db.transaction([name], 'readwrite');
-    //   tx.oncomplete = (): void => resolve(result);
-    //   tx.onerror = (): void => reject(new Error(`Unable to delete from the ${name} store.`));
-    //   const store = tx.objectStore(name);
-      
-    //   keys.forEach((k) => {
-    //     const request = store.get(k);
-    //     request.onsuccess = (): void => {
-    //       const data = request.result as IStoredEntity | undefined;
-    //       if (data) {
-    //         data.meta.deleted = true;
-    //         store.put(data);
-    //         const record: ContextDeleteRecord = {
-    //           key: k,
-    //         };
-    //         const typed = data.data as any;
-    //         if (typed.kind) {
-    //           record.kind = typed.kind;
-    //         }
-    //         result.push(record);
-    //       } else {
-    //         result.push(undefined);
-    //       }
-    //     };
-    //   });
-    // });
   }
 
   async restore(key: string): Promise<ContextChangeRecord<unknown> | undefined> {
@@ -752,38 +553,6 @@ export class Base {
     }
     await tx.done;
     return result;
-
-    // if (!key) {
-    //   throw new Error(`The "key" argument is missing.`);
-    // }
-    // const db = await this.open();
-    // return new Promise((resolve, reject) => {
-    //   const { name } = this;
-    //   let result: ContextChangeRecord<unknown> | undefined;
-
-    //   const tx = db.transaction([name], 'readwrite');
-    //   tx.oncomplete = (): void => resolve(result);
-    //   tx.onerror = (): void => reject(new Error(`Unable to restore from the ${name} store.`));
-    //   const store = tx.objectStore(name);
-    //   const request = store.get(key);
-    //   request.onsuccess = (): void => {
-    //     const data = request.result as IStoredEntity | undefined;
-    //     if (data) {
-    //       if (data.meta.deleted) {
-    //         data.meta.deleted = false;
-    //         result = {
-    //           key,
-    //           item: data.data,
-    //         };
-    //         const typed = data.data as any;
-    //         if (typed.kind) {
-    //           result.kind = typed.kind;
-    //         }
-    //         store.put(data);
-    //       }
-    //     }
-    //   };
-    // });
   }
 
   async restoreBulk(keys: string[]): Promise<(ContextChangeRecord<unknown> | undefined)[] > {
@@ -823,43 +592,6 @@ export class Base {
     await Promise.all(ps);
     await tx.done;
     return result;
-
-    // const db = await this.open();
-    // return new Promise((resolve, reject) => {
-    //   const { name } = this;
-    //   const result: (ContextChangeRecord<unknown> | undefined)[] = [];
-
-    //   const tx = db.transaction([name], 'readwrite');
-    //   tx.oncomplete = (): void => resolve(result);
-    //   tx.onerror = (): void => reject(new Error(`Unable to restore from the ${name} store.`));
-    //   const store = tx.objectStore(name);
-      
-    //   keys.forEach((k) => {
-    //     const request = store.get(k);
-    //     request.onsuccess = (): void => {
-    //       const data = request.result as IStoredEntity | undefined;
-    //       if (data) {
-    //         if (data.meta.deleted) {
-    //           data.meta.deleted = false;
-    //           store.put(data);
-    //           const record: ContextChangeRecord<unknown> = {
-    //             key: k,
-    //             item: data.data,
-    //           };
-    //           const typed = data.data as any;
-    //           if (typed.kind) {
-    //             record.kind = typed.kind;
-    //           }
-    //           result.push(record);
-    //         } else {
-    //           result.push(undefined);
-    //         }
-    //       } else {
-    //         result.push(undefined);
-    //       }
-    //     };
-    //   });
-    // });
   }
 
   /**

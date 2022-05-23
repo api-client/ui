@@ -164,12 +164,12 @@ export default class HeadersEditorElement extends EventsTargetMixin(LitElement) 
 
   _attachListeners(node: EventTarget): void {
     super._attachListeners(node);
-    node.addEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, this._contentTypeHandler as EventListener);
+    node.addEventListener(EventTypes.Http.Request.State.contentTypeChange, this._contentTypeHandler as EventListener);
   }
 
   _detachListeners(node: EventTarget): void {
     super._detachListeners(node);
-    node.removeEventListener(EventTypes.HttpProject.Request.State.contentTypeChange, this._contentTypeHandler as EventListener);
+    node.removeEventListener(EventTypes.Http.Request.State.contentTypeChange, this._contentTypeHandler as EventListener);
   }
 
   /**

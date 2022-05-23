@@ -12,9 +12,16 @@ async function supportsModuleWorker(): Promise<boolean> {
   return supports;
 }
 
+function supportFileAccess(): boolean {
+  return 'showOpenFilePicker' in window;
+}
+
 export default async function supportedPlatform(): Promise<boolean> {
   const hasWorkerModule = await supportsModuleWorker();
   if (!hasWorkerModule) {
+    return false;
+  }
+  if (!supportFileAccess()) {
     return false;
   }
   return true;

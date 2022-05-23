@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import { ContextChangeRecord, ContextEventDetailWithResult, IAuthorizationData } from '@api-client/core/build/browser.js';
-import { ArcModelEventTypes } from './ArcModelEventTypes.js';
+import { EventTypes } from '../../EventTypes.js';
 
 export const urlValue = Symbol('urlValue');
 export const methodValue = Symbol('methodValue');
@@ -53,7 +53,7 @@ export class ARCAuthDataUpdateEvent extends CustomEvent<ContextEventDetailWithRe
     if (!authData) {
       throw new Error('Expected authData argument as an object.');
     }
-    super(ArcModelEventTypes.AuthData.update, {
+    super(EventTypes.HttpClient.Model.AuthData.update, {
       bubbles: true,
       composed: true,
       cancelable: true,
@@ -100,7 +100,7 @@ export class ARCAuthDataQueryEvent extends CustomEvent<ContextEventDetailWithRes
     if (typeof method !== 'string') {
       throw new Error('Expected method argument as string.');
     }
-    super(ArcModelEventTypes.AuthData.query, {
+    super(EventTypes.HttpClient.Model.AuthData.query, {
       bubbles: true,
       composed: true,
       cancelable: true,
@@ -133,7 +133,7 @@ export class ARCAuthDataUpdatedEvent extends Event {
     if (!record) {
       throw new Error('Expected record argument as object.');
     }
-    super(ArcModelEventTypes.AuthData.State.update, {
+    super(EventTypes.HttpClient.Model.AuthData.State.update, {
       bubbles: true,
       composed: true,
     });

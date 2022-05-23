@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import { ArcModelEventTypes } from './ArcModelEventTypes.js';
+import { EventTypes } from '../../EventTypes.js';
 
 export const storesSymbol = Symbol('stores');
 
@@ -17,7 +17,7 @@ export class ARCModelDeleteEvent extends CustomEvent<{ result: Promise<void>[] |
     if (!Array.isArray(stores)) {
       throw new Error('The stores expected to be an array.');
     }
-    super(ArcModelEventTypes.destroy, {
+    super(EventTypes.HttpClient.Model.destroy, {
       bubbles: true,
       composed: true,
       cancelable: true,
@@ -50,7 +50,7 @@ export class ARCModelStateDeleteEvent extends Event {
     if (typeof store !== 'string') {
       throw new Error('The store expected to be a string.');
     }
-    super(ArcModelEventTypes.destroyed, {
+    super(EventTypes.HttpClient.Model.destroyed, {
       bubbles: true,
       composed: true,
     });

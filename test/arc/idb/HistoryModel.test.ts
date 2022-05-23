@@ -3,8 +3,8 @@ import { assert, aTimeout } from '@open-wc/testing';
 import { ContextStateUpdateEvent, IArcHttpRequest, ArcHttpRequest, ArcHttpRequestKind, ProjectMock, ContextStateDeleteEvent, ContextDeleteRecord } from '@api-client/core/build/browser.js';
 import sinon from 'sinon';
 import { HistoryModel } from  '../../../src/arc/idb/HistoryModel.js';
-import { ArcModelEventTypes } from '../../../src/arc/events/models/ArcModelEventTypes.js';
-import { ArcModelEvents } from '../../../src/arc/events/models/ArcModelEvents.js';
+import { EventTypes } from '../../../src/events/EventTypes.js';
+import { Events } from '../../../src/events/Events.js';
 
 describe('HistoryModel', () => {
   const mock = new ProjectMock();
@@ -38,9 +38,9 @@ describe('HistoryModel', () => {
     it('dispatches the change event', async () => {
       const data = mock.arc.arcRequest();
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
       await instance.put(data);
-      window.removeEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
 
       assert.isTrue(spy.called, 'Event was dispatched');
       const e = spy.args[0][0] as ContextStateUpdateEvent<IArcHttpRequest>;
@@ -54,7 +54,7 @@ describe('HistoryModel', () => {
     it('creates the object via the event', async () => {
       const data = mock.arc.arcRequest();
       instance.listen();
-      const result = await ArcModelEvents.History.update(data);
+      const result = await Events.HttpClient.Model.History.update(data);
       instance.unlisten();
       assert.typeOf(result, 'object');
       assert.typeOf(result.key, 'string', 'has an key');
@@ -95,9 +95,9 @@ describe('HistoryModel', () => {
     it('dispatches the change event for each inserted object', async () => {
       const data = mock.arc.arcRequests(2);
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
       await instance.putBulk(data);
-      window.removeEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
 
       assert.equal(spy.callCount, 2, 'The event was dispatched twice');
       const e1 = spy.args[0][0] as ContextStateUpdateEvent<IArcHttpRequest>;
@@ -119,7 +119,7 @@ describe('HistoryModel', () => {
     it('creates the object via the event', async () => {
       const data = mock.arc.arcRequests(2);
       instance.listen();
-      const result = await ArcModelEvents.History.updateBulk(data);
+      const result = await Events.HttpClient.Model.History.updateBulk(data);
       instance.unlisten();
       assert.typeOf(result, 'array');
       assert.lengthOf(result, 2);
@@ -264,16 +264,16 @@ describe('HistoryModel', () => {
 
     it('deletes the entity through the event', async () => {
       instance.listen();
-      await ArcModelEvents.History.delete(id);
+      await Events.HttpClient.Model.History.delete(id);
       const item = await instance.get(id);
       assert.isUndefined(item);
     });
 
     it('dispatches the change event', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
       await instance.delete(id);
-      window.removeEventListener(ArcModelEventTypes.History.State.delete, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
 
       assert.isTrue(spy.called, 'Event was dispatched');
       const e = spy.args[0][0] as ContextStateDeleteEvent;
@@ -342,16 +342,16 @@ describe('HistoryModel', () => {
 
     it('deletes the entity through the event', async () => {
       instance.listen();
-      await ArcModelEvents.History.deleteBulk([id]);
+      await Events.HttpClient.Model.History.deleteBulk([id]);
       const item = await instance.get(id);
       assert.isUndefined(item);
     });
 
     it('dispatches the change event for each deleted', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.delete, spy);
-      await ArcModelEvents.History.deleteBulk([id]);
-      window.removeEventListener(ArcModelEventTypes.History.State.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
+      await Events.HttpClient.Model.History.deleteBulk([id]);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
 
       assert.equal(spy.callCount, 1, 'the event was dispatched');
       const e = spy.args[0][0] as ContextStateDeleteEvent;
@@ -363,9 +363,9 @@ describe('HistoryModel', () => {
 
     it('does not dispatch event for invalid items', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.delete, spy);
-      await ArcModelEvents.History.deleteBulk([id, 'other']);
-      window.removeEventListener(ArcModelEventTypes.History.State.delete, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
+      await Events.HttpClient.Model.History.deleteBulk([id, 'other']);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.delete, spy);
 
       assert.equal(spy.callCount, 1, 'the event was dispatched');
       const e = spy.args[0][0] as ContextStateDeleteEvent;
@@ -436,7 +436,7 @@ describe('HistoryModel', () => {
 
     it('restores the entity through the event', async () => {
       instance.listen();
-      await ArcModelEvents.History.undeleteBulk(records);
+      await Events.HttpClient.Model.History.undeleteBulk(records);
       instance.unlisten();
       const item = await instance.get(id);
       assert.typeOf(item, 'object');
@@ -444,9 +444,9 @@ describe('HistoryModel', () => {
 
     it('dispatches the change event for each deleted', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.update, spy);
-      await ArcModelEvents.History.undeleteBulk(records);
-      window.removeEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
+      await Events.HttpClient.Model.History.undeleteBulk(records);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
 
       assert.equal(spy.callCount, 1, 'the event was dispatched');
       const e = spy.args[0][0] as ContextStateUpdateEvent<IArcHttpRequest>;
@@ -459,9 +459,9 @@ describe('HistoryModel', () => {
 
     it('does not dispatch event for invalid items', async () => {
       const spy = sinon.spy();
-      window.addEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.addEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
       await instance.undeleteBulk([ ...records, { key: 'other' } ]);
-      window.removeEventListener(ArcModelEventTypes.History.State.update, spy);
+      window.removeEventListener(EventTypes.HttpClient.Model.History.State.update, spy);
 
       assert.equal(spy.callCount, 1, 'the event was dispatched');
     });
@@ -551,7 +551,7 @@ describe('HistoryModel', () => {
 
 
       it('returns a query result for default parameters', async () => {
-        const result = await ArcModelEvents.History.list(undefined);
+        const result = await Events.HttpClient.Model.History.list(undefined);
         assert.typeOf(result, 'object', 'result is an object');
         assert.typeOf(result.nextPageToken, 'string', 'has page token');
         assert.typeOf(result.items, 'array', 'has response items');
@@ -559,21 +559,21 @@ describe('HistoryModel', () => {
       });
 
       it('respects the "limit" parameter', async () => {
-        const result = await ArcModelEvents.History.list({
+        const result = await Events.HttpClient.Model.History.list({
           limit: 5,
         });
         assert.lengthOf(result.items, 5);
       });
 
       it('respects the "nextPageToken" parameter', async () => {
-        const result1 = await ArcModelEvents.History.list({
+        const result1 = await Events.HttpClient.Model.History.list({
           limit: 10,
         });
-        const result2 = await ArcModelEvents.History.list({
+        const result2 = await Events.HttpClient.Model.History.list({
           nextPageToken: result1.nextPageToken,
         });
         assert.lengthOf(result2.items, 10);
-        const all = await ArcModelEvents.History.list({
+        const all = await Events.HttpClient.Model.History.list({
           limit: 20,
         });
         assert.deepEqual(all.items, result1.items.concat(result2.items), 'has both pages');
@@ -653,7 +653,7 @@ describe('HistoryModel', () => {
 
     it('queries via the event', async () => {
       instance.listen();
-      const result = await ArcModelEvents.History.query({ term: '123456qwe' });
+      const result = await Events.HttpClient.Model.History.query({ term: '123456qwe' });
       instance.unlisten();
       assert.lengthOf(result, 1, 'has all matches');
       assert.deepEqual(result, [r4]);

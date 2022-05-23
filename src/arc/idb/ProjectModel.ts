@@ -14,9 +14,9 @@ License for the specific language governing permissions and limitations under
 the License.
 */
 import { IArcProject, ArcProject, ContextChangeRecord, ContextDeleteRecord, ContextListOptions, ContextListResult, ContextRestoreEvent } from '@api-client/core/build/browser.js';
-import { ArcModelEvents } from '../events/models/ArcModelEvents.js';
-import { ArcModelEventTypes } from '../events/models/ArcModelEventTypes.js';
 import { Base, IGetOptions } from './Base.js';
+import { EventTypes } from '../../events/EventTypes.js';
+import { Events } from '../../events/Events.js';
 
 
 /**
@@ -41,7 +41,7 @@ export class ProjectModel extends Base {
     }
 
     const result = await super.put(insert) as ContextChangeRecord<IArcProject>;
-    ArcModelEvents.Project.State.update(result, this.eventsTarget);
+    Events.HttpClient.Model.Project.State.update(result, this.eventsTarget);
     return result;
   }
 
@@ -59,7 +59,7 @@ export class ProjectModel extends Base {
     });
 
     const result = await super.putBulk(inserts) as ContextChangeRecord<IArcProject>[];
-    result.forEach(record => ArcModelEvents.Project.State.update(record, this.eventsTarget));
+    result.forEach(record => Events.HttpClient.Model.Project.State.update(record, this.eventsTarget));
     return result;
   }
 
@@ -74,7 +74,7 @@ export class ProjectModel extends Base {
   async delete(key: string): Promise<ContextDeleteRecord | undefined> {
     const result = await super.delete(key);
     if (result) {
-      ArcModelEvents.Project.State.delete(result, this.eventsTarget);
+      Events.HttpClient.Model.Project.State.delete(result, this.eventsTarget);
     }
     return result;
   }
@@ -83,7 +83,7 @@ export class ProjectModel extends Base {
     const result = await super.deleteBulk(keys);
     result.forEach((record) => {
       if (record) {
-        ArcModelEvents.Project.State.delete(record, this.eventsTarget);
+        Events.HttpClient.Model.Project.State.delete(record, this.eventsTarget);
       }
     });
     return result;
@@ -101,7 +101,7 @@ export class ProjectModel extends Base {
     const result = await super.restoreBulk(ids) as (ContextChangeRecord<IArcProject> | undefined)[];
     result.forEach((record) => {
       if (record) {
-        ArcModelEvents.Project.State.update(record, this.eventsTarget)
+        Events.HttpClient.Model.Project.State.update(record, this.eventsTarget)
       }
     });
     return result;
@@ -113,26 +113,26 @@ export class ProjectModel extends Base {
 
   listen(node: EventTarget = window): void {
     super.listen(node);
-    node.addEventListener(ArcModelEventTypes.Project.read, this._readHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Project.readBulk, this._readBulkHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Project.update, this._updateHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Project.updateBulk, this._updateBulkHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Project.delete, this._deleteHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Project.deleteBulk, this._deleteBulkHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Project.undeleteBulk, this._undeleteBulkHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.Project.list, this._listHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Project.read, this._readHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Project.readBulk, this._readBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Project.update, this._updateHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Project.updateBulk, this._updateBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Project.delete, this._deleteHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Project.deleteBulk, this._deleteBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Project.undeleteBulk, this._undeleteBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Project.list, this._listHandler as EventListener);
   }
 
   unlisten(node: EventTarget = window): void {
     super.unlisten(node);
-    node.removeEventListener(ArcModelEventTypes.Project.read, this._readHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Project.readBulk, this._readBulkHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Project.update, this._updateHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Project.updateBulk, this._updateBulkHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Project.delete, this._deleteHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Project.deleteBulk, this._deleteBulkHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Project.undeleteBulk, this._undeleteBulkHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.Project.list, this._listHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Project.read, this._readHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Project.readBulk, this._readBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Project.update, this._updateHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Project.updateBulk, this._updateBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Project.delete, this._deleteHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Project.deleteBulk, this._deleteBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Project.undeleteBulk, this._undeleteBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Project.list, this._listHandler as EventListener);
   }
 
   protected _undeleteBulkHandler(e: ContextRestoreEvent<IArcProject>): void {

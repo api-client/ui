@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import { ContextChangeRecord, ContextDeleteEvent, ContextDeleteRecord, ContextListEvent, ContextListOptions, ContextListResult, ContextReadEvent, ContextStateDeleteEvent, ContextStateUpdateEvent, ContextUpdateEvent, ICertificate } from '@api-client/core/build/browser.js';
-import { ArcModelEventTypes } from './ArcModelEventTypes.js';
+import { EventTypes } from '../../EventTypes.js';
 
 export class CertificatesEvents {
   /**
@@ -11,7 +11,7 @@ export class CertificatesEvents {
    * @returns Promise resolved to a client certificate model.
    */
   static async read(id: string, target: EventTarget = window): Promise<ICertificate | undefined> {
-    const e = new ContextReadEvent<ICertificate>(ArcModelEventTypes.ClientCertificate.read, id);
+    const e = new ContextReadEvent<ICertificate>(EventTypes.HttpClient.Model.Certificate.read, id);
     target.dispatchEvent(e);
     return e.detail.result;
   }
@@ -24,7 +24,7 @@ export class CertificatesEvents {
    * @returns Promise resolved to the change record
    */
   static async insert(item: ICertificate, target: EventTarget = window): Promise<ContextChangeRecord<ICertificate> | undefined> {
-    const e = new ContextUpdateEvent<ICertificate>(ArcModelEventTypes.ClientCertificate.insert, { item });
+    const e = new ContextUpdateEvent<ICertificate>(EventTypes.HttpClient.Model.Certificate.insert, { item });
     target.dispatchEvent(e);
     return e.detail.result;
   }
@@ -36,7 +36,7 @@ export class CertificatesEvents {
    * @param target A node on which to dispatch the event.
    */
   static async delete(id: string, target: EventTarget = window): Promise<ContextDeleteRecord | undefined> {
-    const e = new ContextDeleteEvent(ArcModelEventTypes.ClientCertificate.delete, id);
+    const e = new ContextDeleteEvent(EventTypes.HttpClient.Model.Certificate.delete, id);
     target.dispatchEvent(e);
     return e.detail.result;
   }
@@ -49,7 +49,7 @@ export class CertificatesEvents {
    * @returns The list result.
    */
   static async list(opts?: ContextListOptions, target: EventTarget = window): Promise<ContextListResult<ICertificate> | undefined> {
-    const e = new ContextListEvent(ArcModelEventTypes.ClientCertificate.list, opts);
+    const e = new ContextListEvent(EventTypes.HttpClient.Model.Certificate.list, opts);
     target.dispatchEvent(e);
     return e.detail.result as Promise<ContextListResult<ICertificate> | undefined>;
   }
@@ -62,7 +62,7 @@ export class CertificatesEvents {
      * @param target A node on which to dispatch the event.
      */
     static update(record: ContextChangeRecord<ICertificate>, target: EventTarget = window): void {
-      const e = new ContextStateUpdateEvent(ArcModelEventTypes.ClientCertificate.State.update, record);
+      const e = new ContextStateUpdateEvent(EventTypes.HttpClient.Model.Certificate.State.update, record);
       target.dispatchEvent(e);
     }
 
@@ -73,7 +73,7 @@ export class CertificatesEvents {
      * @param target A node on which to dispatch the event.
      */
     static delete(record: ContextDeleteRecord, target: EventTarget = window): void {
-      const e = new ContextStateDeleteEvent(ArcModelEventTypes.ClientCertificate.State.delete, record);
+      const e = new ContextStateDeleteEvent(EventTypes.HttpClient.Model.Certificate.State.delete, record);
       target.dispatchEvent(e);
     }
   }

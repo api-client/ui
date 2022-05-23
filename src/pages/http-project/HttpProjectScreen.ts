@@ -128,7 +128,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     window.addEventListener(EventTypes.Store.File.State.fileChange, this._fileChangeHandler.bind(this));
     window.addEventListener(EventTypes.HttpProject.changed, this._contextMenuMutationCallback);
     window.addEventListener(EventTypes.HttpProject.State.nameChanged, this._projectNameChanged.bind(this));
-    window.addEventListener(EventTypes.HttpProject.Request.rename, this._renameRequestHandler.bind(this) as EventListener);
+    window.addEventListener(EventTypes.Http.Request.rename, this._renameRequestHandler.bind(this) as EventListener);
     this.layout.addEventListener('change', this._renderHandler.bind(this));
     this.layout.addEventListener('nameitem', this._nameLayoutItemHandler.bind(this));
   }

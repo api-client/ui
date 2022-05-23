@@ -18,9 +18,9 @@ import { IArcHttpRequest, ArcHttpRequest, ContextChangeRecord, ContextDeleteReco
 import { SimpleDocumentSearchResultSetUnit } from 'flexsearch';
 // @ts-ignore
 import SearchDocument from 'flexsearch/dist/module/document.js';
-import { ArcModelEvents } from '../events/models/ArcModelEvents.js';
-import { ArcModelEventTypes } from '../events/models/ArcModelEventTypes.js';
 import { Base, IGetOptions } from './Base.js';
+import { EventTypes } from '../../events/EventTypes.js';
+import { Events } from '../../events/Events.js';
 
 /**
  * ARC request model for version >= 18.
@@ -44,7 +44,7 @@ export class HistoryModel extends Base {
       insert = { ...value } as IArcHttpRequest;
     }
     const result = await super.put(insert) as ContextChangeRecord<IArcHttpRequest>;
-    ArcModelEvents.History.State.update(result, this.eventsTarget);
+    Events.HttpClient.Model.History.State.update(result, this.eventsTarget);
     return result;
   }
 
@@ -64,7 +64,7 @@ export class HistoryModel extends Base {
     });
 
     const result = await super.putBulk(inserts) as ContextChangeRecord<IArcHttpRequest>[];
-    result.forEach(record => ArcModelEvents.History.State.update(record, this.eventsTarget));
+    result.forEach(record => Events.HttpClient.Model.History.State.update(record, this.eventsTarget));
     return result;
   }
 
@@ -79,7 +79,7 @@ export class HistoryModel extends Base {
   async delete(key: string): Promise<ContextDeleteRecord | undefined> {
     const result = await super.delete(key);
     if (result) {
-      ArcModelEvents.History.State.delete(result, this.eventsTarget);
+      Events.HttpClient.Model.History.State.delete(result, this.eventsTarget);
     }
     return result;
   }
@@ -88,7 +88,7 @@ export class HistoryModel extends Base {
     const result = await super.deleteBulk(keys);
     result.forEach((record) => {
       if (record) {
-        ArcModelEvents.History.State.delete(record, this.eventsTarget);
+        Events.HttpClient.Model.History.State.delete(record, this.eventsTarget);
       }
     });
     return result;
@@ -106,7 +106,7 @@ export class HistoryModel extends Base {
     const result = await super.restoreBulk(ids) as (ContextChangeRecord<IArcHttpRequest> | undefined)[];
     result.forEach((record) => {
       if (record) {
-        ArcModelEvents.History.State.update(record, this.eventsTarget)
+        Events.HttpClient.Model.History.State.update(record, this.eventsTarget)
       }
     });
     return result;
@@ -158,28 +158,28 @@ export class HistoryModel extends Base {
 
   listen(node: EventTarget = window): void {
     super.listen(node);
-    node.addEventListener(ArcModelEventTypes.History.read, this._readHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.History.readBulk, this._readBulkHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.History.update, this._updateHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.History.updateBulk, this._updateBulkHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.History.delete, this._deleteHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.History.deleteBulk, this._deleteBulkHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.History.undeleteBulk, this._undeleteBulkHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.History.list, this._listHandler as EventListener);
-    node.addEventListener(ArcModelEventTypes.History.query, this._queryHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.History.read, this._readHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.History.readBulk, this._readBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.History.update, this._updateHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.History.updateBulk, this._updateBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.History.delete, this._deleteHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.History.deleteBulk, this._deleteBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.History.undeleteBulk, this._undeleteBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.History.list, this._listHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.History.query, this._queryHandler as EventListener);
   }
 
   unlisten(node: EventTarget = window): void {
     super.unlisten(node);
-    node.removeEventListener(ArcModelEventTypes.History.read, this._readHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.History.readBulk, this._readBulkHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.History.update, this._updateHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.History.updateBulk, this._updateBulkHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.History.delete, this._deleteHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.History.deleteBulk, this._deleteBulkHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.History.undeleteBulk, this._undeleteBulkHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.History.list, this._listHandler as EventListener);
-    node.removeEventListener(ArcModelEventTypes.History.query, this._queryHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.History.read, this._readHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.History.readBulk, this._readBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.History.update, this._updateHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.History.updateBulk, this._updateBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.History.delete, this._deleteHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.History.deleteBulk, this._deleteBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.History.undeleteBulk, this._undeleteBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.History.list, this._listHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.History.query, this._queryHandler as EventListener);
   }
 
   protected _undeleteBulkHandler(e: ContextRestoreEvent<IArcHttpRequest>): void {
