@@ -348,7 +348,7 @@ export default class HttpRequestElement extends EventsTargetMixin(ResizableEleme
   }
 
   /**
-   * Dispatches the send request event to the ARC request engine.
+   * Dispatches the send request event to the HTTP request engine.
    */
   async send(): Promise<void> {
     if (this.loading && this.noSendOnLoading) {

@@ -2,7 +2,7 @@
 import { assert } from '@open-wc/testing';
 import { ContextStateUpdateEvent, ContextStateDeleteEvent, ContextDeleteRecord, ArcProject, ArcProjectKind, IArcProject } from '@api-client/core/build/browser.js';
 import sinon from 'sinon';
-import { ProjectModel } from  '../../../src/arc/idb/ProjectModel.js';
+import { ProjectModel } from  '../../../src/http-client/idb/ProjectModel.js';
 import { EventTypes } from '../../../src/events/EventTypes.js';
 import { Events } from '../../../src/events/Events.js';
 

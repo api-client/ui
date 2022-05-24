@@ -235,13 +235,11 @@ export default class OpenID extends OAuth2 {
 
   /**
    * Requests the data from the discovery endpoint.
-   * First it dispatched ARC's HTTP transport event to avoid CORS issues.
-   * When this fails then it tried native `fetch` API.
    */
   async transportDiscovery(url: string): Promise<IOpenIdProviderMetadata | undefined> {
     let result;
     // try {
-    //   result = await this.transportArc(url);
+    //   result = await this.transportCustom(url);
     // } catch (e) {
     //   // ...
     // }
@@ -252,19 +250,16 @@ export default class OpenID extends OAuth2 {
   }
 
   // /**
-  //  * Uses the ARC's internal HTTP request backend service to request the discovery data
-  //  * without CORS restrictions. This event may not be handled when component is hosted by another application.
-  //  * 
   //  * @param url The URL to request.
   //  * @returns The processed response as JSON.
   //  */
-  // async transportArc(url: string): Promise<IOpenIdProviderMetadata | undefined> {
+  // async transportCustom(url: string): Promise<IOpenIdProviderMetadata | undefined> {
   //   const result = await TransportEvents.httpTransport(this.target, {
   //     method: 'GET',
   //     url,
   //   });
   //   if (!result) {
-  //     throw new Error(`The ARC request is not handled`);
+  //     throw new Error(`The request is not handled.`);
   //   }
   //   let { payload } = result;
   //   // @ts-ignore
@@ -279,7 +274,6 @@ export default class OpenID extends OAuth2 {
 
   /**
    * Uses the `fetch` API as a fallback to download the discovery info.
-   * This may not work due to CORS and this is secondary to ARC's backend transport.
    * 
    * @param url The URL to request.
    * @returns The processed response as JSON.

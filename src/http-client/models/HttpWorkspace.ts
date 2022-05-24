@@ -1,8 +1,8 @@
 import { Environment, IEnvironment, IThing, Thing, uuidV4 } from "@api-client/core/build/browser.js";
 import { Core as JsonCore } from "@api-client/json";
-import { ILayoutPanelState } from "../../elements/layout/LayoutManager.js";
+import { ILayoutState } from "../../elements/layout/LayoutManager.js";
 
-export const Kind = 'ARC#HttpWorkspace';
+export const Kind = 'HttpClient#Workspace';
 
 export interface IWorkspaceItem {
   /**
@@ -37,7 +37,7 @@ export interface IWorkspaceState {
   /**
    * The layout configuration for the workspace.
    */
-  layout?: ILayoutPanelState;
+  layout?: ILayoutState;
 }
 
 export interface INavigationState {
@@ -47,7 +47,7 @@ export interface INavigationState {
   selected?: number;
 }
 
-export interface IArcWorkspace {
+export interface IHttpWorkspace {
   /**
    * The data kind. The workspace file parser ignores the data with an unknown `kind`.
    */
@@ -58,7 +58,7 @@ export interface IArcWorkspace {
   key?: string;
   /**
    * The list of environments in this workspace.
-   * Note, this is unrelated to ArcProject's environments.
+   * Note, this is unrelated to Project's environments.
    */
   environments?: IEnvironment[];
   /**
@@ -75,7 +75,7 @@ export interface IArcWorkspace {
   state?: IWorkspaceState;
 }
 
-export class ArcWorkspace {
+export class HttpWorkspace {
   /**
    * The data kind. The workspace file parser ignores the data with an unknown `kind`.
    */
@@ -88,7 +88,7 @@ export class ArcWorkspace {
 
   /**
    * The list of environments in this workspace.
-   * Note, this is unrelated to ArcProject's environments.
+   * Note, this is unrelated to Project's environments.
    */
   environments: Environment[] = [];
 
@@ -107,8 +107,8 @@ export class ArcWorkspace {
    */
   state?: IWorkspaceState
 
-  constructor(input?: string | IArcWorkspace) {
-    let init: IArcWorkspace;
+  constructor(input?: string | IHttpWorkspace) {
+    let init: IHttpWorkspace;
     if (typeof input === 'string') {
       init = JSON.parse(input);
     } else if (typeof input === 'object') {
@@ -128,8 +128,8 @@ export class ArcWorkspace {
    * 
    * Note, this throws an error when the environment is not a space. 
    */
-  new(init: IArcWorkspace): void {
-    if (!ArcWorkspace.isWorkspace(init)) {
+  new(init: IHttpWorkspace): void {
+    if (!HttpWorkspace.isWorkspace(init)) {
       throw new Error(`Not an HTTP Client workspace.`);
     }
     const { environments, info, items, key = uuidV4(), state, } = init;
@@ -163,15 +163,15 @@ export class ArcWorkspace {
    * Checks whether the input is a definition of an user space.
    */
   static isWorkspace(input: unknown): boolean {
-    const typed = input as IArcWorkspace;
+    const typed = input as IHttpWorkspace;
     if (!input || typed.kind !== Kind) {
       return false;
     }
     return true;
   }
 
-  toJSON(): IArcWorkspace {
-    const result: IArcWorkspace = {
+  toJSON(): IHttpWorkspace {
+    const result: IHttpWorkspace = {
       kind: Kind,
       key: this.key,
       info: this.info.toJSON(),

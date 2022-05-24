@@ -105,7 +105,7 @@ export interface EntrySizing {
 }
 
 /** used when generating keys for entires */
-let nextId: number = 0;
+let nextId = 0;
 
 /**
  * An element that renders the UI for HAR data.
@@ -121,22 +121,22 @@ export default class HarViewerElement extends ApiElement {
 
       .status-code {
         color: var(--response-status-code-color, #fff);
-        background-color: var(--arc-status-code-color-200, rgb(36, 107, 39));
+        background-color: var(--status-code-color-200, rgb(36, 107, 39));
         padding: 2px 12px;
         border-radius: 12px;
         margin-right: 4px;
       }
 
       .status-code.error {
-        background-color: var(--arc-status-code-color-500, rgb(211, 47, 47));
+        background-color: var(--status-code-color-500, rgb(211, 47, 47));
       }
 
       .status-code.warning {
-        background-color: var(--arc-status-code-color-400, rgb(171, 86, 0));
+        background-color: var(--status-code-color-400, rgb(171, 86, 0));
       }
 
       .status-code.info {
-        background-color: var(--arc-status-code-color-300, rgb(48, 63, 159));
+        background-color: var(--status-code-color-300, rgb(48, 63, 159));
       }
 
       .loading-time-label {
@@ -790,7 +790,7 @@ export default class HarViewerElement extends ApiElement {
    * @param statusText The response reason part of the status.
    * @returns The template for the status message
    */
-  [statusLabel](status: number, statusText: string=''): TemplateResult {
+  [statusLabel](status: number, statusText = ''): TemplateResult {
     const codeClasses = this[computeStatusClasses](status);
     return html`
     <span class="${classMap(codeClasses)}">${status}</span>
@@ -823,7 +823,7 @@ export default class HarViewerElement extends ApiElement {
    * @param fullWidth When set then it renders the timeline in the whole available space.
    * @returns The template for the timings timeline
    */
-  [timingsTemplate](timings: Timings, visualTimings?: RenderedEntryTimings, fullWidth: boolean = false): TemplateResult | string {
+  [timingsTemplate](timings: Timings, visualTimings?: RenderedEntryTimings, fullWidth = false): TemplateResult | string {
     if (!visualTimings) {
       return '';
     }

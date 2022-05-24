@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { css, CSSResult, html, LitElement, PropertyValueMap, TemplateResult } from "lit";
+import { css, CSSResult, html, PropertyValueMap, TemplateResult } from "lit";
 import { property, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { StyleInfo, styleMap } from "lit/directives/style-map.js";
@@ -8,6 +8,7 @@ import { EventUtils } from '@api-client/core/build/browser.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '../../define/api-icon.js';
 import { IconType } from "../icons/Icons.js";
+import ApiElement from "../ApiElement.js";
 
 export interface ISelectDetail {
   /**
@@ -73,7 +74,7 @@ export interface IListItemRenderOptions {
  * 
  * @fires select - Custom, non bubbling event when a selection is made. It has the `key` and `kind` properties on the detail panel with optional `parent` id.
  */
-export default class AppNavigation extends LitElement {
+export default class AppNavigation extends ApiElement {
   static get styles(): CSSResult[] {
     return [
     css`
@@ -125,6 +126,7 @@ export default class AppNavigation extends LitElement {
         do standardize the way to do this.
       */
       padding-left: 8px;
+      padding-right: 8px;
     }
     
     .root > li {

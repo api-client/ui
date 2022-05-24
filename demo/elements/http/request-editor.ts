@@ -4,7 +4,7 @@ import { DemoPage } from '../../../src/pages/demo/DemoPage.js';
 import { reactive } from '../../../src/lib/decorators.js';
 import '../../../src/define/http-request.js';
 
-const REQUEST_STORE_KEY = 'demo.arc-request-ui.editorRequest';
+const REQUEST_STORE_KEY = 'demo.request-ui.editorRequest';
 
 class ComponentDemoPage extends DemoPage {
   componentName = 'http-request';

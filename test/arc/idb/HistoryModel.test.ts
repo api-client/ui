@@ -2,7 +2,7 @@
 import { assert, aTimeout } from '@open-wc/testing';
 import { ContextStateUpdateEvent, IArcHttpRequest, ArcHttpRequest, ArcHttpRequestKind, ProjectMock, ContextStateDeleteEvent, ContextDeleteRecord } from '@api-client/core/build/browser.js';
 import sinon from 'sinon';
-import { HistoryModel } from  '../../../src/arc/idb/HistoryModel.js';
+import { HistoryModel } from  '../../../src/http-client/idb/HistoryModel.js';
 import { EventTypes } from '../../../src/events/EventTypes.js';
 import { Events } from '../../../src/events/Events.js';
 

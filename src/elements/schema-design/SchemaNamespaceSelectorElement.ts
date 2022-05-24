@@ -81,7 +81,7 @@ export default class SchemaNamespaceSelectorElement extends AppNavigation {
     `;
   }
 
-  protected _namespaceTreeTemplate(root: DataNamespace, indent: number = 0): TemplateResult {
+  protected _namespaceTreeTemplate(root: DataNamespace, indent = 0): TemplateResult {
     const children = root.listNamespaces();
     const contents = children.map(item => this._nsItemTemplate(item, indent));
     return this._outerListTemplate(contents);

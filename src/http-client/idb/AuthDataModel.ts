@@ -13,7 +13,7 @@ the License.
 */
 import { ContextChangeRecord, IAuthorizationData } from '@api-client/core/build/browser.js';
 import { Base } from './Base.js';
-import { ARCAuthDataQueryEvent, ARCAuthDataUpdateEvent } from '../../events/http-client/models/AuthDataEvents.js';
+import { AuthDataQueryEvent, AuthDataUpdateEvent } from '../../events/http-client/models/AuthDataEvents.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import { Events } from '../../events/Events.js';
 
@@ -89,19 +89,19 @@ export class AuthDataModel extends Base {
     return super.getBulk(keys) as Promise<(IAuthorizationData | undefined)[]>;
   }
 
-  listen(node: EventTarget): void {
+  listen(node: EventTarget = window): void {
     super.listen(node);
     node.addEventListener(EventTypes.HttpClient.Model.AuthData.query, this[queryHandler] as EventListener);
     node.addEventListener(EventTypes.HttpClient.Model.AuthData.update, this[updateHandler] as EventListener);
   }
 
-  unlisten(node: EventTarget): void {
+  unlisten(node: EventTarget = window): void {
     super.unlisten(node);
     node.removeEventListener(EventTypes.HttpClient.Model.AuthData.query, this[queryHandler] as EventListener);
     node.removeEventListener(EventTypes.HttpClient.Model.AuthData.update, this[updateHandler] as EventListener);
   }
 
-  [queryHandler](e: ARCAuthDataQueryEvent): void {
+  [queryHandler](e: AuthDataQueryEvent): void {
     if (this._eventCancelled(e)) {
       return;
     }
@@ -129,7 +129,7 @@ export class AuthDataModel extends Base {
     }
   }
 
-  [updateHandler](e: ARCAuthDataUpdateEvent): void {
+  [updateHandler](e: AuthDataUpdateEvent): void {
     if (this._eventCancelled(e)) {
       return;
     }

@@ -162,6 +162,7 @@ export default class ClientCertificate extends AuthUiBase {
   }
 
   importHandler(): void {
+    // TODO: Add in-app navigation
     // ArcNavigationEvents.navigate(this.target, 'client-certificate-import');
     CoreEvents.Telemetry.event({
       category: 'Certificates',

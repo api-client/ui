@@ -18,15 +18,14 @@ export abstract class DemoPage extends RenderableMixin(EventTarget) {
   }
 
   /**
-   * A list of demo states to be passed to `arc-interactive-demo` element
+   * A list of demo states to be passed to `interactive-demo` element
    */
   demoStates: string[] = ['Material', 'Anypoint'];
 
   /**
    * Whether the demoed component should be rendered in the "narrow" view
    */
-  @reactive()
-  narrow: boolean = false;
+  @reactive() narrow = false;
 
   /**
    * Whether view controls should be rendered in the top navigation.

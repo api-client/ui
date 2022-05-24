@@ -52,7 +52,7 @@ export default class LogHeadersElement extends LitElement {
         min-height: var(--headers-list-item-min-height, 20px);
         user-select: text;
         word-break: break-all;
-        font-family: var(--arc-font-code-family);
+        font-family: var(--font-code-family);
         list-style: none;
         margin: 0px;
         display: flex;

@@ -1,6 +1,6 @@
 import { fixture, assert, oneEvent } from '@open-wc/testing';
 import { IAuthorizationData } from '@api-client/core/build/browser.js';
-import { normalizeUrl, computeKey, AuthDataModel } from  '../../../src/arc/idb/AuthDataModel.js';
+import { normalizeUrl, computeKey, AuthDataModel } from  '../../../src/http-client/idb/AuthDataModel.js';
 import { EventTypes } from '../../../src/events/EventTypes.js';
 import { Events } from '../../../src/events/Events.js';
 

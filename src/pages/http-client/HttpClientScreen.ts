@@ -5,7 +5,7 @@ import { html, TemplateResult, CSSResult } from 'lit';
 // } from '@api-client/core/build/browser.js';
 // import { Patch, JsonPatch, ApplyResult } from '@api-client/json';
 import { ApplicationScreen } from '../ApplicationScreen.js';
-// import { Events } from '../../events/Events.js';
+import { Events } from '../../events/Events.js';
 // import { EventTypes } from '../../events/EventTypes.js';
 import styles from './HttpClientStyles.js';
 import globalStyles from '../styles/global-styles.js';
@@ -14,6 +14,11 @@ import { HttpClientContextMenu } from './HttpClientContextMenu.js';
 import '../../define/layout-panel.js';
 import { LayoutManager, ILayoutItem } from '../../elements/layout/LayoutManager.js';
 import { IRoute } from '../../mixins/RouteMixin.js';
+import { HttpWorkspace } from '../../http-client/models/HttpWorkspace.js';
+import { AuthDataModel } from '../../http-client/idb/AuthDataModel.js';
+import { CertificateModel } from '../../http-client/idb/CertificateModel.js';
+import { HistoryModel } from '../../http-client/idb/HistoryModel.js';
+import { ProjectModel } from '../../http-client/idb/ProjectModel.js';
 // import { randomString } from '../../lib/Random.js';
 // import { navigate } from '../../lib/route.js';
 // import AppInfo from './AppInfo.js';
@@ -41,8 +46,17 @@ export default class HttpProjectScreen extends ApplicationScreen {
   protected layout = new LayoutManager({ 
     dragTypes: ['text/kind', 'text/key'],
     autoStore: false,
-    storeKey: 'api-client.http-client.layout',
   });
+
+  workspace = new HttpWorkspace();
+
+  authDataModel = new AuthDataModel();
+
+  certificatesModel = new CertificateModel();
+
+  historyModel = new HistoryModel();
+
+  projectModel = new ProjectModel();
 
   constructor() {
     super();
@@ -60,11 +74,15 @@ export default class HttpProjectScreen extends ApplicationScreen {
     const key = this.readWorkspaceKey();
     this.key = key;
     await this.requestWorkspace(key);
-    this.layout.opts.storeKey = `api-client.http-client.layout.${key}`;
+    this.setupLayout();
+    this.authDataModel.listen();
+    this.certificatesModel.listen();
+    this.historyModel.listen();
+    this.projectModel.listen();
     await this.layout.initialize();
     this.initializeRouting();
     this.initialized = true;
-    this.layout.addEventListener('change', this._renderHandler.bind(this));
+    this.layout.addEventListener('change', this._layoutChangeHandler.bind(this));
     this.layout.addEventListener('nameitem', this._nameLayoutItemHandler.bind(this));
   }
 
@@ -85,14 +103,19 @@ export default class HttpProjectScreen extends ApplicationScreen {
   protected readWorkspaceKey(): string {
     const url = new URL(window.location.href);
     const key = url.searchParams.get('key');
-    return key || 'default';
+    return key || 'workspace.json';
   }
 
   /**
    * An event handler that renders the view on request.
    */
-  protected _renderHandler(): void {
+  protected _layoutChangeHandler(): void {
     this.render();
+    const { key } = this;
+    if (key) {
+      const data = JSON.stringify(this.layout);
+      Events.AppData.File.write(key, data, { type: 'workspace' })
+    }
   }
 
   /**
@@ -108,6 +131,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     // }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected _nameLayoutItemHandler(event: Event): void {
     // const item = (event as CustomEvent).detail as ILayoutItem;
     // if (item.kind === ProjectFolderKind) {
@@ -149,7 +173,22 @@ export default class HttpProjectScreen extends ApplicationScreen {
   // }
 
   protected async requestWorkspace(key: string): Promise<void> {
-    // ...
+    const data = await Events.AppData.File.read(key, { type: 'workspace' }) as string | undefined;
+    if (!data && key !== 'workspace.json') {
+      throw new Error(`Unable to locate the workspace file: ${key}`);
+    }
+    const workspace = new HttpWorkspace(data);
+    this.workspace = workspace;
+  }
+
+  protected setupLayout(): void {
+    const { workspace, layout } = this;
+    const { state } = workspace;
+    if (state && state.layout) {
+      layout.initialize(state.layout);
+    } else {
+      layout.initialize();
+    }
   }
 
   pageTemplate(): TemplateResult {

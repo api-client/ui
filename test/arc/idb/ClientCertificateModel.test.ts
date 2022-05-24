@@ -2,7 +2,7 @@
 import { fixture, assert } from '@open-wc/testing';
 import sinon from 'sinon';
 import { IPemCertificate, ProjectMock, Certificate, ICertificateData, CertificateKind, ContextStateUpdateEvent, ICertificate } from '@api-client/core/build/browser.js';
-import { CertificateModel } from  '../../../src/arc/idb/CertificateModel.js';
+import { CertificateModel } from  '../../../src/http-client/idb/CertificateModel.js';
 import { EventTypes } from '../../../src/events/EventTypes.js';
 import { Events } from '../../../src/events/Events.js';
 

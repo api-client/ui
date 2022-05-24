@@ -1,9 +1,9 @@
 /**
- * Creates a base definition of the Monaco theme for ARC.
+ * Creates a base definition of the Monaco theme for the API Client.
  * This is to be used on the monaco instance:
  * 
  * ```
- * monaco.editor.defineTheme('ArcTheme', generateMonacoArcTheme());
+ * monaco.editor.defineTheme('HttpTheme', generateMonacoTheme());
  * ```
  */
 export function generateMonacoTheme(): any {

@@ -7,6 +7,38 @@ export interface IRequestUiInsertDetail {
   meta: IRequestUiMeta;
 }
 
+export interface IFileReadConfig {
+  /**
+   * This is application and context store specific.
+   * A type of the file to read.
+   * 
+   * For example in the HttpClient app data files can be 
+   * the settings file, theme file, or a workspace file.
+   * The UI does not build paths to these files but sets the `path` to the
+   * name of the expected file and the context store resolves the name
+   * to the correct path in the filesystem.
+   */
+  type?: string;
+  /**
+   * Whether it should return a Buffer (or ArrayBuffer) instead of a string.
+   */
+  binary?: boolean;
+}
+
+export interface IFileWriteConfig {
+  /**
+   * This is application and context store specific.
+   * A type of the file to read.
+   * 
+   * For example in the HttpClient app data files can be 
+   * the settings file, theme file, or a workspace file.
+   * The UI does not build paths to these files but sets the `path` to the
+   * name of the expected file and the context store resolves the name
+   * to the correct path in the filesystem.
+   */
+  type?: string;
+}
+
 export const AppDataEvents = Object.freeze({
   Http: Object.freeze({
     UrlHistory: Object.freeze({
@@ -189,5 +221,58 @@ export const AppDataEvents = Object.freeze({
         },
       }),
     }),
+  }),
+
+  File: Object.freeze({
+    /**
+     * Reads file content from the application's app data folder on the user filesystem.
+     * In the web platform this can be a virtual FS made in IDB.
+     * 
+     * The content of the file is returned as string by default. Set the `binary` configuration option if it should return a binary content.
+     * 
+     * @param path The path to the file to read. Usually it is the file name and the background thread resolves the name to the actual path.
+     * @param opts Optional configuration.
+     * @param target Optional events target
+     */
+    read: async (path: string, opts?: IFileReadConfig, target: EventTarget=document.body): Promise<string | Buffer | ArrayBuffer | undefined> => {
+      const e = new CustomEvent(EventTypes.AppData.File.read, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          path,
+          opts,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      return ((e.detail.result as unknown) as Promise<string | Buffer | ArrayBuffer | undefined>);
+    },
+    /**
+     * Writes a content to a file in the application's app data folder on the user filesystem.
+     * In the web platform this can be a virtual FS made in IDB.
+     * 
+     * The content of the file is can be either a string or a buffer.
+     * 
+     * @param path The path to the file to read. Usually it is the file name and the background thread resolves the name to the actual path.
+     * @param content The content to write.
+     * @param opts Optional configuration.
+     * @param target Optional events target
+     */
+    write: async (path: string, content: string | Buffer | ArrayBuffer, opts?: IFileWriteConfig, target: EventTarget=document.body): Promise<void> => {
+      const e = new CustomEvent(EventTypes.AppData.File.write, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        detail: {
+          path,
+          content,
+          opts,
+          result: undefined,
+        },
+      });
+      target.dispatchEvent(e);
+      await ((e.detail.result as unknown) as Promise<void>);
+    },
   }),
 });

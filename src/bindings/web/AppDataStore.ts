@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ContextChangeRecord, ContextDeleteRecord, IRequestUiMeta, IUrl } from '@api-client/core/build/browser.js';
 import { openDB, DBSchema, IDBPDatabase } from 'idb/with-async-ittr';
+import { IFileReadConfig, IFileWriteConfig } from '../../events/AppDataEvents.js';
 
-export type StoreName = 'UrlHistory' | 'WsHistory' | 'ProjectRequestUi' | 'HttpRequestUi';
+export type StoreName = 'UrlHistory' | 'WsHistory' | 'ProjectRequestUi' | 'HttpRequestUi' | 'AppFileStore';
 
 interface IStoredRequestUiMeta extends IRequestUiMeta {
   key: string;
@@ -25,6 +26,10 @@ interface AppDataDB extends DBSchema {
     key: string;
     value: IStoredRequestUiMeta,
   },
+  AppFileStore: {
+    key: string;
+    value: string | ArrayBuffer | Buffer,
+  },
 }
 
 function setMidnight(date: Date): void {
@@ -44,7 +49,7 @@ export default class AppDataStore {
     if (this._db) {
       return this._db;
     }
-    const dbResult = await openDB<AppDataDB>('ApiClientData', 7, {
+    const dbResult = await openDB<AppDataDB>('ApiClientData', 8, {
       upgrade(db) {
         const stores: StoreName[] = [
           'UrlHistory', 'ProjectRequestUi', 'HttpRequestUi', 'WsHistory',
@@ -54,6 +59,10 @@ export default class AppDataStore {
           if (!names.contains(name)) {
             db.createObjectStore(name, { keyPath: 'key' });
           }
+        }
+        if (!names.contains('AppFileStore')) {
+          // for this store we create separate keys.
+          db.createObjectStore('AppFileStore');
         }
       },
     });
@@ -214,5 +223,35 @@ export default class AppDataStore {
       key: id,
       parent: pid,
     };
+  }
+
+  /**
+   * In the web environment we could potentially use the new filesystem API but currently
+   * it is not widely supported and not really the use case. The app data files are not selected
+   * by the user so we don't show the file picker. To mimic access to the user filesystem
+   * we use IDB that shares the state between apps.
+   * 
+   * @param path The file path. In the idb this is the entry id.
+   */
+  async readAppDataFile(path: string, opts?: IFileReadConfig): Promise<string | Buffer | ArrayBuffer | undefined> {
+    const key = this._getAppFileKey(path, opts);
+    const db = await this.open();
+    return db.get('AppFileStore', key);
+  }
+  
+  async writeAppDataFile(path: string, content: string | Buffer | ArrayBuffer, opts?: IFileWriteConfig): Promise<void> {
+    const key = this._getAppFileKey(path, opts);
+    const db = await this.open();
+    await db.put('AppFileStore', content, key);
+  }
+
+  protected _getAppFileKey(path: string, opts: IFileReadConfig | IFileWriteConfig | undefined | null): string {
+    // through the serialization between the process this can be `null` instead of `undefined`.
+    const options = (opts || {}) as IFileReadConfig;
+    let key: string;
+    switch (options.type) {
+      default: key = path;
+    }
+    return key;
   }
 }

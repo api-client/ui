@@ -20,7 +20,7 @@ import { Events } from '../../events/Events.js';
 
 
 /**
- * ARC hosts table model for version >= 18.
+ * Hosts table model for version >= 18.
  */
 export class HostsModel extends Base {
   constructor() {

@@ -17,8 +17,8 @@ export default css`
     hyphens: auto;
     background-color: var(--prism-container-background-color);
     display: block;
-    font-family: var(--arc-font-code-family, monospace);
-    font-size: var(--arc-font-code-font-size, 10pt);
+    font-family: var(--font-code-family, monospace);
+    font-size: var(--font-code-font-size, 10pt);
   }
 
   pre[class*='language-']::-moz-selection,

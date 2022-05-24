@@ -136,6 +136,11 @@ export const EventTypes = Object.freeze({
         }),
       }),
     }),
+    // manipulating application data file
+    File: Object({
+      read: 'appdatafileread',
+      write: 'appdatafilewrite',
+    }),
   }),
   SchemaDesign: Object.freeze({
     changed: 'schemadesignchange',

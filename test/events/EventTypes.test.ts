@@ -469,5 +469,222 @@ describe('events', () => {
         });
       });
     });
+
+    describe('Store', () => {
+      describe('Store namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Store, 'object');
+        });
+  
+        [
+          ['info', 'storebackendinfo'],
+          ['initEnvironment', 'configstoreinitenv'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.Store[prop], value);
+          });
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Store', EventTypes.Store);
+        });
+      });
+
+      describe('Global namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Store, 'object');
+        });
+  
+        [
+          ['setEnv', 'storesetgloablenvironment'],
+          ['getEnv', 'storegetgloablenvironment'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.Store.Global[prop], value);
+          });
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Store.Global', EventTypes.Store.Global);
+        });
+      });
+
+      describe('Auth namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Store, 'object');
+        });
+  
+        [
+          ['isAuthenticated', 'storeaisauthenticated'],
+          ['authenticate', 'storeauthenticate'],
+          ['getToken', 'storeauthgettoken'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.Store.Auth[prop], value);
+          });
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Store.Auth', EventTypes.Store.Auth);
+        });
+      });
+
+      describe('File namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Store, 'object');
+        });
+  
+        [
+          ['list', 'storefileslist'],
+          ['listShared', 'storefileslistshared'],
+          ['create', 'storefilescreate'],
+          ['createDefault', 'storefilescreatedefault'],
+          ['read', 'storefilesread'],
+          ['patch', 'storefilespatch'],
+          ['delete', 'storefilesdelete'],
+          ['patchUsers', 'storefilespatchusers'],
+          ['listUsers', 'storefileslistusers'],
+          ['observeFiles', 'storefilesobservefiles'],
+          ['unobserveFiles', 'storefilesunobservefiles'],
+          ['observeFile', 'storefilesobservefile'],
+          ['unobserveFile', 'storefilesunobservefile'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.Store.File[prop], value);
+          });
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Store.File', EventTypes.Store.File);
+        });
+      });
+
+      describe('File.State namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Store, 'object');
+        });
+  
+        [
+          ['change', 'storefileschange'],
+          ['fileChange', 'storefilechange'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.Store.File.State[prop], value);
+          });
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Store.File.State', EventTypes.Store.File.State);
+        });
+      });
+
+      describe('User namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Store, 'object');
+        });
+  
+        [
+          ['me', 'storeuserme'],
+          ['list', 'storeuserlist'],
+          ['read', 'storeuserread'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.Store.User[prop], value);
+          });
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Store.User', EventTypes.Store.User);
+        });
+      });
+
+      describe('History namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Store, 'object');
+        });
+  
+        [
+          ['create', 'storehistorycreate'],
+          ['createBulk', 'storehistorycreatebulk'],
+          ['list', 'storehistorylist'],
+          ['delete', 'storehistorydelete'],
+          ['read', 'storehistoryread'],
+        ].forEach(([prop, value]) => {
+          it(`has ${prop} property`, () => {
+            assert.equal(EventTypes.Store.History[prop], value);
+          });
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Store.History', EventTypes.Store.History);
+        });
+      });
+    });
+
+    describe('Config', () => {
+      describe('Environment namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Config.Environment, 'object');
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Config.Environment', EventTypes.Config.Environment);
+        });
+      });
+
+      describe('Session namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Config.Session, 'object');
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Config.Session', EventTypes.Config.Session);
+        });
+      });
+
+      describe('Local namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Config.Local, 'object');
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Config.Local', EventTypes.Config.Local);
+        });
+      });
+
+      describe('Telemetry namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Config.Telemetry, 'object');
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Config.Telemetry', EventTypes.Config.Telemetry);
+        });
+      });
+
+    });
+
+    describe('Navigation', () => {
+      describe('App namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Navigation.App, 'object');
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Navigation.App', EventTypes.Navigation.App);
+        });
+      });
+
+      describe('Store namespace', () => {
+        it('has the namespace', () => {
+          assert.typeOf(EventTypes.Navigation.Store, 'object');
+        });
+    
+        it('has unique events', () => {
+          ensureUnique('EventTypes.Navigation.Store', EventTypes.Navigation.Store);
+        });
+      });
+
+    });
   });
 });

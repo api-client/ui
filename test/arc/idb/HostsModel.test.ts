@@ -2,7 +2,7 @@
 import { assert } from '@open-wc/testing';
 import { ContextStateUpdateEvent, IHostRule, HostRuleKind, ProjectMock, ContextStateDeleteEvent } from '@api-client/core/build/browser.js';
 import sinon from 'sinon';
-import { HostsModel } from  '../../../src/arc/idb/HostsModel.js';
+import { HostsModel } from  '../../../src/http-client/idb/HostsModel.js';
 import { EventTypes } from '../../../src/events/EventTypes.js';
 import { Events } from '../../../src/events/Events.js';
 

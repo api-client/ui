@@ -1,10 +1,10 @@
-import { ARCModelDeleteEvent, ARCModelStateDeleteEvent } from "./http-client/models/BaseEvents.js";
+import { ModelDeleteEvent, ModelStateDeleteEvent } from "./http-client/models/BaseEvents.js";
 import { AuthDataEvents } from './http-client/models/AuthDataEvents.js';
 import { CertificatesEvents } from './http-client/models/CertificatesEvents.js';
 import { HistoryEvents } from './http-client/models/HistoryEvents.js';
 import { ProjectEvents } from './http-client/models/ProjectEvents.js';
 import { HostsEvents } from './http-client/models/HostsEvents.js';
-import { StoreName } from "../arc/idb/Base.js";
+import { StoreName } from "../http-client/idb/Base.js";
 
 export const HttpClientEvents = Object.freeze({
   Model: Object.freeze({
@@ -16,7 +16,7 @@ export const HttpClientEvents = Object.freeze({
      * @returns A promise resolved when all requested stores are deleted
      */
     destroy: async (stores: StoreName[], target: EventTarget = window): Promise<void> => {
-      const e = new ARCModelDeleteEvent(stores);
+      const e = new ModelDeleteEvent(stores);
       target.dispatchEvent(e);
       if (Array.isArray(e.detail.result)) {
         await Promise.all(e.detail.result);
@@ -29,7 +29,7 @@ export const HttpClientEvents = Object.freeze({
      * @param target A node on which to dispatch the event.
      */
     destroyed: (store: StoreName, target: EventTarget = window) => {
-      const e = new ARCModelStateDeleteEvent(store);
+      const e = new ModelStateDeleteEvent(store);
       target.dispatchEvent(e);
     },
   

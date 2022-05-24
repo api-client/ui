@@ -212,8 +212,9 @@ export default class RequestHistoryBrowserElement extends LitElement {
 
   @state() protected _closedGroups: string[] = [];
 
-  @state() protected _view: number = 0;
+  @state() protected _view = 0;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected willUpdate(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     if (cp.has('history')) {
       this._computeHistory();

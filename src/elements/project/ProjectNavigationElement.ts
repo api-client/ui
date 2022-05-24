@@ -110,10 +110,10 @@ export default class ProjectNavigationElement extends AppNavigation {
       return this._emptyStateTemplate();
     }
     const content = this._renderParentChildrenTemplate(project);
-    return this._outerListTemplate(content)
+    return this._outerListTemplate(content);
   }
 
-  protected _renderParentChildrenTemplate(parent: HttpProject | ProjectFolder, indent: number = 0): TemplateResult | string {
+  protected _renderParentChildrenTemplate(parent: HttpProject | ProjectFolder, indent = 0): TemplateResult | string {
     const { key } = parent;
     const folders = parent.listFolders();
     const requests = parent.listRequests();

@@ -7,7 +7,7 @@ export const storesSymbol = Symbol('stores');
  * An event to be dispatched by the UI to destroy all data in a data
  * store.
  */
-export class ARCModelDeleteEvent extends CustomEvent<{ result: Promise<void>[] | undefined }> {
+export class ModelDeleteEvent extends CustomEvent<{ result: Promise<void>[] | undefined }> {
   [storesSymbol]: string[];
 
   /**
@@ -40,7 +40,7 @@ export class ARCModelDeleteEvent extends CustomEvent<{ result: Promise<void>[] |
  * An event dispatched by the data store to inform the application that a data model
  * has been destroyed.
  */
-export class ARCModelStateDeleteEvent extends Event {
+export class ModelStateDeleteEvent extends Event {
   [storesSymbol]: string;
 
   /**

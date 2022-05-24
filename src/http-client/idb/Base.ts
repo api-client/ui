@@ -18,7 +18,7 @@ import { ContextChangeRecord, ContextDeleteBulkEvent, ContextDeleteEvent, Contex
 import { openDB, DBSchema, IDBPDatabase, IDBPObjectStore } from 'idb/with-async-ittr';
 import { EventTypes } from '../../events/EventTypes.js';
 import { Events } from '../../events/Events.js';
-import { ARCModelDeleteEvent } from '../../events/http-client/models/BaseEvents.js';
+import { ModelDeleteEvent } from '../../events/http-client/models/BaseEvents.js';
 
 /* eslint-disable class-methods-use-this */
 
@@ -62,7 +62,7 @@ export interface IGetOptions {
   deleted?: boolean;
 }
 
-interface ArcDB extends DBSchema {
+interface HttpClientDB extends DBSchema {
   UrlHistory: {
     key: string;
     value: IStoredEntity<IUrl>;
@@ -131,17 +131,17 @@ export class Base {
     this[deleteModelHandler] = this[deleteModelHandler].bind(this);
   }
 
-  protected _db?: IDBPDatabase<ArcDB>;
+  protected _db?: IDBPDatabase<HttpClientDB>;
 
   /**
    * Opens the ARC store.
    * @returns The reference to the database
    */
-  async open(): Promise<IDBPDatabase<ArcDB>> {
+  async open(): Promise<IDBPDatabase<HttpClientDB>> {
     if (this._db) {
       return this._db;
     }
-    const dbResult = await openDB<ArcDB>('AdvancedRestClient', 1, {
+    const dbResult = await openDB<HttpClientDB>('AdvancedRestClient', 1, {
       upgrade(db) {
         const stores: StoreName[] = [
           'UrlHistory', 'WsHistory', 'History', 'Projects', 'AuthCache', 'Certificates', 'Hosts', 'Environments',
@@ -151,7 +151,7 @@ export class Base {
           if (!names.contains(name)) {
             const store = db.createObjectStore(name, { keyPath: 'data.key' });
             if (name === 'History') {
-              const typed = store as IDBPObjectStore<ArcDB, ['History'], 'History', 'versionchange'>;
+              const typed = store as IDBPObjectStore<HttpClientDB, ['History'], 'History', 'versionchange'>;
               typed.createIndex('day', 'data.midnight', { unique: false });
             }
           }
@@ -235,7 +235,7 @@ export class Base {
    * Handler for `destroy-model` custom event.
    * Deletes current data when scheduled for deletion.
    */
-  [deleteModelHandler](e: ARCModelDeleteEvent): void {
+  [deleteModelHandler](e: ModelDeleteEvent): void {
     if (e.defaultPrevented) {
       return;
     }
@@ -335,7 +335,7 @@ export class Base {
     }
   }
 
-  protected async _listEntities(db: IDBPDatabase<ArcDB>, storeName: StoreName, opts: IBaseQueryOptions): Promise<unknown[]> {
+  protected async _listEntities(db: IDBPDatabase<HttpClientDB>, storeName: StoreName, opts: IBaseQueryOptions): Promise<unknown[]> {
     let adv = opts.skip || 0;
     const { descending, limit = 25, startKey } = opts;
     const tx = db.transaction(storeName, 'readonly');

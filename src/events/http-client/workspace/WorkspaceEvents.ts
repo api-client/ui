@@ -2,7 +2,7 @@
 /* eslint-disable class-methods-use-this */
 import { ContextReadEvent, ContextUpdateEvent } from "@api-client/core/build/browser.js";
 import { EventTypes } from "../../EventTypes.js";
-import { IArcWorkspace } from "../../../arc/models/ArcWorkspace.js";
+import { IHttpWorkspace } from "../../../http-client/models/HttpWorkspace.js";
 
 export interface IWorkspaceAppendDetail {
   /**
@@ -38,8 +38,8 @@ export class WorkspaceEvents {
    * 
    * @param key The key of the workspace.
    */
-  static async read(key: string, target: EventTarget = window): Promise<IArcWorkspace | undefined> {
-    const e = new ContextReadEvent<IArcWorkspace | undefined>(EventTypes.HttpClient.Workspace.read, key);
+  static async read(key: string, target: EventTarget = window): Promise<IHttpWorkspace | undefined> {
+    const e = new ContextReadEvent<IHttpWorkspace | undefined>(EventTypes.HttpClient.Workspace.read, key);
     target.dispatchEvent(e);
     return e.detail.result;
   }
@@ -47,7 +47,7 @@ export class WorkspaceEvents {
   /**
    * @param contents The workspace contents.
    */
-  static async write(key: string, contents: IArcWorkspace, target: EventTarget = window): Promise<void> {
+  static async write(key: string, contents: IHttpWorkspace, target: EventTarget = window): Promise<void> {
     const e = new ContextUpdateEvent(EventTypes.HttpClient.Workspace.write, { item: contents, parent: key });
     target.dispatchEvent(e);
     await e.detail.result;

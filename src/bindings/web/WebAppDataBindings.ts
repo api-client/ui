@@ -1,4 +1,5 @@
 import { ContextChangeRecord, ContextDeleteRecord, IRequestUiMeta, IUrl } from '@api-client/core/build/browser';
+import { IFileReadConfig, IFileWriteConfig } from '../../events/AppDataEvents.js';
 import { AppDataBindings } from '../base/AppDataBindings.js';
 import { IoCommand, IoEvent, IoNotification } from '../base/PlatformBindings.js';
 
@@ -91,5 +92,13 @@ export class WebAppDataBindings extends AppDataBindings {
 
   deleteHttpRequestUi(pid: string, id: string): Promise<ContextDeleteRecord> {
     return this.invoke('deleteHttpRequestUi', pid, id);
+  }
+
+  readAppDataFile(path: string, opts?: IFileReadConfig): Promise<string | Buffer | ArrayBuffer | undefined> {
+    return this.invoke('readAppDataFile', path, opts);
+  }
+
+  writeAppDataFile(path: string, content: string | Buffer | ArrayBuffer, opts?: IFileWriteConfig): Promise<void> {
+    return this.invoke('writeAppDataFile', path, content, opts);
   }
 }

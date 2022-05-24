@@ -42,9 +42,9 @@ export default css`
 
   .markdown-body,
   .docs-container {
-    font-size: var(--arc-font-body1-font-size);
-    font-weight: var(--arc-font-body1-font-weight);
-    line-height: var(--arc-font-body1-line-height);
+    font-size: var(--font-body1-font-size);
+    font-weight: var(--font-body1-font-weight);
+    line-height: var(--font-body1-line-height);
     color: var(--inline-documentation-color, rgba(0, 0, 0, 0.87));
   }
 
@@ -64,9 +64,9 @@ export default css`
   }
 
   .subtitle {
-    font-size: var(--arc-font-subhead-font-size);
-    font-weight: var(--arc-font-subhead-font-weight);
-    line-height: var(--arc-font-subhead-line-height);
+    font-size: var(--font-subhead-font-size);
+    font-weight: var(--font-subhead-font-weight);
+    line-height: var(--font-subhead-line-height);
     margin: 12px 8px;
   }
 
@@ -99,7 +99,7 @@ export default css`
   }
 
   .code {
-    font-family: var(--arc-font-code-family);
+    font-family: var(--font-code-family);
     flex: 1;
     outline: none;
     cursor: text;
