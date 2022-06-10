@@ -1,4 +1,4 @@
-import { IUrl, ContextDeleteEvent, IRequestUiMeta, ContextQueryEvent } from '@api-client/core/build/browser.js';
+import { IUrl, ContextDeleteEvent, IRequestUiMeta, ContextQueryEvent, IQueryResponse } from '@api-client/core/build/browser.js';
 import { EventTypes } from './EventTypes.js';
 
 export interface IRequestUiInsertDetail {
@@ -66,7 +66,7 @@ export const AppDataEvents = Object.freeze({
        * @param q The part of URL to query for.
        * @param target Optional events target
        */
-      query: async (q: string, target: EventTarget=document.body): Promise<IUrl[] | undefined> => {
+      query: async (q: string, target: EventTarget=document.body): Promise<IQueryResponse<IUrl> | undefined> => {
         const e = new ContextQueryEvent<IUrl>(EventTypes.AppData.Http.UrlHistory.query, {
           term: q,
         });
@@ -157,7 +157,7 @@ export const AppDataEvents = Object.freeze({
        * @param q The part of URL to query for.
        * @param target Optional events target
        */
-      query: async (q: string, target: EventTarget=document.body): Promise<IUrl[] | undefined> => {
+      query: async (q: string, target: EventTarget=document.body): Promise<IQueryResponse<IUrl> | undefined> => {
         const e = new ContextQueryEvent<IUrl>(EventTypes.AppData.Ws.UrlHistory.query, {
           term: q,
         });

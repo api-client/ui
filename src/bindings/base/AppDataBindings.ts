@@ -1,4 +1,4 @@
-import { IUrl, ContextDeleteEvent, ContextDeleteRecord, ContextUpdateEvent, IRequestUiMeta, ContextChangeRecord, ContextReadEvent, ContextQueryEvent } from '@api-client/core/build/browser.js';
+import { IUrl, ContextDeleteEvent, ContextDeleteRecord, ContextUpdateEvent, IRequestUiMeta, ContextChangeRecord, ContextReadEvent, ContextQueryEvent, IQueryResponse } from '@api-client/core/build/browser.js';
 import { PlatformBindings } from './PlatformBindings.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import { IFileReadConfig, IFileWriteConfig, IRequestUiInsertDetail } from '../../events/AppDataEvents.js';
@@ -127,7 +127,7 @@ export abstract class AppDataBindings extends PlatformBindings {
    * Queries the URL history for suggestions.
    * @param q The part of URL to query for.
    */
-  abstract queryUrlHistory(q: string): Promise<IUrl[]>;
+  abstract queryUrlHistory(q: string): Promise<IQueryResponse<IUrl>>;
 
   /**
    * Deletes a single URL form the store.
@@ -150,7 +150,7 @@ export abstract class AppDataBindings extends PlatformBindings {
    * Queries the web sockets URL history for suggestions.
    * @param q The part of URL to query for.
    */
-  abstract queryWsHistory(q: string): Promise<IUrl[]>;
+  abstract queryWsHistory(q: string): Promise<IQueryResponse<IUrl>>;
 
   /**
    * Deletes a single web sockets URL form the store.

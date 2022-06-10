@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { IApplication } from '@api-client/core/build/browser.js';
 import { Events } from '../../events/Events.js';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -83,6 +87,15 @@ export abstract class PlatformBindings {
   private id = 0;
 
   protected queue: QueueItem[] = [];
+
+  /**
+   * The application id that initialized this binding.
+   */
+  app: IApplication;
+
+  constructor(app: IApplication) {
+    this.app = app;
+  }
 
   /**
    * Initializes the bindings.

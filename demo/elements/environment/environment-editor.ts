@@ -3,6 +3,7 @@ import { IEnvironment, Environment } from '@api-client/core/build/browser.js';
 import { DemoPage } from '../../../src/pages/demo/DemoPage.js';
 import '../../../src/define/environment-editor.js';
 import { reactive } from '../../../src/lib/decorators.js';
+import EnvironmentEditor from '../../../src/elements/environment/EnvironmentEditorElement.js';
 
 const storeKey = 'api-client.demo.elements.environment.environment-editor';
 
@@ -29,7 +30,7 @@ class ComponentDemoPage extends DemoPage {
   }
 
   _changedHandler(): void {
-    const editor = document.querySelector('environment-editor')!;
+    const editor = document.querySelector('environment-editor') as EnvironmentEditor;
     localStorage.setItem(storeKey, JSON.stringify(editor.environment));
     console.log('change');
   }

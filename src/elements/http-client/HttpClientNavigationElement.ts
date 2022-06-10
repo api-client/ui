@@ -3,7 +3,7 @@ import { css, CSSResult, html, PropertyValueMap, TemplateResult, nothing } from 
 import { classMap } from "lit/directives/class-map.js";
 import { StyleInfo, styleMap } from "lit/directives/style-map.js";
 import { property, state } from "lit/decorators.js";
-import { ContextListOptions, IArcHttpRequest, ArcProject, Events as CoreEvents, ErrorResponse, IResponse, ArcProjectFolder, ArcProjectRequest } from "@api-client/core/build/browser.js";
+import { ContextListOptions, IAppRequest, AppProject, Events as CoreEvents, ErrorResponse, IResponse, AppProjectFolder, AppProjectRequest } from "@api-client/core/build/browser.js";
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '@github/time-elements/dist/relative-time-element.js'
 import AppNavigation from "../navigation/AppNavigationElement.js";
@@ -139,11 +139,11 @@ export default class HttpClientNavigationElement extends AppNavigation {
    */
   @property({ type: String, reflect: true }) rail: string;
 
-  @state() protected _sortedHistory?: IArcHttpRequest[][];
+  @state() protected _sortedHistory?: IAppRequest[][];
 
-  protected _history?: IArcHttpRequest[];
+  protected _history?: IAppRequest[];
 
-  @state() protected projects: ArcProject[] = [];
+  @state() protected projects: AppProject[] = [];
 
   @state() protected loading?: boolean;
 
@@ -216,7 +216,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
           this._pageInfo.set('projects', data.nextPageToken);
         }
         if (data.items.length) {
-          const instances = data.items.map(i => new ArcProject(i));
+          const instances = data.items.map(i => new AppProject(i));
           this.projects = this.projects.concat(instances);
         }
       }
@@ -228,7 +228,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
     }
   }
 
-  protected _addHistoryList(list: IArcHttpRequest[]): void {
+  protected _addHistoryList(list: IAppRequest[]): void {
     // this.history = this.history.concat(data.items);
     const { _history } = this;
     if (_history) {
@@ -238,11 +238,11 @@ export default class HttpClientNavigationElement extends AppNavigation {
     }
   }
 
-  protected _computeHistory(history: IArcHttpRequest[]): void {
+  protected _computeHistory(history: IAppRequest[]): void {
     if (!Array.isArray(history) || !history.length) {
       return;
     }
-    const result: IArcHttpRequest[][] = [];
+    const result: IAppRequest[][] = [];
     const now = Date.now();
     history.forEach((current) => {
       const { midnight = now } = current;
@@ -265,7 +265,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
    * @param list The list to insert the item to
    * @param item The item to insert.
    */
-  protected _pushSorted(list: IArcHttpRequest[], item: IArcHttpRequest): void {
+  protected _pushSorted(list: IAppRequest[], item: IAppRequest): void {
     const older = list.findIndex(i => (i.created || 0) < (item.created || 0));
     if (older >= 0) {
       list.splice(older, 0, item);
@@ -396,12 +396,12 @@ export default class HttpClientNavigationElement extends AppNavigation {
     `;
   }
 
-  protected _historyList(items: IArcHttpRequest[][]): TemplateResult {
+  protected _historyList(items: IAppRequest[][]): TemplateResult {
     const content = items.map(i => this._historyListItemsTemplate(i));
     return this._outerListTemplate(content);
   }
 
-  protected _historyListItemsTemplate(items: IArcHttpRequest[]): TemplateResult {
+  protected _historyListItemsTemplate(items: IAppRequest[]): TemplateResult {
     const { midnight = 0 } = items[0];
     const key = String(midnight);
     // const opened = !this._opened.includes(key);
@@ -410,7 +410,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
     return this._parentListItemTemplate(key, 'HttpClient#HistoryHeader', name, html`${content}`);
   }
 
-  protected _historyListItemTemplate(item: IArcHttpRequest): TemplateResult | typeof nothing {
+  protected _historyListItemTemplate(item: IAppRequest): TemplateResult | typeof nothing {
     const { log, created = 0, key, kind } = item;
     if (!log) {
       return nothing;
@@ -491,12 +491,12 @@ export default class HttpClientNavigationElement extends AppNavigation {
     `;
   }
 
-  protected _projectsList(projects: ArcProject[]): TemplateResult {
+  protected _projectsList(projects: AppProject[]): TemplateResult {
     const content = projects.map(p => this._projectItemTemplate(p));
     return this._outerListTemplate(content);
   }
 
-  protected _projectItemTemplate(project: ArcProject): TemplateResult {
+  protected _projectItemTemplate(project: AppProject): TemplateResult {
     const content = this._renderParentChildrenTemplate(project);
     const name = project.info.name || 'Unnamed project';
     const { kind, key } = project;
@@ -505,7 +505,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
     });
   }
 
-  protected _renderParentChildrenTemplate(parent: ArcProject | ArcProjectFolder, indent = 0): TemplateResult | string {
+  protected _renderParentChildrenTemplate(parent: AppProject | AppProjectFolder, indent = 0): TemplateResult | string {
     const { key } = parent;
     const folders = parent.listFolders();
     const requests = parent.listRequests();
@@ -523,7 +523,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
     `;
   }
 
-  protected renderFolder(folder: ArcProjectFolder, indent: number, parentKey?: string): TemplateResult | string {
+  protected renderFolder(folder: AppProjectFolder, indent: number, parentKey?: string): TemplateResult | string {
     const content = this._renderParentChildrenTemplate(folder, indent + 1);
     const name = folder.info.name || 'Unnamed folder';
     const { kind, key } = folder;
@@ -534,7 +534,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
     });
   }
 
-  protected renderRequest(request: ArcProjectRequest, indent: number, parentKey?: string): TemplateResult | string {
+  protected renderRequest(request: AppProjectRequest, indent: number, parentKey?: string): TemplateResult | string {
     const name = request.info.name || 'Unnamed request';
     const { key, kind } = request;
     const content = this._itemContentTemplate('request', name);

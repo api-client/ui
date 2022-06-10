@@ -4,13 +4,13 @@ import { NavigationBindings } from '../base/NavigationBindings.js';
 export class WebNavigationBindings extends NavigationBindings {
   handles = new Map<string, Window>();
 
-  protected open(id: string, url: string, sameWindow: boolean = false): void {
+  protected open(id: string, url: string, sameWindow = false): void {
     if (sameWindow) {
       window.location.href = url;
       return;
     }
     if (this.handles.has(id)) {
-      const handle = this.handles.get(id)!;
+      const handle = this.handles.get(id) as Window;
       if (!handle.closed) {
         // handle.blur();
         // setTimeout(handle.focus, 0);

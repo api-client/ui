@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { IoThread } from '../../../src/bindings/base/IoThread.js';
 import { IoCommand, IoEvent, IoNotification } from '../../../src/bindings/base/PlatformBindings.js';
 

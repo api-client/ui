@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import 'pouchdb/dist/pouchdb.js';
 import { get, set } from 'idb-keyval';
-import { ArcHttpRequest, IArcHttpRequest, ArcProject, IAuthorizationData, Certificate, IHostRule, HostRuleKind } from '@api-client/core/build/browser.js';
+import { AppRequest, IAppRequest, AppProject, IAuthorizationData, Certificate, IHostRule, HostRuleKind } from '@api-client/core/build/browser.js';
 import { ARCHistoryRequest, Normalizer, ARCProject, ARCSavedRequest, ARCAuthData, ARCCertificateIndex, ARCRequestCertificate, HostRule as LegacyHostRule } from '@api-client/core/build/legacy.js';
 import { LegacyBodyProcessor } from './LegacyBodyProcessor.js';
 import { HistoryModel } from '../idb/HistoryModel.js';
@@ -98,7 +98,7 @@ export default class Arc18DataUpgrade {
       requests.push(restored);
     });
     const ps = projects.map(async (legacy) => {
-      const instance = await ArcProject.fromLegacyProject(legacy, requests);
+      const instance = await AppProject.fromLegacyProject(legacy, requests);
       return instance.toJSON();
     });
     const upgrades = await Promise.all(ps);
@@ -121,7 +121,7 @@ export default class Arc18DataUpgrade {
     if (!requests.length) {
       return;
     }
-    const project = ArcProject.fromName('Saved requests');
+    const project = AppProject.fromName('Saved requests');
     const ps = requests.map(i => project.addLegacyRequest(i));
     await Promise.allSettled(ps);
     const targetDb = new ProjectModel();
@@ -175,12 +175,12 @@ export default class Arc18DataUpgrade {
         return undefined;
       }
       const restored = LegacyBodyProcessor.restorePayload(Normalizer.normalizeRequest(old) as ARCHistoryRequest) as ARCHistoryRequest;
-      const upgraded = await ArcHttpRequest.fromLegacy(restored) as ArcHttpRequest;
+      const upgraded = await AppRequest.fromLegacy(restored) as AppRequest;
       const date = new Date(upgraded.created);
       upgraded.key = date.toJSON();
       return upgraded.toJSON();
     });
-    const upgrades = (await Promise.all(upgradePromises)).filter(i => !!i) as IArcHttpRequest[];
+    const upgrades = (await Promise.all(upgradePromises)).filter(i => !!i) as IAppRequest[];
     await targetDb.putBulk(upgrades);
     if (pageKey) {
       await this._upgradeHistoryPage(sourceDb, targetDb, pageKey);

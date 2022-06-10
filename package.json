@@ -41,7 +41,7 @@
   "dependencies": {
     "@anypoint-web-components/awc": "^3.0.4",
     "@api-client/context-menu": "^0.4.0",
-    "@api-client/core": "^0.6.28",
+    "@api-client/core": "^0.7.4",
     "@api-client/graph": "^0.1.0",
     "@api-client/json": "^0.1.3",
     "@github/time-elements": "^3.1.2",
@@ -58,10 +58,10 @@
     "prismjs": "^1.28.0"
   },
   "devDependencies": {
-    "@api-client/net-store": "^0.7.0",
+    "@api-client/net-store": "^0.8.0",
     "@commitlint/cli": "^17.0.0",
     "@commitlint/config-conventional": "^17.0.0",
-    "@custom-elements-manifest/analyzer": "^0.5.7",
+    "@custom-elements-manifest/analyzer": "^0.6.3",
     "@open-wc/eslint-config": "^7.0.0",
     "@open-wc/testing": "^3.1.3",
     "@types/dompurify": "^2.3.3",
@@ -73,13 +73,13 @@
     "@typescript-eslint/parser": "^5.22.0",
     "@web/dev-server": "^0.1.30",
     "@web/dev-server-esbuild": "^0.3.0",
-    "@web/test-runner": "0.13.27",
+    "@web/test-runner": "^0.13.30",
     "@web/test-runner-playwright": "^0.8.8",
     "concurrently": "^7.0.0",
     "eslint": "^8.11.0",
     "eslint-config-prettier": "^8.3.0",
     "husky": "^8.0.1",
-    "lint-staged": "^12.3.7",
+    "lint-staged": "^13.0.1",
     "sinon": "^14.0.0",
     "tslib": "^2.3.1",
     "typescript": "^4.5.2"

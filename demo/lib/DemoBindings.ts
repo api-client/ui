@@ -1,3 +1,4 @@
+import { IApplication } from '@api-client/core/build/browser.js';
 import { WebConfigurationBindings } from '../../src/bindings/web/WebConfigurationBindings.js';
 import { WebStoreBindings } from '../../src/bindings/web/WebStoreBindings.js';
 import { WebNavigationBindings } from '../../src/bindings/web/WebNavigationBindings.js';
@@ -21,14 +22,14 @@ export class DemoBindings {
 
   http: WebHttpBindings;
   
-  constructor() {
+  constructor(app: IApplication) {
     this.io = new IoProcess();
     // const base = new URL(window.location.href);
-    this.config = new WebConfigurationBindings('/demo/lib/io/AppConfig.ts');
-    this.store = new WebStoreBindings(`http://localhost:${8550}/v1`);
-    this.nav = new WebNavigationBindings();
-    this.appData = new WebAppDataBindings('/demo/lib/io/AppData.ts');
-    this.http = new WebHttpBindings(`http://192.168.86.249:8553/v1`);
+    this.config = new WebConfigurationBindings(app, '/demo/lib/io/AppConfig.ts');
+    this.store = new WebStoreBindings(app, `http://localhost:${8550}/v1`);
+    this.nav = new WebNavigationBindings(app);
+    this.appData = new WebAppDataBindings(app, '/demo/lib/io/AppData.ts');
+    this.http = new WebHttpBindings(app, `http://192.168.86.249:8553/v1`);
   }
 
   async initialize(): Promise<void> {

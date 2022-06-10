@@ -242,8 +242,8 @@ export default class ProjectRequestElement extends HttpRequestElement {
       if (!result) {
         return;
       }
-      const { data, cursor } = result;
-      this._history = data;
+      const { items, cursor } = result;
+      this._history = items;
       if (cursor) {
         this._historyCursor = cursor;
       }

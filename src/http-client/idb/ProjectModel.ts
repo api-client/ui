@@ -13,11 +13,10 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 */
-import { IArcProject, ArcProject, ContextChangeRecord, ContextDeleteRecord, ContextListOptions, ContextListResult, ContextRestoreEvent } from '@api-client/core/build/browser.js';
+import { IAppProject, AppProject, ContextChangeRecord, ContextDeleteRecord, ContextListOptions, ContextListResult, ContextRestoreEvent } from '@api-client/core/build/browser.js';
 import { Base, IGetOptions } from './Base.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import { Events } from '../../events/Events.js';
-
 
 /**
  * ARC project model for version >= 18.
@@ -29,46 +28,46 @@ export class ProjectModel extends Base {
     this._undeleteBulkHandler = this._undeleteBulkHandler.bind(this);
   }
 
-  async put(value: IArcProject | ArcProject): Promise<ContextChangeRecord<IArcProject>> {
+  async put(value: IAppProject | AppProject): Promise<ContextChangeRecord<IAppProject>> {
     if (!value) {
       throw new Error(`Expected a value when inserting a project.`);
     }
-    let insert: IArcProject;
-    if (typeof (value as ArcProject).toJSON === 'function') {
-      insert = (value as ArcProject).toJSON();
+    let insert: IAppProject;
+    if (typeof (value as AppProject).toJSON === 'function') {
+      insert = (value as AppProject).toJSON();
     } else {
-      insert = value as IArcProject;
+      insert = value as IAppProject;
     }
 
-    const result = await super.put(insert) as ContextChangeRecord<IArcProject>;
+    const result = await super.put(insert) as ContextChangeRecord<IAppProject>;
     Events.HttpClient.Model.Project.State.update(result, this.eventsTarget);
     return result;
   }
 
-  async putBulk(values: (IArcProject | ArcProject)[]): Promise<ContextChangeRecord<IArcProject>[]> {
+  async putBulk(values: (IAppProject | AppProject)[]): Promise<ContextChangeRecord<IAppProject>[]> {
     if (!Array.isArray(values)) {
       throw new Error(`Expected a value when inserting projects.`);
     }
-    const inserts: IArcProject[] = [];
+    const inserts: IAppProject[] = [];
     values.forEach((i) => {
-      if (typeof (i as ArcProject).toJSON === 'function') {
-        inserts.push((i as ArcProject).toJSON());
+      if (typeof (i as AppProject).toJSON === 'function') {
+        inserts.push((i as AppProject).toJSON());
       } else {
-        inserts.push(i as IArcProject);
+        inserts.push(i as IAppProject);
       }
     });
 
-    const result = await super.putBulk(inserts) as ContextChangeRecord<IArcProject>[];
+    const result = await super.putBulk(inserts) as ContextChangeRecord<IAppProject>[];
     result.forEach(record => Events.HttpClient.Model.Project.State.update(record, this.eventsTarget));
     return result;
   }
 
-  async get(key: string, opts?: IGetOptions): Promise<IArcProject | undefined> {
-    return super.get(key, opts) as Promise<IArcProject | undefined>;
+  async get(key: string, opts?: IGetOptions): Promise<IAppProject | undefined> {
+    return super.get(key, opts) as Promise<IAppProject | undefined>;
   }
 
-  async getBulk(keys: string[], opts?: IGetOptions): Promise<(IArcProject | undefined)[]> {
-    return super.getBulk(keys, opts) as Promise<(IArcProject | undefined)[]>;
+  async getBulk(keys: string[], opts?: IGetOptions): Promise<(IAppProject | undefined)[]> {
+    return super.getBulk(keys, opts) as Promise<(IAppProject | undefined)[]>;
   }
 
   async delete(key: string): Promise<ContextDeleteRecord | undefined> {
@@ -89,7 +88,7 @@ export class ProjectModel extends Base {
     return result;
   }
 
-  async undeleteBulk(records: ContextDeleteRecord[]): Promise<(ContextChangeRecord<IArcProject> | undefined)[]> {
+  async undeleteBulk(records: ContextDeleteRecord[]): Promise<(ContextChangeRecord<IAppProject> | undefined)[]> {
     if (!records) {
       throw new Error(`The "records" argument is missing.`);
     }
@@ -98,7 +97,7 @@ export class ProjectModel extends Base {
     }
 
     const ids = this._readDeletedRecordKeys(records);
-    const result = await super.restoreBulk(ids) as (ContextChangeRecord<IArcProject> | undefined)[];
+    const result = await super.restoreBulk(ids) as (ContextChangeRecord<IAppProject> | undefined)[];
     result.forEach((record) => {
       if (record) {
         Events.HttpClient.Model.Project.State.update(record, this.eventsTarget)
@@ -107,8 +106,8 @@ export class ProjectModel extends Base {
     return result;
   }
 
-  async list(opts?: ContextListOptions): Promise<ContextListResult<IArcProject>> {
-    return super.list(opts) as Promise<ContextListResult<IArcProject>>;
+  async list(opts?: ContextListOptions): Promise<ContextListResult<IAppProject>> {
+    return super.list(opts) as Promise<ContextListResult<IAppProject>>;
   }
 
   listen(node: EventTarget = window): void {
@@ -135,7 +134,7 @@ export class ProjectModel extends Base {
     node.removeEventListener(EventTypes.HttpClient.Model.Project.list, this._listHandler as EventListener);
   }
 
-  protected _undeleteBulkHandler(e: ContextRestoreEvent<IArcProject>): void {
+  protected _undeleteBulkHandler(e: ContextRestoreEvent<IAppProject>): void {
     if (this._eventCancelled(e)) {
       return;
     }

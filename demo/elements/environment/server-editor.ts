@@ -3,6 +3,7 @@ import { IServer } from '@api-client/core/build/browser.js';
 import { DemoPage } from '../../../src/pages/demo/DemoPage.js';
 import '../../../src/define/server-editor.js';
 import { reactive } from '../../../src/lib/decorators.js';
+import ServerEditorElement from '../../../src/elements/environment/ServerEditorElement.js';
 
 const storeKey = 'api-client.demo.elements.environment.server-editor';
 
@@ -29,7 +30,7 @@ class ComponentDemoPage extends DemoPage {
   }
 
   _changedHandler(): void {
-    const editor = document.querySelector('server-editor')!;
+    const editor = document.querySelector('server-editor') as ServerEditorElement;
     const value = editor.getSchema();
     localStorage.setItem(storeKey, JSON.stringify(value));
     console.log('change');

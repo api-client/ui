@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { get, set, del } from 'idb-keyval';
 import { EnvironmentsKey, TelemetryKey } from '../../../src/bindings/base/ConfigurationBindings.js';
 import { IoCommand, IoEvent, IoNotification } from '../../../src/bindings/base/PlatformBindings.js';

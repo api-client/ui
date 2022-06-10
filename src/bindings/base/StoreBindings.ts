@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable no-dupe-class-members */
 import { 
   IBackendInfo, ProjectKind, WorkspaceKind, DataFileKind, IListOptions, IListResponse, IFile,
   IFileCreateOptions, AccessOperation, IUser, IBackendEvent,
   Workspace, HttpProject, IAccessPatchInfo, IPatchInfo, IPatchRevision, IApplication, 
-  IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions, Project, ListFileKind, DataNamespace, DataFile
+  IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions, Project, ListFileKind, DataNamespace, DataFile, 
+  IBatchUpdateResult, IAppProject, IBatchDeleteResult, IRevertResponse, IAppRequest
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { PlatformBindings } from './PlatformBindings.js';
@@ -71,6 +73,20 @@ export abstract class StoreBindings extends PlatformBindings {
     window.addEventListener(EventTypes.Store.History.delete, this.historyDeleteHandler.bind(this));
     window.addEventListener(EventTypes.Store.History.list, this.historyListHandler.bind(this));
     window.addEventListener(EventTypes.Store.History.read, this.historyReadHandler.bind(this));
+
+    // app requests
+    window.addEventListener(EventTypes.Store.App.Request.createBulk, this.appRequestCreateHandler.bind(this));
+    window.addEventListener(EventTypes.Store.App.Request.deleteBulk, this.appRequestDeleteHandler.bind(this));
+    window.addEventListener(EventTypes.Store.App.Request.patch, this.appRequestPatchHandler.bind(this));
+    window.addEventListener(EventTypes.Store.App.Request.undeleteBulk, this.appRequestUndeleteHandler.bind(this));
+    window.addEventListener(EventTypes.Store.App.Request.list, this.appRequestListHandler.bind(this));
+
+    // app projects
+    window.addEventListener(EventTypes.Store.App.Project.createBulk, this.appProjectCreateHandler.bind(this));
+    window.addEventListener(EventTypes.Store.App.Project.deleteBulk, this.appProjectDeleteHandler.bind(this));
+    window.addEventListener(EventTypes.Store.App.Project.patch, this.appProjectPatchHandler.bind(this));
+    window.addEventListener(EventTypes.Store.App.Project.undeleteBulk, this.appProjectUndeleteHandler.bind(this));
+    window.addEventListener(EventTypes.Store.App.Project.list, this.appProjectListHandler.bind(this));
   }
 
   protected initEnvHandler(input: Event): void {
@@ -235,6 +251,66 @@ export abstract class StoreBindings extends PlatformBindings {
     const e = input as CustomEvent;
     e.preventDefault();
     e.detail.result = this.historyRead(e.detail.key);
+  }
+
+  protected appRequestCreateHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.appRequestCreateBulk(e.detail.values, e.detail.app);
+  }
+
+  protected appRequestDeleteHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.appRequestDeleteBulk(e.detail.keys, e.detail.app);
+  }
+
+  protected appRequestUndeleteHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.appRequestUndeleteBulk(e.detail.keys, e.detail.app);
+  }
+
+  protected appRequestListHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.appRequestList(e.detail.options, e.detail.app);
+  }
+
+  protected appRequestPatchHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.appRequestPatch(e.detail.key, e.detail.id, e.detail.value, e.detail.app);
+  }
+
+  protected appProjectCreateHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.appProjectCreateBulk(e.detail.values, e.detail.app);
+  }
+
+  protected appProjectDeleteHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.appProjectDeleteBulk(e.detail.keys, e.detail.app);
+  }
+
+  protected appProjectUndeleteHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.appProjectUndeleteBulk(e.detail.keys, e.detail.app);
+  }
+
+  protected appProjectPatchHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.appProjectPatch(e.detail.key, e.detail.id, e.detail.value, e.detail.app);
+  }
+
+  protected appProjectListHandler(input: Event): void {
+    const e = input as CustomEvent;
+    e.preventDefault();
+    e.detail.result = this.appProjectList(e.detail.options, e.detail.app);
   }
 
   /**
@@ -722,5 +798,107 @@ export abstract class StoreBindings extends PlatformBindings {
       throw new Error(`Environment is not set.`);
     }
     return store.sdk.history.read(key);
+  }
+
+  async appProjectCreateBulk(values: IAppProject[], optApp?: IApplication): Promise<IBatchUpdateResult<IAppProject>> {
+    const { store, app } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const applicationId = optApp ? optApp.code : app.code;
+    return store.sdk.app.projects.createBatch(values, applicationId);
+  }
+
+  async appProjectDeleteBulk(keys: string[], optApp?: IApplication): Promise<IBatchDeleteResult> {
+    const { store, app } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const applicationId = optApp ? optApp.code : app.code;
+    return store.sdk.app.projects.deleteBatch(keys, applicationId);
+  }
+
+  async appProjectUndeleteBulk(keys: string[], optApp?: IApplication): Promise<IRevertResponse<IAppProject>> {
+    const { store, app } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const applicationId = optApp ? optApp.code : app.code;
+    return store.sdk.app.projects.undeleteBatch(keys, applicationId);
+  }
+
+  async appProjectPatch(key: string, id: string, value: Patch.JsonPatch, optApp?: IApplication): Promise<IPatchRevision> {
+    const { store, app } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const application = optApp || app;
+    const info: IPatchInfo = {
+      app: application.code,
+      appVersion: application.version,
+      patch: value,
+      id,
+    };
+    return store.sdk.app.projects.patch(key, application.code, info);
+  }
+
+  async appProjectList(options?: IListOptions, optApp?: IApplication): Promise<IListResponse<IAppProject>> {
+    const { store, app } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const applicationId = optApp ? optApp.code : app.code;
+    return store.sdk.app.projects.list(applicationId, options);
+  }
+
+  async appRequestCreateBulk(values: IAppRequest[], optApp?: IApplication): Promise<IBatchUpdateResult<IAppRequest>> {
+    const { store, app } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const applicationId = optApp ? optApp.code : app.code;
+    return store.sdk.app.requests.createBatch(values, applicationId);
+  }
+
+  async appRequestDeleteBulk(keys: string[], optApp?: IApplication): Promise<IBatchDeleteResult> {
+    const { store, app } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const applicationId = optApp ? optApp.code : app.code;
+    return store.sdk.app.requests.deleteBatch(keys, applicationId);
+  }
+
+  async appRequestUndeleteBulk(keys: string[], optApp?: IApplication): Promise<IRevertResponse<IAppRequest>> {
+    const { store, app } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const applicationId = optApp ? optApp.code : app.code;
+    return store.sdk.app.requests.undeleteBatch(keys, applicationId);
+  }
+
+  async appRequestPatch(key: string, id: string, value: Patch.JsonPatch, optApp?: IApplication): Promise<IPatchRevision> {
+    const { store, app } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const application = optApp || app;
+    const info: IPatchInfo = {
+      app: application.code,
+      appVersion: application.version,
+      patch: value,
+      id,
+    };
+    return store.sdk.app.requests.patch(key, application.code, info);
+  }
+
+  async appRequestList(options?: IListOptions, optApp?: IApplication): Promise<IListResponse<IAppRequest>> {
+    const { store, app } = this;
+    if (!store) {
+      throw new Error(`Environment is not set.`);
+    }
+    const applicationId = optApp ? optApp.code : app.code;
+    return store.sdk.app.requests.list(applicationId, options);
   }
 }

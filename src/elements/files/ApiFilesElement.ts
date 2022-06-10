@@ -272,9 +272,9 @@ export default class ApiFilesElement extends LitElement {
       const result = useShared ?
         await Events.Store.File.listShared(kinds, opts) :
         await Events.Store.File.list(kinds, opts);
-      if (result.data.length) {
-        this.files = this.files.concat(result.data);
-        if (result.data.length < pageLimit) {
+      if (result.items.length) {
+        this.files = this.files.concat(result.items);
+        if (result.items.length < pageLimit) {
           this.hasMoreFiles = false;
         }
       } else {

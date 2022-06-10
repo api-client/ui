@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { html, TemplateResult } from 'lit';
 import { IEnvironment, Environment } from '@api-client/core/build/browser.js';
 import { DemoPage } from '../../../src/pages/demo/DemoPage.js';
@@ -28,8 +29,8 @@ class ComponentDemoPage extends DemoPage {
 
   fileChanged(e: Event): void {
     const node = e.target as HTMLInputElement;
-    this.processFile(node.files[0]);
-  };
+    this.processFile((node.files as FileList)[0]);
+  }
 
   async processFile(file: File): Promise<void> {
     this.har = undefined;

@@ -1,3 +1,4 @@
+import { IApplication } from '@api-client/core/build/browser.js';
 import { ConfigurationBindings } from '../base/ConfigurationBindings.js';
 import { IoCommand, IoEvent, IoNotification } from '../base/PlatformBindings.js';
 import { IConfigEnvironment, ITelemetryConfig, IEnvConfig } from '../../lib/config/Config.js';
@@ -9,8 +10,8 @@ import { IConfigEnvironment, ITelemetryConfig, IEnvConfig } from '../../lib/conf
 export class WebConfigurationBindings extends ConfigurationBindings {
   worker?: SharedWorker;
 
-  constructor(protected workerUrl: string) {
-    super();
+  constructor(app: IApplication, protected workerUrl: string) {
+    super(app);
     // 
   }
 

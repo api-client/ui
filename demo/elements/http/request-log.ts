@@ -1,5 +1,5 @@
 import { html, TemplateResult } from 'lit';
-import { IRequestLog, ProjectMock, RequestLog, Headers, IRequestLogInit } from '@api-client/core/build/browser.js';
+import { IRequestLog, ProjectMock, RequestLog, Headers, IRequestLogInit, Response } from '@api-client/core/build/browser.js';
 import { DemoPage } from '../../../src/pages/demo/DemoPage.js';
 import '../../../src/define/request-log.js';
 import { reactive } from '../../../src/lib/decorators.js';
@@ -86,13 +86,14 @@ class ComponentDemoPage extends DemoPage {
 
     if (type === 'png') {
       const icon = this.mock.random.pickOne(ResourceIcons);
-      const response = await fetch(`/demo/resources/${icon}`);
-      const data = await response.arrayBuffer();
+      const r = await fetch(`/demo/resources/${icon}`);
+      const data = await r.arrayBuffer();
       const instance = new RequestLog(log);
-      await instance.response!.writePayload(data);
-      const headers = new Headers(instance.response.headers);
+      const response = instance.response as Response;
+      await response.writePayload(data);
+      const headers = new Headers(response.headers);
       headers.set('content-type', 'image/png');
-      instance.response.headers = headers.toString()
+      response.headers = headers.toString()
       log = instance.toJSON();
     }
 

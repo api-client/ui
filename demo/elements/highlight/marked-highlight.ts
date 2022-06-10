@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable no-param-reassign */
 import '../../../src/define/marked-highlight.js';
 import { MarkdownStyles } from '../../../src/index.js';

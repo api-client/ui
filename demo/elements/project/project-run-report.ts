@@ -50,6 +50,7 @@ class ComponentDemoPage extends DemoPage {
     const result: IProjectExecutionIteration = {
       executed: [],
       index,
+      variables: {},
     };
     const size = this.mock.types.number({ min: 1, max: 20 });
     for (let i = 0; i < size; i++) {

@@ -1,9 +1,9 @@
-import { IHttpRequest, HttpRequest, IRequestAuthorization, IRequestBaseConfig, IRequestLog, HttpProject, IProjectRunnerOptions, IProjectExecutionLog, Headers } from "@api-client/core/build/browser.js";
+import { IHttpRequest, HttpRequest, IRequestAuthorization, IRequestBaseConfig, IRequestLog, HttpProject, IProjectRunnerOptions, IProjectExecutionLog, Headers, IApplication } from "@api-client/core/build/browser.js";
 import { Events } from "../../events/Events.js";
 import { HttpBindings } from "../base/HttpBindings.js";
 
 /**
- * AS class that acts as an HTTP proxy for the application.
+ * A class that acts as an HTTP proxy for the application.
  * Since the Project runner and the CoreEngine are strictly NodeJS modules, this needs to proxy the request to the server that supports 
  * this API to make the request.
  * 
@@ -15,8 +15,8 @@ export class WebHttpBindings extends HttpBindings {
   /**
    * @param proxyUrl The base URI to the HTTP proxy. 
    */
-  constructor(public proxyUrl: string) {
-    super();
+  constructor(app: IApplication, public proxyUrl: string) {
+    super(app);
   }
 
   async coreSend(request: IHttpRequest, authorization?: IRequestAuthorization[], config?: IRequestBaseConfig): Promise<IRequestLog> {

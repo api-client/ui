@@ -1,11 +1,10 @@
 import { DemoBindings } from '../../lib/DemoBindings.js';
 import { StartScreen } from '../../../src/index.js';
-
-console.log('Starting page');
+import appInfo from '../../../src/pages/start/AppInfo.js';
 
 (async (): Promise<void> => {
   console.log('Initializing bindings');
-  const bindings = new DemoBindings();
+  const bindings = new DemoBindings(appInfo);
   await bindings.initialize();
 
   console.log('Initializing app screen');

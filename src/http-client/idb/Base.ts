@@ -14,7 +14,10 @@ License for the specific language governing permissions and limitations under
 the License.
 */
 
-import { ContextChangeRecord, ContextDeleteBulkEvent, ContextDeleteEvent, ContextDeleteRecord, ContextListEvent, ContextListOptions, ContextListResult, ContextReadBulkEvent, ContextReadEvent, ContextUpdateBulkEvent, ContextUpdateEvent, Events as CoreEvents, IArcHttpRequest, IArcProject, IAuthorizationData, ICertificate, IHostRule, IUrl } from '@api-client/core/build/browser.js';
+import { 
+  ContextChangeRecord, ContextDeleteBulkEvent, ContextDeleteEvent, ContextDeleteRecord, ContextListEvent, ContextListOptions, 
+  ContextListResult, ContextReadBulkEvent, ContextReadEvent, ContextUpdateBulkEvent, ContextUpdateEvent, Events as CoreEvents, 
+  IAppRequest, IAppProject, IAuthorizationData, ICertificate, IHostRule, IUrl } from '@api-client/core/build/browser.js';
 import { openDB, DBSchema, IDBPDatabase, IDBPObjectStore } from 'idb/with-async-ittr';
 import { EventTypes } from '../../events/EventTypes.js';
 import { Events } from '../../events/Events.js';
@@ -73,12 +76,12 @@ interface HttpClientDB extends DBSchema {
   },
   History: {
     key: string;
-    value: IStoredEntity<IArcHttpRequest>,
+    value: IStoredEntity<IAppRequest>,
     indexes: { 'day': string };
   },
   Projects: {
     key: string;
-    value: IStoredEntity<IArcProject>,
+    value: IStoredEntity<IAppProject>,
   },
   AuthCache: {
     key: string;

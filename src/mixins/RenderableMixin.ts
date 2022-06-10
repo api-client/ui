@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable max-classes-per-file */
 import { dedupeMixin } from '@open-wc/dedupe-mixin';
@@ -94,7 +96,8 @@ export const RenderableMixin = dedupeMixin(<T extends Constructor<any>>(superCla
 
     [hasPendingUpdatePromise] = false;
 
-    [updateResolver]: (value?: any) => void;
+    [updateResolver]?: (value?: any) => void;
+    
 
     /** 
      * @type A promise resolved when the render finished.
@@ -142,12 +145,15 @@ export const RenderableMixin = dedupeMixin(<T extends Constructor<any>>(superCla
      * is rendered for the first time.
      */
     firstRender(): void {
+      // 
     }
 
     /**
      * A function called when the template has been rendered
      */
-    updated(): void {}
+    updated(): void {
+      // 
+    }
 
     /**
      * This to be used by the child classes to render page template.
@@ -208,8 +214,11 @@ export const RenderableMixin = dedupeMixin(<T extends Constructor<any>>(superCla
         return;
       }
       this[hasPendingUpdatePromise] = false;
-      this[updateResolver]();
+      const resolver = this[updateResolver];
+      if (resolver) {
+        resolver();
+      }
     }
-  };
+  }
   return RenderableMixinClass as Constructor<RenderableMixinInterface> & T;
 });

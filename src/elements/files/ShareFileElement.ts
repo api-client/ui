@@ -473,7 +473,7 @@ export default class ShareFileElement extends AnypointDialogElement {
     this.loadingFileUsers = true;
     try {
       const list = await Events.Store.File.listUsers(key);
-      this.permissionUsers = list.data;
+      this.permissionUsers = list.items;
     } catch (e) {
       CoreEvents.Telemetry.exception((e as Error).message, true, this);
     } finally {
@@ -604,7 +604,7 @@ export default class ShareFileElement extends AnypointDialogElement {
       const result = await Events.Store.User.list({
         query,
       });
-      users = result.data;
+      users = result.items;
     }
     if (selectedUsers) {
       users = users.filter(candidate => !selectedUsers.some(i => i.key === candidate.key));

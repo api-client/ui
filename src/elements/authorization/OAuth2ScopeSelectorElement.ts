@@ -215,7 +215,7 @@ export default class OAuth2ScopeSelectorElement extends ValidatableElement {
   [invalidMessage]?: string;
 
   @query('.scope-input')
-  [inputTarget]: HTMLInputElement | null;
+  [inputTarget]?: HTMLInputElement | null;
 
   // protected firstUpdated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
   //   super.firstUpdated(cp);

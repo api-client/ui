@@ -1,10 +1,14 @@
 import { html, TemplateResult } from 'lit';
-import { ProjectMock, ArcProject, ArcProjectRequest } from '@api-client/core/build/browser.js';
+import { ProjectMock } from '@api-client/core/build/browser.js';
 import { DemoPage } from '../../../src/pages/demo/DemoPage.js';
 import { HistoryModel } from '../../../src/http-client/idb/HistoryModel.js';
 import { ProjectModel } from '../../../src/http-client/idb/ProjectModel.js';
+import appInfo from '../../../src/pages/http-client/AppInfo.js';
+import { DemoBindings } from '../../lib/DemoBindings.js';
 // import { reactive } from '../../../src/lib/decorators.js';
 import '../../../src/define/http-client-navigation.js';
+import { IConfigEnvironment } from '../../../src/lib/config/Config.js';
+import { Events } from '../../../src/events/Events.js';
 
 class ComponentDemoPage extends DemoPage {
 
@@ -21,10 +25,27 @@ class ComponentDemoPage extends DemoPage {
 
     this.historyModel.listen();
     this.projectModel.listen();
+
+    this.initialize();
+  }
+  
+  async initialize(): Promise<void> {
+    let env: IConfigEnvironment | undefined;
+    try {
+      env = await Events.Config.Environment.read();
+    } catch (e) { 
+      return;
+    }
+    if (!env || !env.location) {
+      return;
+    }
+    await Events.Store.Global.setEnv(env);
+    const bindings = new DemoBindings(appInfo);
+    await bindings.initialize();
   }
 
   async generateHistory(): Promise<void> {
-    const data = this.mock.arc.arcRequests(100);
+    const data = this.mock.app.appRequests(100);
     const ps = data.map(async (request) => {
       request.log = await this.mock.projectRequest.log();
     });
@@ -37,31 +58,8 @@ class ComponentDemoPage extends DemoPage {
   }
 
   async generateProjects(): Promise<void> {
-    const projects: ArcProject[] = [];
     const { mock, projectModel } = this;
-    for (let i = 0; i<25; i++) {
-      const project = ArcProject.fromName(mock.lorem.words());
-      projects.push(project);
-      const foldersSize = mock.types.number({min: 0, max: 10});
-      const requests = this.mock.arc.arcRequests(mock.types.number({min: foldersSize, max: foldersSize * 2}));
-      for (let j = 0; j<foldersSize; j++) {
-        const folder = project.addFolder(mock.lorem.words());
-        const requestLen = mock.types.number({min: 0, max: 2})
-        if (requestLen) {
-          const folderRequests = requests.splice(0, requestLen);
-          folderRequests.forEach((item) => {
-            const adapted = ArcProjectRequest.fromRequest(item, project);
-            folder.addRequest(adapted);
-          });
-        }
-      }
-      if (requests.length) {
-        requests.forEach((item) => {
-          const adapted = ArcProjectRequest.fromRequest(item, project);
-          project.addRequest(adapted);
-        });
-      }
-    }
+    const projects = mock.app.appProjects(25);
     console.log(projects);
     
     await projectModel.putBulk(projects);

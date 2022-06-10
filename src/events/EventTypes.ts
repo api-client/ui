@@ -42,6 +42,22 @@ export const EventTypes = Object.freeze({
       delete: 'storehistorydelete',
       read: 'storehistoryread',
     }),
+    App: Object.freeze({
+      Project: Object.freeze({
+        createBulk: 'appprojectcreatebulk',
+        deleteBulk: 'appprojectdeletebulk',
+        undeleteBulk: 'appprojectundeletebulk',
+        patch: 'appprojectpatch',
+        list: 'appprojectlist',
+      }),
+      Request: Object.freeze({
+        createBulk: 'apprequestcreatebulk',
+        deleteBulk: 'apprequestdeletebulk',
+        undeleteBulk: 'apprequestundeletebulk',
+        patch: 'apprequestpatch',
+        list: 'apprequestlist',
+      }),
+    }),
   }),
   Config: Object.freeze({
     Environment: Object.freeze({

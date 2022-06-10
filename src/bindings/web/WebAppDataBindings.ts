@@ -1,4 +1,4 @@
-import { ContextChangeRecord, ContextDeleteRecord, IRequestUiMeta, IUrl } from '@api-client/core/build/browser';
+import { ContextChangeRecord, ContextDeleteRecord, IApplication, IQueryResponse, IRequestUiMeta, IUrl } from '@api-client/core/build/browser';
 import { IFileReadConfig, IFileWriteConfig } from '../../events/AppDataEvents.js';
 import { AppDataBindings } from '../base/AppDataBindings.js';
 import { IoCommand, IoEvent, IoNotification } from '../base/PlatformBindings.js';
@@ -6,8 +6,8 @@ import { IoCommand, IoEvent, IoNotification } from '../base/PlatformBindings.js'
 export class WebAppDataBindings extends AppDataBindings {
   worker?: SharedWorker;
 
-  constructor(protected workerUrl: string) {
-    super();
+  constructor(app: IApplication, protected workerUrl: string) {
+    super(app);
   }
 
   async initialize(): Promise<void> {
@@ -50,7 +50,7 @@ export class WebAppDataBindings extends AppDataBindings {
     return this.invoke('addUrlHistory', url);
   }
 
-  queryUrlHistory(q: string): Promise<IUrl[]> {
+  queryUrlHistory(q: string): Promise<IQueryResponse<IUrl>> {
     return this.invoke('queryUrlHistory', q);
   }
 
@@ -66,7 +66,7 @@ export class WebAppDataBindings extends AppDataBindings {
     return this.invoke('addWsHistory', url);
   }
 
-  queryWsHistory(q: string): Promise<IUrl[]> {
+  queryWsHistory(q: string): Promise<IQueryResponse<IUrl>> {
     return this.invoke('queryWsHistory', q);
   }
 

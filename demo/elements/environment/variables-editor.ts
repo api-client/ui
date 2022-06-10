@@ -3,6 +3,7 @@ import { IProperty } from '@api-client/core/build/browser.js';
 import { DemoPage } from '../../../src/pages/demo/DemoPage.js';
 import '../../../src/define/variables-editor.js';
 import { reactive } from '../../../src/lib/decorators.js';
+import VariablesEditorElement from '../../../src/elements/environment/VariablesEditorElement.js';
 
 const storeKey = 'api-client.demo.elements.environment.variables-editor';
 
@@ -32,7 +33,7 @@ class ComponentDemoPage extends DemoPage {
   }
 
   _changedHandler(): void {
-    const editor = document.querySelector('variables-editor')!;
+    const editor = document.querySelector('variables-editor') as VariablesEditorElement;
     if (!editor.variables) {
       localStorage.removeItem(storeKey);
     } else {

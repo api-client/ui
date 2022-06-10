@@ -36,7 +36,7 @@ class AppData extends SharedWorkerThread {
     return this.urlHistory.setHttpRequestUi(pid, id, meta);
   }
 
-  getHttpRequestUi(pid: string, id: string): Promise<IRequestUiMeta> {
+  getHttpRequestUi(pid: string, id: string): Promise<IRequestUiMeta | undefined> {
     return this.urlHistory.getHttpRequestUi(pid, id);
   }
 

@@ -1,7 +1,8 @@
 /* eslint-disable no-redeclare */
 import { 
   IBackendInfo, IListOptions, IListResponse, IFile, IFileCreateOptions,
-  ListFileKind, AccessOperation, IBackendEvent, IUser, IPatchRevision, IApplication, IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions,
+  ListFileKind, AccessOperation, IBackendEvent, IUser, IPatchRevision, IApplication, IHttpHistory, IHttpHistoryBulkAdd, HistoryListOptions, 
+  IBatchUpdateResult, IAppProject, IBatchDeleteResult, IRevertResponse, IAppRequest,
 } from '@api-client/core/build/browser.js';
 import { Patch } from '@api-client/json';
 import { IConfigEnvironment, IConfigInit } from '../lib/config/Config.js';
@@ -450,7 +451,7 @@ export const StoreEvents = Object.freeze({
     },
     State: Object.freeze({
       /**
-       * Informs the application about a change in a user file.
+       * Informs the application about a change in a user file when the target is a collection.
        */
       change: (event: IBackendEvent, target: EventTarget=document.body): void => {
         const e = new CustomEvent(EventTypes.Store.File.State.change, {
@@ -571,5 +572,209 @@ export const StoreEvents = Object.freeze({
       target.dispatchEvent(e);
       return ((e.detail.result as unknown) as Promise<IHttpHistory>);
     },
+  }),
+  App: Object.freeze({
+    Project: Object.freeze({
+      /**
+       * Creates multiple projects in the net-store.
+       * 
+       * @param values The projects to create.
+       * @param app Optional app to use with the store. By default it uses appId used to initialized the bindings.
+       */
+      createBulk: async (values: IAppProject[], app?: IApplication, target: EventTarget=document.body): Promise<IBatchUpdateResult<IAppProject>> => {
+        const e = new CustomEvent(EventTypes.Store.App.Project.createBulk, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            values,
+            app,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+        return ((e.detail.result as unknown) as Promise<IBatchUpdateResult<IAppProject>>);
+      },
+      /**
+       * Deletes multiple projects from the net-store.
+       * 
+       * @param keys The keys of projects to delete.
+       * @param app Optional app to use with the store. By default it uses appId used to initialized the bindings.
+       */
+      deleteBulk: async (keys: string[], app?: IApplication, target: EventTarget=document.body): Promise<IBatchDeleteResult> => {
+        const e = new CustomEvent(EventTypes.Store.App.Project.deleteBulk, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            keys,
+            app,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+        return ((e.detail.result as unknown) as Promise<IBatchDeleteResult>);
+      },
+      /**
+       * Restores multiple projects in the net-store.
+       * 
+       * @param keys The keys of projects to delete.
+       * @param app Optional app to use with the store. By default it uses appId used to initialized the bindings.
+       */
+      undeleteBulk: async (keys: string[], app?: IApplication, target: EventTarget=document.body): Promise<IRevertResponse<IAppProject>> => {
+        const e = new CustomEvent(EventTypes.Store.App.Project.undeleteBulk, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            keys,
+            app,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+        return ((e.detail.result as unknown) as Promise<IRevertResponse<IAppProject>>);
+      },
+      /**
+       * Patches a project in the store.
+       * 
+       * @param key The key of the project to patch.
+       * @param id Generated patch id used to recognize own patches.
+       * @param value The patch info.
+       * @param app Optional app to use with the store. By default it uses appId used to initialized the bindings.
+       */
+      patch: async (key: string, id: string, value: Patch.JsonPatch, app?: IApplication, target: EventTarget=document.body): Promise<IPatchRevision> => {
+        const e = new CustomEvent(EventTypes.Store.App.Project.patch, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            key,
+            value,
+            app,
+            id,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+        return ((e.detail.result as unknown) as Promise<IPatchRevision>);
+      },
+
+      list: async (options?: IListOptions, app?: IApplication, target: EventTarget=document.body): Promise<IListResponse<IAppProject>> =>  {
+        const e = new CustomEvent(EventTypes.Store.App.Project.list, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            options,
+            app,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+        return ((e.detail.result as unknown) as Promise<IListResponse<IAppProject>>);
+      },
+    }),
+    Request: Object.freeze({
+      /**
+       * Creates multiple requests in the net-store.
+       * 
+       * @param values The requests to create.
+       * @param app Optional app to use with the store. By default it uses appId used to initialized the bindings.
+       */
+      createBulk: async (values: IAppRequest[], app?: IApplication, target: EventTarget=document.body): Promise<IBatchUpdateResult<IAppRequest>> => {
+        const e = new CustomEvent(EventTypes.Store.App.Request.createBulk, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            values,
+            app,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+        return ((e.detail.result as unknown) as Promise<IBatchUpdateResult<IAppRequest>>);
+      },
+      /**
+       * Deletes multiple requests from the net-store.
+       * 
+       * @param keys The keys of requests to delete.
+       * @param app Optional app to use with the store. By default it uses appId used to initialized the bindings.
+       */
+      deleteBulk: async (keys: string[], app?: IApplication, target: EventTarget=document.body): Promise<IBatchDeleteResult> => {
+        const e = new CustomEvent(EventTypes.Store.App.Request.deleteBulk, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            keys,
+            app,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+        return ((e.detail.result as unknown) as Promise<IBatchDeleteResult>);
+      },
+      /**
+       * Restores multiple requests in the net-store.
+       * 
+       * @param keys The keys of requests to restore.
+       * @param app Optional app to use with the store. By default it uses appId used to initialized the bindings.
+       */
+      undeleteBulk: async (keys: string[], app?: IApplication, target: EventTarget=document.body): Promise<IRevertResponse<IAppRequest>> => {
+        const e = new CustomEvent(EventTypes.Store.App.Request.undeleteBulk, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            keys,
+            app,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+        return ((e.detail.result as unknown) as Promise<IRevertResponse<IAppRequest>>);
+      },
+      /**
+       * Patches a request in the store.
+       * 
+       * @param key The key of the request to patch.
+       * @param id Generated patch id used to recognize own patches.
+       * @param value The patch info.
+       * @param app Optional app to use with the store. By default it uses appId used to initialized the bindings.
+       */
+      patch: async (key: string, id: string, value: Patch.JsonPatch, app?: IApplication, target: EventTarget=document.body): Promise<IPatchRevision> => {
+        const e = new CustomEvent(EventTypes.Store.App.Request.patch, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            key,
+            id,
+            value,
+            app,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+        return ((e.detail.result as unknown) as Promise<IPatchRevision>);
+      },
+
+      list: async (options?: IListOptions, app?: IApplication, target: EventTarget=document.body): Promise<IListResponse<IAppRequest>> =>  {
+        const e = new CustomEvent(EventTypes.Store.App.Request.list, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          detail: {
+            options,
+            app,
+            result: undefined,
+          },
+        });
+        target.dispatchEvent(e);
+        return ((e.detail.result as unknown) as Promise<IListResponse<IAppRequest>>);
+      },
+    }),
   }),
 });

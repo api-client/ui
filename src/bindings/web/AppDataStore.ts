@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ContextChangeRecord, ContextDeleteRecord, IRequestUiMeta, IUrl } from '@api-client/core/build/browser.js';
+import { ContextChangeRecord, ContextDeleteRecord, IQueryResponse, IRequestUiMeta, IUrl } from '@api-client/core/build/browser.js';
 import { openDB, DBSchema, IDBPDatabase } from 'idb/with-async-ittr';
 import { IFileReadConfig, IFileWriteConfig } from '../../events/AppDataEvents.js';
 
@@ -100,16 +100,21 @@ export default class AppDataStore {
     await tx.done;
   }
 
-  async queryUrlHistory(query: string): Promise<IUrl[]> {
+  async queryUrlHistory(query: string): Promise<IQueryResponse<IUrl>> {
     const q = String(query).toLowerCase();
     const db = await this.open();
     const tx = db.transaction('UrlHistory', 'readonly');
-    const result: IUrl[] = [];
+    const result: IQueryResponse<IUrl> = {
+      items: [],
+    };
     for await (const cursor of tx.store) {
       const item = cursor.value;
       const url = String(item.key).toLowerCase();
       if (url.includes(q)) {
-        result.push(item);
+        result.items.push({
+          doc: item,
+          index: ['key'],
+        });
       }
     }
     return result;
@@ -152,16 +157,21 @@ export default class AppDataStore {
     await tx.done;
   }
 
-  async queryWsHistory(query: string): Promise<IUrl[]> {
+  async queryWsHistory(query: string): Promise<IQueryResponse<IUrl>> {
     const q = String(query).toLowerCase();
     const db = await this.open();
     const tx = db.transaction('WsHistory', 'readonly');
-    const result: IUrl[] = [];
+    const result: IQueryResponse<IUrl> = {
+      items: [],
+    };
     for await (const cursor of tx.store) {
       const item = cursor.value;
       const url = String(item.key).toLowerCase();
       if (url.includes(q)) {
-        result.push(item);
+        result.items.push({
+          doc: item,
+          index: ['key'],
+        });
       }
     }
     return result;

@@ -1,4 +1,4 @@
-import { uuidV4, IBackendInfo } from '@api-client/core/build/browser.js';
+import { uuidV4, IBackendInfo, IApplication } from '@api-client/core/build/browser.js';
 import { Events } from '../../events/Events.js';
 import { HttpStore } from '../../store/HttpStore.js';
 import { StoreBindings } from '../base/StoreBindings.js';
@@ -21,8 +21,8 @@ export class WebStoreBindings extends StoreBindings {
    * @param storeBaseUri The base URI of the "local" store to be used when the user chooses 
    * the local store over the 
    */
-  constructor(storeBaseUri: string) {
-    super();
+  constructor(app: IApplication, storeBaseUri: string) {
+    super(app);
     this.storeBaseUri = storeBaseUri;
     this.channel = new BroadcastChannel('api-store');
   }
