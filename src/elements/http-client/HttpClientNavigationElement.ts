@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { css, CSSResult, html, PropertyValueMap, TemplateResult, nothing } from "lit";
 import { classMap } from "lit/directives/class-map.js";
-import { StyleInfo, styleMap } from "lit/directives/style-map.js";
 import { property, state, eventOptions } from "lit/decorators.js";
 import { 
   ContextListOptions, IAppRequest, AppProject, Events as CoreEvents, ErrorResponse, IResponse, AppProjectFolder, 
@@ -17,6 +16,17 @@ import { relativeDay } from "../../lib/time/Conversion.js";
 import '../../define/api-icon.js';
 import { statusIndicator, StatusStyles } from "../http/HttpStatus.js";
 import { ModelStateDeleteEvent } from "../../events/http-client/models/BaseEvents.js";
+
+interface IPageState {
+  /**
+   * The next page cursor.
+   */
+  cursor?: string;
+  /**
+   * Whether the last query resulted with an empty response.
+   */
+  ended?: boolean;
+}
 
 /**
  * Main app navigation for the HttpClient application.
@@ -194,6 +204,49 @@ export default class HttpClientNavigationElement extends AppNavigation {
         border-top: 1px var(--divider-color) solid;
         text-transform: uppercase;
       }
+
+      .empty-list {
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        display: flex;
+        color: var(--secondary-text-color);
+        font-size: 1.2rem;
+        flex-direction: column;
+        font-style: italic;
+      }
+
+      .empty-icon {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 20px;
+        fill: inherit;
+      }
+
+      .empty-list.projects {
+        fill: #ce93d8;
+        color: #8e22a0;
+      }
+
+      .empty-list.history {
+        fill: #a5d6a7;
+        color: #246327;
+      }
+
+      .empty-list.saved {
+        fill: #ffcc80;
+        color: #804c00;
+      }
+
+      .empty-list .tip {
+        color: var(--secondary-text-color);
+        font-size: var(--secondary-text-size);
+        margin-top: 20px;
+      }
+
+      .empty-button {
+        margin-top: 20px;
+      }
       `,
     ];
   }
@@ -216,7 +269,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
 
   @state() protected loading?: boolean;
 
-  protected _pageInfo = new Map<'history' | 'projects', string>();
+  protected _pageInfo = new Map<'history' | 'projects', IPageState>();
 
   constructor() {
     super();
@@ -358,11 +411,14 @@ export default class HttpClientNavigationElement extends AppNavigation {
   }
 
   protected async getHistoryPage(): Promise<void> {
+    const info = this._pageInfo.get('history');
+    if (info && info.ended) {
+      return;
+    }
     this.loading = true;
     const opts: ContextListOptions = {};
-    const token = this._pageInfo.get('history');
-    if (token) {
-      opts.nextPageToken = token;
+    if (info && info.cursor) {
+      opts.nextPageToken = info.cursor;
     } else {
       opts.limit = 100;
     }
@@ -370,10 +426,12 @@ export default class HttpClientNavigationElement extends AppNavigation {
       const data = await Events.HttpClient.Model.History.list(opts, this);
       if (data) {
         if (data.nextPageToken) {
-          this._pageInfo.set('history', data.nextPageToken);
+          this._pageInfo.set('history', { cursor: data.nextPageToken });
         }
         if (data.items.length) {
           this._addHistoryList(data.items);
+        } else {
+          this._pageInfo.set('history', { ended: true });
         }
       }
     } catch (e) {
@@ -385,11 +443,14 @@ export default class HttpClientNavigationElement extends AppNavigation {
   }
 
   protected async getProjectsPage(): Promise<void> {
+    const info = this._pageInfo.get('projects');
+    if (info && info.ended) {
+      return;
+    }
     this.loading = true;
     const opts: ContextListOptions = {};
-    const token = this._pageInfo.get('projects');
-    if (token) {
-      opts.nextPageToken = token;
+    if (info && info.cursor) {
+      opts.nextPageToken = info.cursor;
     } else {
       opts.limit = 100;
     }
@@ -397,11 +458,13 @@ export default class HttpClientNavigationElement extends AppNavigation {
       const data = await Events.HttpClient.Model.Project.list(opts, this);
       if (data) {
         if (data.nextPageToken) {
-          this._pageInfo.set('projects', data.nextPageToken);
+          this._pageInfo.set('projects', { cursor: data.nextPageToken });
         }
         if (data.items.length) {
           const instances = data.items.map(i => new AppProject(i));
           this.projects = this.projects.concat(instances);
+        } else {
+          this._pageInfo.set('projects', { ended: true });
         }
       }
     } catch (e) {
@@ -500,6 +563,11 @@ export default class HttpClientNavigationElement extends AppNavigation {
     }
   }
 
+  protected _createProjectHandler(): void {
+    const project = AppProject.fromName('New project');
+    Events.HttpClient.Model.Project.update(project.toJSON(), this);
+  }
+
   render(): TemplateResult {
     return html`
     <div class="menu">
@@ -563,19 +631,6 @@ export default class HttpClientNavigationElement extends AppNavigation {
       ${this._savedTemplate()}
       ${this._projectsTemplate()}
       ${this._restApisTemplate()}
-    </div>
-    `;
-  }
-
-  protected _savedTemplate(): TemplateResult {
-    const menuOpened = this.rail === 'saved';
-    return html`
-    <div class="menu-title" ?hidden=${!menuOpened}>
-      <span class="menu-title-label">Saved</span>
-    </div>
-    <div class="menu-content" ?hidden=${!menuOpened}>
-      <p>The "saved" have moved.</p>
-      <p>Your previously saved request are now in the "Saved requests" project.</p>
     </div>
     `;
   }
@@ -669,7 +724,11 @@ export default class HttpClientNavigationElement extends AppNavigation {
 
   protected _emptyHistory(): TemplateResult {
     return html`
-    <div class="empty-list">You have no history.</div>
+    <div class="empty-list history">
+      <api-icon icon="timeline" class="empty-icon"></api-icon>
+      <p>You have no history.</p>
+      <p class="tip">Send a request in the editor to record the history.</p>
+    </div>
     `;
   }
 
@@ -689,7 +748,13 @@ export default class HttpClientNavigationElement extends AppNavigation {
 
   protected _emptyProjects(): TemplateResult {
     return html`
-    <div class="empty-list">You have no projects.</div>
+    <div class="empty-list projects">
+      <api-icon icon="collectionsBookmark" class="empty-icon"></api-icon>
+      <p>You have no projects.</p>
+      <p class="tip">Create a project to structure your API calls.</p>
+
+      <anypoint-button emphasis="medium" flat class="empty-button" @click="${this._createProjectHandler}">Add project</anypoint-button>
+    </div>
     `;
   }
 
@@ -703,59 +768,75 @@ export default class HttpClientNavigationElement extends AppNavigation {
     const name = project.info.name || 'Unnamed project';
     const { kind, key } = project;
     return this._parentListItemTemplate(key, kind, name, content, {
-      parentIcon: 'cloud',
+      parentIcon: 'cloudFilled',
     });
   }
 
-  protected _renderParentChildrenTemplate(parent: AppProject | AppProjectFolder, indent = 0): TemplateResult | string {
+  protected _renderParentChildrenTemplate(parent: AppProject | AppProjectFolder): TemplateResult | string {
     const { key } = parent;
     const folders = parent.listFolders();
     const requests = parent.listRequests();
     const isProject = parent.getProject() === undefined;
     const isEmpty = !folders.length && !requests.length;
     if (isEmpty) {
-      const styles: StyleInfo = {
-        'padding-left': `${this._computeIndent(indent)}px`,
-      };
-      return html`<p class="list-item-content empty" style="${styleMap(styles)}" aria-disabled="true">Empty folder</p>`;
+      return html`<p class="list-item-content empty" aria-disabled="true">Empty folder</p>`;
     }
     return html`
-    ${folders.map(f => this.renderFolder(f, indent, isProject ? undefined : key))}
-    ${requests.map(r => this.renderRequest(r, indent, isProject ? undefined : key))}
+    ${folders.map(f => this.renderFolder(f, isProject ? undefined : key))}
+    ${requests.map(r => this.renderRequest(r, isProject ? undefined : key))}
     `;
   }
 
-  protected renderFolder(folder: AppProjectFolder, indent: number, parentKey?: string): TemplateResult | string {
-    const content = this._renderParentChildrenTemplate(folder, indent + 1);
+  protected renderFolder(folder: AppProjectFolder, parentKey?: string): TemplateResult | string {
+    const content = this._renderParentChildrenTemplate(folder);
     const name = folder.info.name || 'Unnamed folder';
     const { kind, key } = folder;
     return this._parentListItemTemplate(key, kind, name, content, {
       parent: parentKey,
-      indent,
-      parentIcon: 'folder',
+      parentIcon: 'folderFilled',
     });
   }
 
-  protected renderRequest(request: AppProjectRequest, indent: number, parentKey?: string): TemplateResult | string {
+  protected renderRequest(request: AppProjectRequest, parentKey?: string): TemplateResult | string {
     const name = request.info.name || 'Unnamed request';
     const { key, kind } = request;
     const content = this._itemContentTemplate('request', name);
     return this._listItemTemplate(key, kind, name, content, {
       parent: parentKey,
-      indent,
       draggable: true,
     });
   }
 
-  protected _restApisTemplate(): TemplateResult {
+  protected _restApisTemplate(): TemplateResult | typeof nothing {
     const menuOpened = this.rail === 'rest-apis';
+    if (!menuOpened) {
+      return nothing;
+    }
     return html`
-    <div class="menu-title" ?hidden=${!menuOpened}>
+    <div class="menu-title">
       <span class="menu-title-label">Rest Apis</span>
     </div>
-    <div class="menu-content" ?hidden=${!menuOpened}>
+    <div class="empty-list rest-apis">
+      <api-icon icon="apps" class="empty-icon"></api-icon>
       <p>The "REST APIs" have moved.</p>
-      <p>APIs are now available as a separate application.</p>
+      <p class="tip">API Consumer is now a separate application. Open it through the application menu.</p>
+    </div>
+    `;
+  }
+
+  protected _savedTemplate(): TemplateResult | typeof nothing {
+    const menuOpened = this.rail === 'saved';
+    if (!menuOpened) {
+      return nothing;
+    }
+    return html`
+    <div class="menu-title">
+      <span class="menu-title-label">Saved</span>
+    </div>
+    <div class="empty-list saved">
+      <api-icon icon="save" class="empty-icon"></api-icon>
+      <p>The "saved" have moved.</p>
+      <p class="tip">You will find your previously saved HTTP requests in the project “Saved requests”</p>
     </div>
     `;
   }

@@ -2,7 +2,6 @@
 import { css, CSSResult, html, PropertyValueMap, TemplateResult } from "lit";
 import { property, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
-import { StyleInfo, styleMap } from "lit/directives/style-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { EventUtils } from '@api-client/core/build/browser.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
@@ -27,7 +26,6 @@ export interface ISelectDetail {
 
 export interface IListItemRenderOptions {
   draggable?: boolean;
-  indent?: number;
   parent?: string;
   disabled?: boolean;
   /**
@@ -89,25 +87,22 @@ export default class AppNavigation extends ApiElement {
     }
 
     .list-item-content {
-      height: 40px;
+      min-height: 48px;
       display: flex;
       align-items: center;
-      padding: 0 20px;
-      margin: 0;
       width: 100%;
       box-sizing: border-box;
+      padding: 0 0 0 12px;
     }
 
     .object-icon {
       width: 20px;
       height: 20px;
       margin-right: 8px;
-      /* color: var(--accent-color); */
     }
 
     .opened > div > .group-toggle-icon {
       transform: rotate(90deg);
-      margin-right: 8px;
     }
 
     :not([aria-disabled="true"]):not(.selected) .list-item-content:hover {
@@ -117,20 +112,15 @@ export default class AppNavigation extends ApiElement {
     li {
       outline: none;
       list-style: none;
-      /* 
-        This will move the indented this way children to the right.
-        Even though this is the default behavior probably this is not
-        what you want. Your implementation has to indent each
-        list item manually (by setting styles). Until the CSS's "attr()"
-        function is not widely supported this element won't try to 
-        do standardize the way to do this.
-      */
-      padding-left: 8px;
-      padding-right: 8px;
+      padding: 0 0 0 12px;
     }
-    
-    .root > li {
-      padding-left: 0;
+
+    ul {
+      padding: 0 0 0 12px;
+    }
+
+    ul.root {
+      padding: 0 12px 0 0;
     }
 
     *[aria-disabled="true"] {
@@ -174,8 +164,16 @@ export default class AppNavigation extends ApiElement {
     }
 
     .list-item-content.empty {
-      margin-left: 20px;
+      margin: 0 0 0 20px;
       width: calc(100% - 20px);
+    }
+
+    .parent-item .list-item-content:not(.parent-content) {
+      /* 
+        These are  element that are not parents but rendered under a parent.
+        Because they have no toggle icon, we move them to the right by the size of the icon.
+       */
+      padding-left: 24px;
     }
     `];
   }
@@ -798,7 +796,7 @@ export default class AppNavigation extends ApiElement {
   }
 
   protected _homeAction(): void {
-    const first = this.shadowRoot!.querySelector('ul');
+    const first = (this.shadowRoot as ShadowRoot).querySelector('ul');
     if (!first) {
       return;
     }
@@ -806,12 +804,13 @@ export default class AppNavigation extends ApiElement {
     for (const node of children) {
       if (this._isValidListItem(node)) {
         this._focusListItem(node);
+        break;
       }
     }
   }
 
   protected _endAction(): void {
-    const first = this.shadowRoot!.querySelector('ul');
+    const first = (this.shadowRoot as ShadowRoot).querySelector('ul');
     if (!first) {
       return;
     }
@@ -819,6 +818,7 @@ export default class AppNavigation extends ApiElement {
     for (const node of children) {
       if (this._isValidListItem(node)) {
         this._focusListItem(node);
+        break;
       }
     }
   }
@@ -852,10 +852,6 @@ export default class AppNavigation extends ApiElement {
       focused: _focused === key,
       opened,
     };
-    const styles: StyleInfo = {};
-    if (typeof opts.indent === 'number') {
-      styles['padding-left'] = `${this._computeIndent(opts.indent)}px`;
-    }
     return html`
     <li 
       class="${classMap(classes)}" 
@@ -883,12 +879,8 @@ export default class AppNavigation extends ApiElement {
   }
 
   protected parentListItemContentTemplate(label: string, opts: IListItemRenderOptions = {}): TemplateResult {
-    const styles: StyleInfo = {};
-    if (typeof opts.indent === 'number') {
-      styles['padding-left'] = `${this._computeIndent(opts.indent)}px`;
-    }
     return html`
-    <div class="list-item-content" style="${styleMap(styles)}">
+    <div class="list-item-content parent-content">
       <api-icon icon="chevronRight" class="group-toggle-icon"></api-icon>
       ${opts.parentIcon ? html`<api-icon icon="${opts.parentIcon}" class="object-icon"></api-icon>` : ''}
       <span class="item-label" title="${label}">${label}</span>
@@ -905,10 +897,6 @@ export default class AppNavigation extends ApiElement {
       selected: selected === key,
       focused: _focused === key,
     };
-    const styles: StyleInfo = {};
-    if (typeof opts.indent === 'number') {
-      styles['padding-left'] = `${this._computeIndent(opts.indent)}px`;
-    }
     return html`
     <li 
       class="${classMap(classes)}" 
@@ -920,7 +908,7 @@ export default class AppNavigation extends ApiElement {
       @dragstart="${this._itemDragStartHandler}"
       aria-disabled="${opts.disabled ? 'true' : 'false'}"
     >
-      <div class="list-item-content" style="${styleMap(styles)}">${content}</div>
+      <div class="list-item-content">${content}</div>
     </li>
     `;
   }

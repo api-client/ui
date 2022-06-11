@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign */
+/* eslint-disable @typescript-eslint/ban-types */
 import { ContextMenuCommand } from '@api-client/context-menu';
 import { DataEntityKind, DataModelKind, DataNamespace, DataNamespaceKind } from '@api-client/core/build/browser.js';
 import { schemaNamespace, rename, schemaModel, deleteFile, schemaEntity } from '../../elements/icons/Icons.js';
@@ -13,6 +15,20 @@ const commands: ContextMenuCommand[] = [
   //
   // NAVIGATION
   //
+
+  {
+    target: "schema-design-navigation",
+    label: 'Add namespace',
+    icon: schemaNamespace,
+    execute: (init): void => {
+      const domain = init.store.get('schema') as DataNamespace;
+      const callback = init.store.get('callback') as Function;
+      const created = domain.addNamespace('New namespace');
+      callback();
+      (init.target as SchemaDesignNavigationElement).edited = created.key;
+    },
+    visible: (init) => init.store.has('schema'),
+  },
 
   {
     target: ".ns-selector",

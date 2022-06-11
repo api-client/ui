@@ -2,7 +2,6 @@
 /* eslint-disable class-methods-use-this */
 import { html, TemplateResult, CSSResult, css } from 'lit';
 import { property } from 'lit/decorators.js';
-import { StyleInfo, styleMap } from 'lit/directives/style-map.js';
 import { 
   HttpProject, ProjectFolder, ProjectRequest, ProjectFolderKind, ProjectRequestKind, 
   Environment, EnvironmentKind,
@@ -26,7 +25,7 @@ export default class ProjectNavigationElement extends AppNavigation {
       }
 
       li {
-        padding-left: 0 !important;
+        /* padding-left: 0 !important; */
       }
       `,
     ];
@@ -113,7 +112,7 @@ export default class ProjectNavigationElement extends AppNavigation {
     return this._outerListTemplate(content);
   }
 
-  protected _renderParentChildrenTemplate(parent: HttpProject | ProjectFolder, indent = 0): TemplateResult | string {
+  protected _renderParentChildrenTemplate(parent: HttpProject | ProjectFolder): TemplateResult | string {
     const { key } = parent;
     const folders = parent.listFolders();
     const requests = parent.listRequests();
@@ -121,15 +120,12 @@ export default class ProjectNavigationElement extends AppNavigation {
     const isProject = parent.getProject() === undefined;
     const isEmpty = !folders.length && !environments.length && !requests.length;
     if (isEmpty) {
-      const styles: StyleInfo = {
-        'padding-left': `${this._computeIndent(indent)}px`,
-      };
-      return html`<p class="list-item-content empty" style="${styleMap(styles)}" aria-disabled="true">Empty folder</p>`;
+      return html`<p class="list-item-content empty" aria-disabled="true">Empty folder</p>`;
     }
     return html`
-    ${folders.map(f => this.renderFolder(f, indent, isProject ? undefined : key))}
-    ${environments.map(r => this.renderEnvironment(r, indent, isProject ? undefined : key))}
-    ${requests.map(r => this.renderRequest(r, indent, isProject ? undefined : key))}
+    ${folders.map(f => this.renderFolder(f, isProject ? undefined : key))}
+    ${environments.map(r => this.renderEnvironment(r, isProject ? undefined : key))}
+    ${requests.map(r => this.renderRequest(r, isProject ? undefined : key))}
     `;
   }
 
@@ -141,34 +137,32 @@ export default class ProjectNavigationElement extends AppNavigation {
     `;
   }
 
-  protected renderFolder(folder: ProjectFolder, indent: number, parentKey?: string): TemplateResult | string {
-    const content = this._renderParentChildrenTemplate(folder, indent + 1);
+  protected renderFolder(folder: ProjectFolder, parentKey?: string): TemplateResult | string {
+    const content = this._renderParentChildrenTemplate(folder);
     const name = folder.info.name || 'Unnamed folder';
     const { kind, key } = folder;
     return this._parentListItemTemplate(key, kind, name, content, {
       parent: parentKey,
-      indent,
+      parentIcon: 'folderFilled',
     });
   }
 
-  protected renderRequest(request: ProjectRequest, indent: number, parentKey?: string): TemplateResult | string {
+  protected renderRequest(request: ProjectRequest, parentKey?: string): TemplateResult | string {
     const name = request.info.name || 'Unnamed request';
     const { key, kind } = request;
     const content = this._itemContentTemplate('request', name);
     return this._listItemTemplate(key, kind, name, content, {
       parent: parentKey,
-      indent,
       draggable: true,
     });
   }
 
-  protected renderEnvironment(environment: Environment, indent: number, parentKey?: string): TemplateResult | string {
+  protected renderEnvironment(environment: Environment, parentKey?: string): TemplateResult | string {
     const name = environment.info.name || 'Unnamed environment';
     const { key, kind } = environment;
     const content = this._itemContentTemplate('environment', name);
     return this._listItemTemplate(key, kind, name, content, {
       parent: parentKey,
-      indent,
       draggable: true,
     });
   }

@@ -46,7 +46,18 @@ class ComponentDemoPage extends DemoPage {
 
   async generateHistory(): Promise<void> {
     const data = this.mock.app.appRequests(100, { isoKey: true });
+    const now = Date.now();
+    const d =  2 * 30 * 24 * 60 * 60 * 1000;
+    const min = now - d;
     const ps = data.map(async (request) => {
+      const date = this.mock.types.datetime({ min, max: now });
+      const time = date.getTime();
+      request.created = time;
+      request.updated = time;
+      request.key = date.toJSON();
+      const midnight = new Date(time);
+      midnight.setHours(0, 0, 0, 0);
+      request.midnight = midnight.getTime();
       request.log = await this.mock.projectRequest.log();
     });
     await Promise.all(ps);
