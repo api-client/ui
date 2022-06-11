@@ -495,7 +495,7 @@ export default class AppNavigation extends ApiElement {
     let current = node.nextElementSibling as HTMLElement;
     while (current) {
       if (!this._isValidListItem(current)) {
-        current = node.nextElementSibling as HTMLElement;
+        current = current.nextElementSibling as HTMLElement;
         continue;
       }
       this._focusListItem(current);
@@ -517,7 +517,7 @@ export default class AppNavigation extends ApiElement {
     let current = node.previousElementSibling as HTMLElement;
     while (current) {
       if (!this._isValidListItem(current)) {
-        current = node.previousElementSibling as HTMLElement;
+        current = current.previousElementSibling as HTMLElement;
         continue;
       }
       // now we find the last descendant of this node.
@@ -685,13 +685,13 @@ export default class AppNavigation extends ApiElement {
       return;
     }
     switch (e.key) {
-      case 'ArrowRight': this._itemRightAction(node); break;
-      case 'ArrowLeft': this._itemLeftAction(node); break;
-      case 'ArrowDown': this._itemDownAction(node); break;
-      case 'ArrowUp': this._itemUpAction(node); break;
-      case 'Home': this._homeAction(); break;
-      case 'End': this._endAction(); break;
-      case 'Enter': this._itemEnterAction(node); break;
+      case 'ArrowRight': this._itemRightAction(node); e.preventDefault(); break;
+      case 'ArrowLeft': this._itemLeftAction(node); e.preventDefault(); break;
+      case 'ArrowDown': this._itemDownAction(node); e.preventDefault(); break;
+      case 'ArrowUp': this._itemUpAction(node); e.preventDefault(); break;
+      case 'Home': this._homeAction(); e.preventDefault(); break;
+      case 'End': this._endAction(); e.preventDefault(); break;
+      case 'Enter': this._itemEnterAction(node); e.preventDefault(); break;
       default:
     }
   }

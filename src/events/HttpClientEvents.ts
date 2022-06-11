@@ -5,6 +5,7 @@ import { HistoryEvents } from './http-client/models/HistoryEvents.js';
 import { ProjectEvents } from './http-client/models/ProjectEvents.js';
 import { HostsEvents } from './http-client/models/HostsEvents.js';
 import { StoreName } from "../http-client/idb/Base.js";
+import { EventTypes } from "./EventTypes.js";
 
 export const HttpClientEvents = Object.freeze({
   Model: Object.freeze({
@@ -30,6 +31,17 @@ export const HttpClientEvents = Object.freeze({
      */
     destroyed: (store: StoreName, target: EventTarget = window) => {
       const e = new ModelStateDeleteEvent(store);
+      target.dispatchEvent(e);
+    },
+
+    /**
+     * An event dispatches when a datastore state has been restored and any UI
+     * that uses a database should renew data.
+     * 
+     * @param target A node on which to dispatch the event.
+     */
+    restored: (target: EventTarget = window): void => {
+      const e = new Event(EventTypes.HttpClient.Model.restored);
       target.dispatchEvent(e);
     },
   

@@ -68,3 +68,8 @@ export function statusTemplate(code: number, text?: string): TemplateResult {
   const classes = statusClasses(code);
   return html`<span class="${classMap(classes)}">${code} ${text || ''}</span>`;
 }
+
+export function statusIndicator(code: number): TemplateResult {
+  const classes = statusClasses(code);
+  return html`<span class="${classMap(classes)}"></span>`;
+}

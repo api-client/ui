@@ -221,6 +221,7 @@ export class Base {
     const { store } = tx;
     await store.clear();
     await tx.done;
+    this[notifyDestroyed](this.name);
   }
 
   /**

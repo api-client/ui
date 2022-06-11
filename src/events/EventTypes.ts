@@ -178,6 +178,7 @@ export const EventTypes = Object.freeze({
     Model: Object.freeze({
       destroy: 'modeldestroy',
       destroyed: 'modeldestroyed',
+      restored: 'modelrestored',
       Project: Object.freeze({
         read: 'modelprojectread',
         readBulk: 'modelprojectreadbulk',

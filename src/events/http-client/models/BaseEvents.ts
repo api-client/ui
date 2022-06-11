@@ -1,4 +1,5 @@
 /* eslint-disable max-classes-per-file */
+import { StoreName } from '../../../http-client/idb/Base.js';
 import { EventTypes } from '../../EventTypes.js';
 
 export const storesSymbol = Symbol('stores');
@@ -41,12 +42,12 @@ export class ModelDeleteEvent extends CustomEvent<{ result: Promise<void>[] | un
  * has been destroyed.
  */
 export class ModelStateDeleteEvent extends Event {
-  [storesSymbol]: string;
+  [storesSymbol]: StoreName;
 
   /**
    * @param store The name of the deleted store
    */
-  constructor(store: string) {
+  constructor(store: StoreName) {
     if (typeof store !== 'string') {
       throw new Error('The store expected to be a string.');
     }
@@ -60,7 +61,7 @@ export class ModelStateDeleteEvent extends Event {
   /**
    * The name of the deleted store used to initialize the event.
    */
-  get store(): string {
+  get store(): StoreName {
     return this[storesSymbol];
   }
 }

@@ -45,14 +45,14 @@ class ComponentDemoPage extends DemoPage {
   }
 
   async generateHistory(): Promise<void> {
-    const data = this.mock.app.appRequests(100);
+    const data = this.mock.app.appRequests(100, { isoKey: true });
     const ps = data.map(async (request) => {
       request.log = await this.mock.projectRequest.log();
     });
     await Promise.all(ps);
     await this.historyModel.putBulk(data);
   }
-
+  
   async clearHistory(): Promise<void> {
     await this.historyModel.deleteModel();
   }
@@ -63,6 +63,10 @@ class ComponentDemoPage extends DemoPage {
     console.log(projects);
     
     await projectModel.putBulk(projects);
+  }
+
+  async clearProjects(): Promise<void> {
+    await this.projectModel.deleteModel();
   }
 
   _populateHistoryHandler(): void {
@@ -77,16 +81,21 @@ class ComponentDemoPage extends DemoPage {
     this.generateProjects();
   }
 
+  _clearProjectsHandler(): void {
+    this.clearProjects();
+  }
+
   contentTemplate(): TemplateResult {
     return html`
-    <section class="centered large">
+    <section class="centered large demo-region">
       <http-client-navigation></http-client-navigation>
     </section>
-    <section class="centered large">
+    <section class="centered large data-control">
       <h2>Data control</h2>
       <button @click="${this._populateHistoryHandler}">Populate history</button>
       <button @click="${this._clearHistoryHandler}">Clear history</button>
       <button @click="${this._populateProjectsHandler}">Populate projects</button>
+      <button @click="${this._clearProjectsHandler}">Clear projects</button>
     </section>
     `;
   }
