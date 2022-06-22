@@ -61,6 +61,9 @@ export const updateHandler = Symbol('updateHandler');
 
 /**
  * Model for authorization data stored in the application.
+ * 
+ * TODO: (@jarrodek) I don't think this is needed anymore.
+ * We do not add basic auth header to requests in the engine anymore.
  */
 export class AuthDataModel extends Base {
   constructor() {
@@ -136,7 +139,7 @@ export class AuthDataModel extends Base {
     e.preventDefault();
     e.stopPropagation();
     const { url, method, authData } = e;
-    e.detail.result = this.update(url, method, authData);
+    e.detail.result = this._update(url, method, authData);
   }
 
   /**
@@ -147,7 +150,7 @@ export class AuthDataModel extends Base {
    * @param authData The authorization data to store. Schema depends on
    * the `authMethod` property. From model standpoint schema does not matter.
    */
-  async update(url: string, authMethod: string, authData: IAuthorizationData): Promise<ContextChangeRecord<IAuthorizationData>> {
+  async _update(url: string, authMethod: string, authData: IAuthorizationData): Promise<ContextChangeRecord<IAuthorizationData>> {
     const parsedUrl = normalizeUrl(url);
     const key = computeKey(authMethod, parsedUrl);
     let stored: IAuthorizationData | undefined;

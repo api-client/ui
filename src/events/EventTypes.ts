@@ -103,6 +103,7 @@ export const EventTypes = Object.freeze({
     App: Object.freeze({
       runProjectRunner: 'navapprunprojectrunner',
       runHttpProject: 'navapprunhttpproject',
+      runHttpClient: 'navapprunhttpclient',
       runSchemaDesigner: 'navapprunschemadesigner',
       runStart: 'navapprunstart',
     }),
@@ -180,6 +181,7 @@ export const EventTypes = Object.freeze({
       destroyed: 'modeldestroyed',
       restored: 'modelrestored',
       Project: Object.freeze({
+        create: 'modelprojectcreate',
         read: 'modelprojectread',
         readBulk: 'modelprojectreadbulk',
         update: 'modelprojectchange',
@@ -194,6 +196,7 @@ export const EventTypes = Object.freeze({
         })
       }),
       History: Object.freeze({
+        create: 'modelhistorycreate',
         read: 'modelhistoryread',
         readBulk: 'modelhistoryreadbulk',
         update: 'modelhistorychange',

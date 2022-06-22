@@ -35,6 +35,13 @@ export class WebNavigationBindings extends NavigationBindings {
     this.open(url, url);
   }
 
+  async openHttpClient(init: INavDetail = {}): Promise<void> {
+    const url = this.getPageUrl('../http-client/main.html');
+    const { sameWindow } = init;
+    const id = url.toString();
+    this.open(id, id, sameWindow);
+  }
+
   async openHttpProject(init: INavRunHttpProjectDetail): Promise<void> {
     if (!init) {
       throw new Error(`The HTTP Project app initialization requires a configuration.`);

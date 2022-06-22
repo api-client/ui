@@ -126,6 +126,7 @@ export class Base {
     this._listHandler = this._listHandler.bind(this);
     this._readHandler = this._readHandler.bind(this);
     this._readBulkHandler = this._readBulkHandler.bind(this);
+    this._createHandler = this._createHandler.bind(this);
     this._updateHandler = this._updateHandler.bind(this);
     this._updateBulkHandler = this._updateBulkHandler.bind(this);
     this._deleteHandler = this._deleteHandler.bind(this);
@@ -373,6 +374,17 @@ export class Base {
       }
     }
     return items;
+  }
+
+  /**
+   * A specialized method to perform an update operation.
+   * By default it calls `put()` which replaces the whole object.
+   * Implement own logic that can perform a PATCH operation instead, if needed.
+   * 
+   * @param value The object to update.
+   */
+  async update(value: unknown): Promise<ContextChangeRecord<unknown>> {
+    return this.put(value);
   }
 
   async put(value: unknown): Promise<ContextChangeRecord<unknown>> {
@@ -634,6 +646,15 @@ export class Base {
   }
 
   protected _updateHandler(e: ContextUpdateEvent<any>): void {
+    if (this._eventCancelled(e)) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    e.detail.result = this.update(e.detail.item);
+  }
+
+  protected _createHandler(e: ContextUpdateEvent<any>): void {
     if (this._eventCancelled(e)) {
       return;
     }

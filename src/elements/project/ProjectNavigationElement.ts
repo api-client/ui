@@ -23,10 +23,6 @@ export default class ProjectNavigationElement extends AppNavigation {
         height: 100%;
         font-style: italic;
       }
-
-      li {
-        /* padding-left: 0 !important; */
-      }
       `,
     ];
   }

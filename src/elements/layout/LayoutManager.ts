@@ -29,6 +29,10 @@ export interface ILayoutItem {
    */
   key: string;
   /**
+   * Optional parent information that helps location this object.
+   */
+  parent?: string;
+  /**
    * The label to render in the tab.
    */
   label: string;
@@ -48,6 +52,15 @@ export interface ILayoutItem {
    * A tab that is always present in the layout. The user can't close this tab.
    */
   persistent?: boolean;
+  /**
+   * A property to be used by the screen to indicate the property is being loaded
+   * (from a data store, file, etc).
+   */
+  loading?: boolean;
+  /**
+   * Indicates the item has been changed and is out of sync with the data store.
+   */
+  isDirty?: boolean;
 }
 
 export interface ILayoutOptions {
@@ -200,7 +213,7 @@ export class LayoutPanel {
    * Adds an item to the layout.
    * 
    * @param item The item to add
-   * @param region The region where to put the item. When other than `center` it splits the layout giving the region
+   * @param opts Layout adding item options
    * @returns Whether a new item was added to the layout. false when the item is already in the layout panel.
    */
   addItem(item: ILayoutItem, opts: ILayoutItemAddOptions = {}): boolean {
@@ -338,6 +351,12 @@ export class LayoutPanel {
       }
       this.selected = nextKey;
     }
+    this.manager.dispatchEvent(new CustomEvent('closetab', {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      detail: key,
+    }));
     this.manager.changed();
     this.manager.forceUpdateLayout(this.id);
     return removed;

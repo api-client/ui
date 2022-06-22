@@ -1,6 +1,6 @@
 import { Environment, IEnvironment, IThing, Thing, uuidV4 } from "@api-client/core/build/browser.js";
 import { Core as JsonCore } from "@api-client/json";
-import { ILayoutState } from "../../elements/layout/LayoutManager.js";
+import { ILayoutState, LayoutManager } from "../../elements/layout/LayoutManager.js";
 
 export const Kind = 'HttpClient#Workspace';
 
@@ -15,6 +15,8 @@ export interface IWorkspaceItem {
   key: string;
   /**
    * Optional parent this item belongs to.
+   * 
+   * Currently we use this to set the `AppProject` key. In the future we may want to use it for more types.
    */
   parent?: string;
   /**
@@ -25,7 +27,7 @@ export interface IWorkspaceItem {
   /**
    * Item's data. Format depends on the kind.
    */
-  data: unknown;
+  data?: unknown;
 }
 
 export interface IWorkspaceState {
@@ -33,11 +35,6 @@ export interface IWorkspaceState {
    * Settings for the application navigation
    */
   navigation?: INavigationState;
-
-  /**
-   * The layout configuration for the workspace.
-   */
-  layout?: ILayoutState;
 }
 
 export interface INavigationState {
@@ -73,6 +70,10 @@ export interface IHttpWorkspace {
    * The workspace UI state.
    */
   state?: IWorkspaceState;
+  /**
+   * The state of the workspace panel layout
+   */
+  layout?: ILayoutState;
 }
 
 export class HttpWorkspace {
@@ -105,9 +106,15 @@ export class HttpWorkspace {
   /**
    * The workspace UI state.
    */
-  state?: IWorkspaceState
+  state?: IWorkspaceState;
 
-  constructor(input?: string | IHttpWorkspace) {
+  /**
+   * The layout configuration for the workspace.
+   */
+  layout: LayoutManager;
+
+  constructor(layout: LayoutManager, input?: string | IHttpWorkspace) {
+    this.layout = layout;
     let init: IHttpWorkspace;
     if (typeof input === 'string') {
       init = JSON.parse(input);
@@ -132,7 +139,7 @@ export class HttpWorkspace {
     if (!HttpWorkspace.isWorkspace(init)) {
       throw new Error(`Not an HTTP Client workspace.`);
     }
-    const { environments, info, items, key = uuidV4(), state, } = init;
+    const { environments, info, items, key = uuidV4(), state, layout } = init;
     this.kind = Kind;
     this.key = key;
 
@@ -157,6 +164,11 @@ export class HttpWorkspace {
     } else {
       this.state = undefined;
     }
+    if (layout) {
+      this.layout.initialize(layout);
+    } else {
+      this.layout.initialize();
+    }
   }
 
   /**
@@ -175,6 +187,7 @@ export class HttpWorkspace {
       kind: Kind,
       key: this.key,
       info: this.info.toJSON(),
+      layout: this.layout.toJSON(),
     };
     if (this.state) {
       result.state = JsonCore.clone(this.state);

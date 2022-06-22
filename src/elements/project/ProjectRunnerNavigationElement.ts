@@ -5,18 +5,18 @@ import { HttpProject, ProjectFolder, ProjectRequest, ProjectRequestKind } from '
 import ProjectNavigationElement from './ProjectNavigationElement.js';
 
 export default class ProjectRunnerNavigationElement extends ProjectNavigationElement {
-  protected _renderParentChildrenTemplate(parent: HttpProject | ProjectFolder, indent: number = 0): TemplateResult | string {
+  protected _renderParentChildrenTemplate(parent: HttpProject | ProjectFolder): TemplateResult | string {
     const { key } = parent;
     const folders = parent.listFolders();
     const requests = parent.listRequests();
     const isProject = parent.getProject() === undefined;
     return html`
-    ${folders.map(f => this.renderFolder(f, indent, isProject ? undefined : key))}
-    ${requests.map(r => this.renderRequest(r, indent, isProject ? undefined : key))}
+    ${folders.map(f => this.renderFolder(f, isProject ? undefined : key))}
+    ${requests.map(r => this.renderRequest(r, isProject ? undefined : key))}
     `;
   }
 
-  protected renderRequest(request: ProjectRequest, indent: number, parentKey?: string): TemplateResult | string {
+  protected renderRequest(request: ProjectRequest, parentKey?: string): TemplateResult | string {
     const { key } = request;
     const name = request.info.name || 'Unnamed request';
     const classes = {

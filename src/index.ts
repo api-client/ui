@@ -12,6 +12,7 @@ export { default as ConfigInitScreen } from "./pages/init/ConfigInitScreen.js";
 export { default as ConfigAuthenticateScreen } from "./pages/init/ConfigAuthenticateScreen.js";
 export { default as AnalyticsConsentScreen } from "./pages/init/AnalyticsConsentScreen.js";
 export { default as StartScreen } from "./pages/start/StartScreen.js";
+export { default as HttpClientScreen } from "./pages/http-client/HttpClientScreen.js";
 export { default as HttpProjectScreen } from "./pages/http-project/HttpProjectScreen.js";
 export { default as StoreConfigScreen } from "./pages/store/StoreConfigScreen.js";
 export { default as ProjectRunnerScreen } from "./pages/project-runner/ProjectRunnerScreen.js";

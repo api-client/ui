@@ -105,9 +105,9 @@ export class HistoryModel extends Base {
   }
 
   /**
-   * Updates a project in the local and remote store.
+   * Updates a request in the local and remote store.
    * 
-   * @param value The project to update.
+   * @param value The request to update.
    */
   async update(value: IAppRequest | AppRequest): Promise<ContextChangeRecord<IAppRequest>> {
     const current = await this.get(value.key);
@@ -123,7 +123,9 @@ export class HistoryModel extends Base {
     const patch = Patch.diff(current, schema);
     this.pendingItems.patch.push({ patch, key: value.key });
     this._scheduleStoreUpload();
-    return super.put(schema) as Promise<ContextChangeRecord<IAppRequest>>;
+    const result = await super.put(schema) as ContextChangeRecord<IAppRequest>;
+    Events.HttpClient.Model.History.State.update(result, this.eventsTarget);
+    return result;
   }
 
   async get(key: string, opts?: IGetOptions): Promise<IAppRequest | undefined> {
@@ -249,6 +251,7 @@ export class HistoryModel extends Base {
     super.listen(node);
     node.addEventListener(EventTypes.HttpClient.Model.History.read, this._readHandler as EventListener);
     node.addEventListener(EventTypes.HttpClient.Model.History.readBulk, this._readBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.History.create, this._createHandler as EventListener);
     node.addEventListener(EventTypes.HttpClient.Model.History.update, this._updateHandler as EventListener);
     node.addEventListener(EventTypes.HttpClient.Model.History.updateBulk, this._updateBulkHandler as EventListener);
     node.addEventListener(EventTypes.HttpClient.Model.History.delete, this._deleteHandler as EventListener);
@@ -262,6 +265,7 @@ export class HistoryModel extends Base {
     super.unlisten(node);
     node.removeEventListener(EventTypes.HttpClient.Model.History.read, this._readHandler as EventListener);
     node.removeEventListener(EventTypes.HttpClient.Model.History.readBulk, this._readBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.History.create, this._createHandler as EventListener);
     node.removeEventListener(EventTypes.HttpClient.Model.History.update, this._updateHandler as EventListener);
     node.removeEventListener(EventTypes.HttpClient.Model.History.updateBulk, this._updateBulkHandler as EventListener);
     node.removeEventListener(EventTypes.HttpClient.Model.History.delete, this._deleteHandler as EventListener);
@@ -331,7 +335,7 @@ export class HistoryModel extends Base {
   /**
    * Reads requests data from the store from the last checked time.
    */
-  async storeConsume(): Promise<void> {
+  async pullStore(): Promise<void> {
     const since = await Events.Config.Local.get(lastSyncKey) as number | undefined;
     await this._sync(since);
     await Events.Config.Local.set(lastSyncKey, Date.now());

@@ -8,13 +8,21 @@ export class HttpClientContextMenu extends ContextMenu {
     this.registerCommands(commands);
   }
 
+  elementToTarget(element: HTMLElement | SVGElement): string | undefined {
+    const name = element.localName;
+    if (element.dataset.kind) {
+      return `${name}[data-kind="${element.dataset.kind}"]`;
+    }
+    return super.elementToTarget(element);
+  }
+
   /**
    * Finds the click target which can be one of the model objects
    * or SVG elements.
    */
   findTarget(e: PointerEvent): HTMLElement|SVGElement|undefined {
     const element = e.target as HTMLElement;
-    if (element.localName === 'project-navigation') {
+    if (element.localName === 'http-client-navigation') {
       return this.readNavigationElement(e, element);
     }
     if (element.localName === 'layout-panel') {
@@ -38,7 +46,7 @@ export class HttpClientContextMenu extends ContextMenu {
         return elm;
       }
       // top most for the navigation
-      if (elm.localName === 'project-navigation') {
+      if (elm.localName === 'http-client-navigation') {
         return elm;
       }
     }

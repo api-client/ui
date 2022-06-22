@@ -13,15 +13,44 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 */
-import { IAppProject, AppProject, ContextChangeRecord, ContextDeleteRecord, ContextListOptions, ContextListResult, ContextRestoreEvent } from '@api-client/core/build/browser.js';
+import { IAppProject, AppProject, ContextChangeRecord, ContextDeleteRecord, ContextListOptions, ContextListResult, ContextRestoreEvent, IListOptions } from '@api-client/core/build/browser.js';
+import { Patch } from '@api-client/json';
 import { Base, IGetOptions } from './Base.js';
 import { EventTypes } from '../../events/EventTypes.js';
 import { Events } from '../../events/Events.js';
+import { randomString } from '../../lib/Random.js';
+
+interface IPendingPatch {
+  patch: Patch.JsonPatch;
+  key: string;
+}
+
+const lastSyncKey = 'http-client.projects.lastSync';
 
 /**
  * ARC project model for version >= 18.
  */
 export class ProjectModel extends Base {
+  /**
+   * The list of items to synchronize with the server after they being created or updated.
+   */
+   pendingItems = {
+    create: [] as IAppProject[],
+    delete: [] as string[],
+    patch: [] as IPendingPatch[],
+    undelete: [] as string[],
+  };
+
+  pendingUpload = false;
+
+  pendingUploadTimeout?: NodeJS.Timeout;
+
+  /**
+   * Own patches sent to the server.
+   * These are removed after the sever event is received.
+   */
+  protected pendingPatches = new Map<string, Patch.JsonPatch>();
+
   constructor() {
     super('Projects');
 
@@ -41,6 +70,8 @@ export class ProjectModel extends Base {
 
     const result = await super.put(insert) as ContextChangeRecord<IAppProject>;
     Events.HttpClient.Model.Project.State.update(result, this.eventsTarget);
+    this.pendingItems.create.push(insert);
+    this._scheduleStoreUpload();
     return result;
   }
 
@@ -50,15 +81,43 @@ export class ProjectModel extends Base {
     }
     const inserts: IAppProject[] = [];
     values.forEach((i) => {
+      let value: IAppProject;
       if (typeof (i as AppProject).toJSON === 'function') {
-        inserts.push((i as AppProject).toJSON());
+        value = (i as AppProject).toJSON();
       } else {
-        inserts.push(i as IAppProject);
+        value = { ...i } as IAppProject;
       }
+      inserts.push(value);
+      this.pendingItems.create.push(value);
     });
 
     const result = await super.putBulk(inserts) as ContextChangeRecord<IAppProject>[];
     result.forEach(record => Events.HttpClient.Model.Project.State.update(record, this.eventsTarget));
+    this._scheduleStoreUpload();
+    return result;
+  }
+
+  /**
+   * Updates a project in the local and remote store.
+   * 
+   * @param value The project to update.
+   */
+  async update(value: IAppProject | AppProject): Promise<ContextChangeRecord<IAppProject>> {
+    const current = await this.get(value.key);
+    if (!current) {
+      return this.put(value);
+    }
+    let schema: IAppProject;
+    if (typeof (value as AppProject).toJSON === 'function') {
+      schema = (value as AppProject).toJSON();
+    } else {
+      schema = { ...value } as IAppProject;
+    }
+    const patch = Patch.diff(current, schema);
+    this.pendingItems.patch.push({ patch, key: value.key });
+    this._scheduleStoreUpload();
+    const result = await super.put(schema) as ContextChangeRecord<IAppProject>;
+    Events.HttpClient.Model.Project.State.update(result, this.eventsTarget);
     return result;
   }
 
@@ -75,6 +134,8 @@ export class ProjectModel extends Base {
     if (result) {
       Events.HttpClient.Model.Project.State.delete(result, this.eventsTarget);
     }
+    this.pendingItems.delete.push(key);
+    this._scheduleStoreUpload();
     return result;
   }
 
@@ -83,8 +144,10 @@ export class ProjectModel extends Base {
     result.forEach((record) => {
       if (record) {
         Events.HttpClient.Model.Project.State.delete(record, this.eventsTarget);
+        this.pendingItems.delete.push(record.key);
       }
     });
+    this._scheduleStoreUpload();
     return result;
   }
 
@@ -101,8 +164,10 @@ export class ProjectModel extends Base {
     result.forEach((record) => {
       if (record) {
         Events.HttpClient.Model.Project.State.update(record, this.eventsTarget)
+        this.pendingItems.undelete.push(record.key);
       }
     });
+    this._scheduleStoreUpload();
     return result;
   }
 
@@ -114,6 +179,7 @@ export class ProjectModel extends Base {
     super.listen(node);
     node.addEventListener(EventTypes.HttpClient.Model.Project.read, this._readHandler as EventListener);
     node.addEventListener(EventTypes.HttpClient.Model.Project.readBulk, this._readBulkHandler as EventListener);
+    node.addEventListener(EventTypes.HttpClient.Model.Project.create, this._createHandler as EventListener);
     node.addEventListener(EventTypes.HttpClient.Model.Project.update, this._updateHandler as EventListener);
     node.addEventListener(EventTypes.HttpClient.Model.Project.updateBulk, this._updateBulkHandler as EventListener);
     node.addEventListener(EventTypes.HttpClient.Model.Project.delete, this._deleteHandler as EventListener);
@@ -126,6 +192,7 @@ export class ProjectModel extends Base {
     super.unlisten(node);
     node.removeEventListener(EventTypes.HttpClient.Model.Project.read, this._readHandler as EventListener);
     node.removeEventListener(EventTypes.HttpClient.Model.Project.readBulk, this._readBulkHandler as EventListener);
+    node.removeEventListener(EventTypes.HttpClient.Model.Project.create, this._createHandler as EventListener);
     node.removeEventListener(EventTypes.HttpClient.Model.Project.update, this._updateHandler as EventListener);
     node.removeEventListener(EventTypes.HttpClient.Model.Project.updateBulk, this._updateBulkHandler as EventListener);
     node.removeEventListener(EventTypes.HttpClient.Model.Project.delete, this._deleteHandler as EventListener);
@@ -141,5 +208,69 @@ export class ProjectModel extends Base {
     e.preventDefault();
     e.stopPropagation();
     e.detail.result = this.undeleteBulk(e.detail.records);
+  }
+
+  protected _scheduleStoreUpload(): void {
+    if (this.pendingUpload) {
+      return;
+    }
+    this.pendingUpload = true;
+    this.pendingUploadTimeout = setTimeout(() => this._storeUpload(), 1000);
+  }
+
+  protected async _storeUpload(): Promise<void> {
+    const { create, delete: toDelete, patch, undelete } = this.pendingItems;
+    this.pendingItems.create = [];
+    this.pendingItems.delete = [];
+    this.pendingItems.patch = [];
+    this.pendingItems.undelete = [];
+    const ps: Promise<unknown>[] = [];
+    if (create.length) {
+      ps.push(Events.Store.App.Project.createBulk(create));
+    }
+    if (toDelete.length) {
+      ps.push(Events.Store.App.Project.deleteBulk(toDelete));
+    }
+    if (undelete.length) {
+      ps.push(Events.Store.App.Project.undeleteBulk(undelete));
+    }
+    if (patch.length) {
+      patch.forEach((i) => {
+        const id = randomString(16);
+        this.pendingPatches.set(id, i.patch);
+        ps.push(Events.Store.App.Project.patch(i.key, id, i.patch));
+      });
+    }
+    await Promise.allSettled(ps);
+    if (this.pendingItems.create.length || this.pendingItems.delete.length || this.pendingItems.patch.length || this.pendingItems.undelete.length) {
+      await this._storeUpload();
+    } else {
+      this.pendingUpload = false;
+    }
+  }
+
+  /**
+   * Reads projects data from the store from the last checked time.
+   */
+  async pullStore(): Promise<void> {
+    const since = await Events.Config.Local.get(lastSyncKey) as number | undefined;
+    await this._sync(since);
+    await Events.Config.Local.set(lastSyncKey, Date.now());
+  }
+
+  protected async _sync(sinceOrCursor?: number | string | undefined): Promise<void> {
+    const opts: IListOptions = {};
+    if (typeof sinceOrCursor === 'number') {
+      opts.since = sinceOrCursor;
+    } else if (sinceOrCursor) {
+      opts.cursor = sinceOrCursor;
+    }
+    const result = await Events.Store.App.Project.list(opts);
+    if (result.items.length) {
+      await this.putBulk(result.items);
+      if (result.cursor) {
+        await this._sync(result.cursor);
+      }
+    }
   }
 }

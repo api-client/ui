@@ -25,7 +25,7 @@ export default css`
   grid-template:
     "header header" 72px
     "nav content" 
-    "footer footer" 20px / minmax(200px, 2fr) 10fr;
+    "footer footer" 20px / minmax(320px, 2fr) 10fr;
 }
 
 header {

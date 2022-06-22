@@ -14,6 +14,7 @@ import { AppNavigationEvent, INavRunHttpProjectDetail, INavRunProjectRunnerDetai
 export abstract class NavigationBindings extends PlatformBindings {
   async initialize(): Promise<void> {
     window.addEventListener(EventTypes.Navigation.Store.config, this.storeConfigHandler.bind(this));
+    window.addEventListener(EventTypes.Navigation.App.runHttpClient, this.appNavigationHandler.bind(this) as EventListener);
     window.addEventListener(EventTypes.Navigation.App.runHttpProject, this.appNavigationHandler.bind(this) as EventListener);
     window.addEventListener(EventTypes.Navigation.App.runProjectRunner, this.appNavigationHandler.bind(this) as EventListener);
     window.addEventListener(EventTypes.Navigation.App.runStart, this.appNavigationHandler.bind(this) as EventListener);
@@ -62,6 +63,9 @@ export abstract class NavigationBindings extends PlatformBindings {
     }
     e.preventDefault();
     switch (e.type) {
+      case EventTypes.Navigation.App.runHttpClient:
+        this.openHttpClient(e.detail as INavDetail | undefined);
+        break;
       case EventTypes.Navigation.App.runHttpProject: 
         this.openHttpProject(e.detail as INavRunHttpProjectDetail);
         break;
@@ -86,6 +90,12 @@ export abstract class NavigationBindings extends PlatformBindings {
    * Opens a new window with the store configuration
    */
   abstract openStoreConfiguration(): Promise<void>;
+
+  /**
+   * Opens a new window with the HTTP Client application.
+   * @param init The HTTP Project app init options.
+   */
+  abstract openHttpClient(init?: INavDetail): Promise<void>;
 
   /**
    * Opens a new window with the HTTP Project

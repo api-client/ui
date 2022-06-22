@@ -6,9 +6,11 @@ export default css`
 }
 
 main,
-.project-nav {
-  overflow: auto;
-  max-height: calc(100vh - 74px - 20px);
+.project-nav,
+.project-nav > http-client-navigation {
+  height: calc(100vh - 74px - 20px);
+  margin: 0;
+  padding: 0;
 }
 
 #app main {
@@ -22,5 +24,19 @@ main,
 main layout-panel {
   flex: 1;
   overflow: auto;
+}
+
+.environment-editor-content {
+  padding: 20px;
+}
+
+.environment-editor-content environment-editor {
+  max-width: 800px;
+}
+
+.missing-data {
+  text-align: center;
+  margin-top: 40px;
+  font-style: italic;
 }
 `;

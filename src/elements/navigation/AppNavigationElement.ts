@@ -22,6 +22,10 @@ export interface ISelectDetail {
    * Optionally, the parent odf the selected item, if any.
    */
   parent?: string;
+  /**
+   * When applicable, the top object in the structure.
+   */
+  root?: string;
 }
 
 export interface IListItemRenderOptions {
@@ -33,6 +37,11 @@ export interface IListItemRenderOptions {
    * When set it forces this icon to be rendered next to the toggle button.
    */
   parentIcon?: IconType;
+  /**
+   * When set is add the `data-root` attribute.
+   * In principle, it represents a root object in the tree, if any.
+   */
+  root?: string;
 }
 
 /**
@@ -120,7 +129,11 @@ export default class AppNavigation extends ApiElement {
     }
 
     ul.root {
-      padding: 0 12px 0 0;
+      padding: 0;
+    }
+
+    ul.root > li {
+      padding: 0;
     }
 
     *[aria-disabled="true"] {
@@ -144,11 +157,15 @@ export default class AppNavigation extends ApiElement {
       text-overflow: ellipsis;
     }
 
+    .name-change-item {
+      padding: 0;
+    }
+
     .name-change {
       height: 40px;
       display: flex;
       align-items: center;
-      padding: 0px 20px;
+      /* padding: 0px 20px; */
       border-top: 1px rgba(0, 0, 0, var(--dark-divider-opacity)) solid;
       border-bottom: 1px rgba(0, 0, 0, var(--dark-divider-opacity)) solid;
     }
@@ -170,10 +187,15 @@ export default class AppNavigation extends ApiElement {
 
     .parent-item .list-item-content:not(.parent-content) {
       /* 
-        These are  element that are not parents but rendered under a parent.
+        These are element that are not parents but rendered under a parent.
         Because they have no toggle icon, we move them to the right by the size of the icon.
        */
-      padding-left: 24px;
+        /* It doesn't took right in the HTTP Client project navigation. */
+      /* padding-left: 24px; */
+    }
+
+    .name-commit-button {
+      min-width: 40px;
     }
     `];
   }
@@ -574,9 +596,9 @@ export default class AppNavigation extends ApiElement {
    * @param kind The kind of the selected item
    * @param parent Optional parent item.
    */
-  protected _notifySelection(key: string, kind: string, parent?: string): void {
+  protected _notifySelection(key: string, kind: string, parent?: string, root?: string): void {
     this.dispatchEvent(new CustomEvent<ISelectDetail>('select', {
-      detail: { key, kind, parent },
+      detail: { key, kind, parent, root },
     }));
   }
 
@@ -622,7 +644,7 @@ export default class AppNavigation extends ApiElement {
 
   protected _commitNameHandler(e: Event): void {
     e.preventDefault();
-    const input = (e.target as HTMLElement).previousElementSibling as HTMLInputElement;
+    const input = (e.currentTarget as HTMLElement).previousElementSibling as HTMLInputElement;
     if (!input || input.localName !== 'input') {
       return;
     }
@@ -710,7 +732,7 @@ export default class AppNavigation extends ApiElement {
     // In a tabbed / split layout the item can be closed while the navigation item still can 
     // be selected.
     this.selected = key;
-    this._notifySelection(key, node.dataset.kind as string);
+    this._notifySelection(key, node.dataset.kind as string, node.dataset.parent, node.dataset.root);
   }
 
   /**
@@ -858,6 +880,7 @@ export default class AppNavigation extends ApiElement {
       role="treeitem" 
       aria-expanded="${opened ? 'true' : 'false'}"
       data-parent="${ifDefined(opts.parent)}"
+      data-root="${ifDefined(opts.root)}"
       data-key="${key}"
       data-kind="${kind}"
       draggable="${opts.draggable ? 'true' : 'false'}"
@@ -891,7 +914,17 @@ export default class AppNavigation extends ApiElement {
   protected _listItemTemplate(key: string, kind: string, label: string, content: TemplateResult | TemplateResult[] | string, opts: IListItemRenderOptions = {}): TemplateResult {
     const { selected, _focused, edited } = this;
     if (edited === key) {
-      return this._nameInputTemplate(key, kind, label);
+      const input = this._nameInputTemplate(key, kind, label);
+      return html`
+      <li 
+        role="treeitem" 
+        class="name-change-item"
+        data-parent="${ifDefined(opts.parent)}"
+        data-root="${ifDefined(opts.root)}"
+        data-key="${key}"
+        data-kind="${kind}"
+      >${input}</li>
+      `;
     }
     const classes = {
       selected: selected === key,
@@ -902,6 +935,7 @@ export default class AppNavigation extends ApiElement {
       class="${classMap(classes)}" 
       role="treeitem" 
       data-parent="${ifDefined(opts.parent)}"
+      data-root="${ifDefined(opts.root)}"
       data-key="${key}"
       data-kind="${kind}"
       draggable="${opts.draggable ? 'true' : 'false'}"
@@ -917,7 +951,7 @@ export default class AppNavigation extends ApiElement {
     return html`
     <div class="name-change" @click="${EventUtils.cancelEvent}" @keydown="${EventUtils.cancelEvent}" @dblclick="${EventUtils.cancelEvent}">
       <input type="text" .value=${oldName || ''} @keydown="${this._nameInputKeydown}" data-key="${key}" data-kind="${kind}"/>
-      <anypoint-icon-button @click="${this._commitNameHandler}" aria-label="Confirm name change">
+      <anypoint-icon-button @click="${this._commitNameHandler}" aria-label="Confirm name change" class="name-commit-button">
         <api-icon icon="check"></api-icon>
       </anypoint-icon-button>
     </div>
@@ -929,9 +963,5 @@ export default class AppNavigation extends ApiElement {
     <api-icon icon="${icon}" class="object-icon"></api-icon>
     <span class="item-label" title="${label}">${label}</span>
     `;
-  }
-
-  protected _computeIndent(indent = 0): number {
-    return indent * 8 + 20;
   }
 }

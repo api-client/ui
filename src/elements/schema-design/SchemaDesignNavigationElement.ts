@@ -24,10 +24,6 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
       :host {
         display: block;
       }
-
-      li {
-        padding-left: 0 !important;
-      }
       `,
     ];
   }
@@ -108,64 +104,57 @@ export default class SchemaDesignNavigationElement extends AppNavigation {
     const dataModels = root.listDataModels();
     const contents: TemplateResult[] = [];
     namespaces.forEach(ns => {
-      contents.push(this._namespaceItemTemplate(ns, 0));
+      contents.push(this._namespaceItemTemplate(ns));
     });
     dataModels.forEach(ns => {
-      contents.push(this._dataModelItemTemplate(ns, 0));
+      contents.push(this._dataModelItemTemplate(ns));
     });
 
     return this._outerListTemplate(contents);
   }
 
-  protected _nsChildrenTemplate(current: DataNamespace, indent: number): TemplateResult {
+  protected _nsChildrenTemplate(current: DataNamespace): TemplateResult {
     const namespaces = current.listNamespaces();
     const dataModels = current.listDataModels();
     const contents: TemplateResult[] = [];
     namespaces.forEach(ns => {
-      contents.push(this._namespaceItemTemplate(ns, indent + 1));
+      contents.push(this._namespaceItemTemplate(ns));
     });
     dataModels.forEach(ns => {
-      contents.push(this._dataModelItemTemplate(ns, indent + 1));
+      contents.push(this._dataModelItemTemplate(ns));
     });
     return this._parentListItemTemplate(current.key, current.kind, current.info.name || 'Unnamed namespace', contents, {
-      indent,
       parentIcon: 'schemaNamespace',
     });
   }
 
-  protected _namespaceItemTemplate(item: DataNamespace, indent: number): TemplateResult {
+  protected _namespaceItemTemplate(item: DataNamespace): TemplateResult {
     const hasChildren = item.items.some(i => [DataNamespaceKind, DataModelKind].includes(i.kind));
     if (hasChildren) {
-      return this._nsChildrenTemplate(item, indent);
+      return this._nsChildrenTemplate(item);
     }
     const label = item.info.renderLabel;
     const content = this._itemContentTemplate('schemaNamespace', label);
-    return this._listItemTemplate(item.key, item.kind, label, content, {
-      indent: indent + 1,
-    });
+    return this._listItemTemplate(item.key, item.kind, label, content);
   }
 
-  protected _dataModelItemTemplate(current: DataModel, indent: number): TemplateResult {
+  protected _dataModelItemTemplate(current: DataModel): TemplateResult {
     const hasChildren = !!current.entities.length;
     const label = current.info.renderLabel;
     if (!hasChildren) {
       const content = this._itemContentTemplate('schemaModel', label);
-      return this._listItemTemplate(current.key, current.kind, label, content, {
-        indent: indent + 1,
-      });
+      return this._listItemTemplate(current.key, current.kind, label, content);
     }
-    const entities = current.entities.map(i => this._entityItemTemplate(i, indent + 1));
+    const entities = current.entities.map(i => this._entityItemTemplate(i));
     return this._parentListItemTemplate(current.key, current.kind, label, entities, {
-      indent,
       parentIcon: 'schemaModel',
     });
   }
 
-  protected _entityItemTemplate(item: DataEntity, indent: number): TemplateResult {
+  protected _entityItemTemplate(item: DataEntity): TemplateResult {
     const label = item.info.renderLabel;
     const content = this._itemContentTemplate('schemaEntity', label);
     return this._listItemTemplate(item.key, item.kind, label, content, {
-      indent: indent + 1,
       draggable: true,
     });
   }

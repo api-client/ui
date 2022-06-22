@@ -38,7 +38,7 @@ export interface INavRunProjectRunnerDetail extends INavDetail {
 export type NavRunDetail = INavRunHttpProjectDetail | INavRunProjectRunnerDetail | INavRunSchemaDesignerDetail | INavDetail;
 
 export class AppNavigationEvent extends CustomEvent<NavRunDetail> {
-  constructor(type: string, detail: NavRunDetail) {
+  constructor(type: string, detail: NavRunDetail = {}) {
     super(type, {
       bubbles: true,
       cancelable: true,
@@ -75,6 +75,16 @@ export const NavigationEvents = Object.freeze({
      */
     runHttpProject: (detail: INavRunHttpProjectDetail, target: EventTarget=document.body): void => {
       const e = new AppNavigationEvent(EventTypes.Navigation.App.runHttpProject, detail);
+      target.dispatchEvent(e);
+    },
+    /**
+     * Opens the HTTP Client application. 
+     * 
+     * @param detail The init environment for the HTTP Client app.
+     * @param target Optional events target
+     */
+    runHttpClient: (detail?: INavDetail, target: EventTarget=document.body): void => {
+      const e = new AppNavigationEvent(EventTypes.Navigation.App.runHttpClient, detail);
       target.dispatchEvent(e);
     },
     /**

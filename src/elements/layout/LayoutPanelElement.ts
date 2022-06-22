@@ -1,6 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { LitElement, html, TemplateResult, CSSResult, css } from 'lit';
 import { property, state, eventOptions } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { LayoutPanel, DropRegion, ILayoutItem } from './LayoutManager.js';
 import '../../define/api-icon.js';
@@ -104,6 +105,15 @@ export default class LayoutPanelElement extends LitElement {
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+    }
+
+    .is-dirty .tab-label {
+      font-style: italic;
+    }
+
+    .is-dirty .tab-label::after {
+      content: '*';
+      user-select: none;
     }
 
     .layout-tab.selected {
@@ -389,7 +399,6 @@ export default class LayoutPanelElement extends LitElement {
       }
       this.panel.removeItem(key);
       this.requestUpdate();
-    } else {
       this.dispatchEvent(new CustomEvent('closetab', {
         bubbles: true,
         cancelable: true,
@@ -549,19 +558,26 @@ export default class LayoutPanelElement extends LitElement {
   }
 
   protected tabTemplate(item: ILayoutItem, last: boolean): TemplateResult {
-    const { key, kind, label, index=0, icon } = item;
+    const { key, kind, label = '', index=0, icon, isDirty = false, parent } = item;
     const { panel } = this;
     const selected = !!panel && panel.selected === key;
     const closable = !item.persistent && !item.pinned;
     const classes = {
       'layout-tab': true,
+      'is-dirty': isDirty,
       selected,
     };
+    let title = label;
+    if (isDirty) {
+      title = 'Unsaved changes';
+    }
     return html`
     <div 
       data-key="${key}" 
       data-kind="${kind}"
       data-index="${index}"
+      data-parent="${ifDefined(parent)}"
+      data-dirty="${isDirty}"
       role="tab"
       class="${classMap(classes)}" 
       draggable="true"
@@ -573,7 +589,7 @@ export default class LayoutPanelElement extends LitElement {
       tabindex="0"
     >
       ${icon ? html`<api-icon icon="${icon}" class="tab-favicon"></api-icon>` : ''}
-      <span class="tab-label">${label}</span>
+      <span class="tab-label" title="${title}">${label}</span>
       ${closable ? html`<api-icon icon="cancelFilled" class="close-icon" @click="${this._tabCloseHandler}"></api-icon>` : ''}
     </div>
     ${last ? '' : html`<div class="tab-divider"></div>`}

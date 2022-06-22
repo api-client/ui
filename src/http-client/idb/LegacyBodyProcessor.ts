@@ -1,12 +1,4 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-/* eslint-disable class-methods-use-this */
-/** @typedef {import('@advanced-rest-client/events').ArcRequest.ARCHistoryRequest} ARCHistoryRequest */
-/** @typedef {import('@advanced-rest-client/events').ArcRequest.ARCSavedRequest} ARCSavedRequest */
-/** @typedef {import('@advanced-rest-client/events').ArcResponse.Response} ArcResponse */
-/** @typedef {import('@advanced-rest-client/events').RequestBody.MultipartBody} MultipartBody */
-/** @typedef {import('@advanced-rest-client/events').ArcResponse.TransformedPayload} TransformedPayload */
-/** @typedef {import('@advanced-rest-client/events').WebSocket.WebsocketRequest} WebsocketRequest */
-/** @typedef {import('@advanced-rest-client/events').WebSocket.WebsocketLog} WebsocketLog */
 
 import { ARCHistoryRequest, ARCSavedRequest, MultipartBody, Response as ArcResponse, TransformedPayload } from "@api-client/core/build/legacy.js";
 

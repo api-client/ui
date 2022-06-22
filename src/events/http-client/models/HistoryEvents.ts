@@ -9,6 +9,14 @@ import {
 import { EventTypes } from '../../EventTypes.js';
 
 export class HistoryEvents {
+  static create(item: IAppRequest, target: EventTarget = window): Promise<ContextChangeRecord<IAppRequest> | undefined> {
+    const e = new ContextUpdateEvent<IAppRequest>(EventTypes.HttpClient.Model.History.create, {
+      item,
+    });
+    target.dispatchEvent(e);
+    return e.detail.result as Promise<ContextChangeRecord<IAppRequest> | undefined>;
+  }
+
   static read(id: string, target: EventTarget = window): Promise<IAppRequest | undefined> {
     const e = new ContextReadEvent<IAppRequest>(EventTypes.HttpClient.Model.History.read, id);
     target.dispatchEvent(e);

@@ -4,11 +4,11 @@ import { get, set } from 'idb-keyval';
 import { AppRequest, IAppRequest, AppProject, IAuthorizationData, Certificate, IHostRule, HostRuleKind } from '@api-client/core/build/browser.js';
 import { ARCHistoryRequest, Normalizer, ARCProject, ARCSavedRequest, ARCAuthData, ARCCertificateIndex, ARCRequestCertificate, HostRule as LegacyHostRule } from '@api-client/core/build/legacy.js';
 import { LegacyBodyProcessor } from './LegacyBodyProcessor.js';
-import { HistoryModel } from '../idb/HistoryModel.js';
-import { ProjectModel } from '../idb/ProjectModel.js';
-import { AuthDataModel } from '../idb/AuthDataModel.js';
-import { CertificateModel } from '../idb/CertificateModel.js';
-import { HostsModel } from '../idb/HostsModel.js';
+import { HistoryModel } from './HistoryModel.js';
+import { ProjectModel } from './ProjectModel.js';
+import { AuthDataModel } from './AuthDataModel.js';
+import { CertificateModel } from './CertificateModel.js';
+import { HostsModel } from './HostsModel.js';
 
 const upgradeKey = 'CHL5v3fUMx';
 

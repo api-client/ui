@@ -4,7 +4,7 @@ import { classMap } from "lit/directives/class-map.js";
 import { property, state, eventOptions } from "lit/decorators.js";
 import { 
   ContextListOptions, IAppRequest, AppProject, Events as CoreEvents, ErrorResponse, IResponse, AppProjectFolder, 
-  AppProjectRequest, ContextStateUpdateEvent, ContextStateDeleteEvent, IAppProject 
+  AppProjectRequest, ContextStateUpdateEvent, ContextStateDeleteEvent, IAppProject, AppProjectFolderKind, AppProjectKind, AppProjectRequestKind, EnvironmentKind, Environment 
 } from "@api-client/core/build/browser.js";
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '@github/time-elements/dist/relative-time-element.js'
@@ -30,6 +30,9 @@ interface IPageState {
 
 /**
  * Main app navigation for the HttpClient application.
+ * 
+ * @fires rail - Dispatched when the `rail` selection change
+ * @fires minimized - Dispatched when the navigation's `minimized` value change.
  */
 export default class HttpClientNavigationElement extends AppNavigation {
   static get styles(): CSSResult[] {
@@ -238,14 +241,18 @@ export default class HttpClientNavigationElement extends AppNavigation {
         color: #804c00;
       }
 
+      .empty-list p {
+        text-align: center;
+      }
+
       .empty-list .tip {
         color: var(--secondary-text-color);
         font-size: var(--secondary-text-size);
-        margin-top: 20px;
+        margin: 20px;
       }
 
       .empty-button {
-        margin-top: 20px;
+        margin: 20px;
       }
       `,
     ];
@@ -273,7 +280,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
 
   constructor() {
     super();
-    this.rail = 'history';
+    this.rail = 'projects';
     this._modelDestroyedHandler = this._modelDestroyedHandler.bind(this);
     this._historyUpdatedHandler = this._historyUpdatedHandler.bind(this);
     this._historyDeletedHandler = this._historyDeletedHandler.bind(this);
@@ -539,7 +546,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
       return;
     }
     this.rail = type;
-    this._notifySelection();
+    this._notifyRailSelection();
     if (this.minimized) {
       this.minimized = false;
       this._notifyMinimized();
@@ -550,8 +557,8 @@ export default class HttpClientNavigationElement extends AppNavigation {
     this.dispatchEvent(new Event('minimized'));
   }
 
-  protected _notifySelection(): void {
-    this.dispatchEvent(new Event('selected'));
+  protected _notifyRailSelection(): void {
+    this.dispatchEvent(new Event('rail'));
   }
 
   @eventOptions({ passive: true })
@@ -566,6 +573,110 @@ export default class HttpClientNavigationElement extends AppNavigation {
   protected _createProjectHandler(): void {
     const project = AppProject.fromName('New project');
     Events.HttpClient.Model.Project.update(project.toJSON(), this);
+  }
+
+  protected _findProjectParentItem(key: string): HTMLLIElement | null | undefined {
+    const node = this.shadowRoot?.querySelector(`li[data-key="${key}"]`) as HTMLLIElement | null;
+    if (!node) {
+      return undefined;
+    }
+    let current = node.parentElement as HTMLElement;
+    while (current) {
+      if (current.nodeType !== Node.ELEMENT_NODE) {
+        current = current.parentElement as HTMLElement
+        continue;
+      }
+      if (current.nodeName !== 'li' || current.dataset.kind !== AppProjectKind) {
+        current = current.parentElement as HTMLElement
+        continue;
+      }
+      break;
+    }
+    return current as HTMLLIElement;
+  }
+
+  protected async _commitName(key: string, kind: string, name: string): Promise<void> {
+    if (!name) {
+      return;
+    }
+    switch (kind) {
+      case AppProjectFolderKind: await this._commitFolderName(key, name); break;
+      case AppProjectRequestKind: await this._commitRequestName(key, name); break;
+      case EnvironmentKind: await this._commitProjectEnvironmentName(key, name); break;
+      case AppProjectKind: await this._commitProjectName(key, name); break;
+      default:
+    }
+  }
+
+  protected async _commitFolderName(key: string, name: string): Promise<void> {
+    const node = this.shadowRoot?.querySelector(`li[data-key="${key}"]`) as HTMLLIElement | null;
+    const pid = node?.dataset?.root;
+    if (!pid) {
+      return;
+    }
+    const schema = await Events.HttpClient.Model.Project.read(pid, this);
+    if (!schema) {
+      return;
+    }
+    const project = new AppProject(schema);
+    const folder = project.findFolder(key);
+    if (!folder) {
+      return;
+    }
+    folder.info.name = name;
+    await Events.HttpClient.Model.Project.update(project.toJSON(), this);
+    this.edited = undefined;
+  }
+
+  protected async _commitRequestName(key: string, name: string): Promise<void> {
+    const node = this.shadowRoot?.querySelector(`li[data-key="${key}"]`) as HTMLLIElement | null;
+    const pid = node?.dataset?.root;
+    if (!pid) {
+      return;
+    }
+    const schema = await Events.HttpClient.Model.Project.read(pid, this);
+    if (!schema) {
+      return;
+    }
+    const project = new AppProject(schema);
+    const request = project.findRequest(key);
+    if (!request) {
+      return;
+    }
+    request.info.name = name;
+    await Events.HttpClient.Model.Project.update(project.toJSON(), this);
+    this.edited = undefined;
+  }
+
+  protected async _commitProjectEnvironmentName(key: string, name: string): Promise<void> {
+    const node = this.shadowRoot?.querySelector(`li[data-key="${key}"]`) as HTMLLIElement | null;
+    const pid = node?.dataset?.root;
+    if (!pid) {
+      return;
+    }
+    const schema = await Events.HttpClient.Model.Project.read(pid, this);
+    if (!schema) {
+      return;
+    }
+    const project = new AppProject(schema);
+    const env = project.findEnvironment(key);
+    if (!env) {
+      return;
+    }
+    env.info.name = name;
+    await Events.HttpClient.Model.Project.update(project.toJSON(), this);
+    this.edited = undefined;
+  }
+
+  protected async _commitProjectName(key: string, name: string): Promise<void> {
+    const schema = await Events.HttpClient.Model.Project.read(key, this);
+    if (!schema) {
+      return;
+    }
+    const project = new AppProject(schema);
+    project.info.name = name;
+    await Events.HttpClient.Model.Project.update(project.toJSON(), this);
+    this.edited = undefined;
   }
 
   render(): TemplateResult {
@@ -583,16 +694,6 @@ export default class HttpClientNavigationElement extends AppNavigation {
     return html`
     <div class="rail">
       <anypoint-icon-button
-        title="Select history"
-        ?anypoint="${anypoint}"
-        class=${classMap({'menu-item': true, selected: rail === 'history'})}
-        data-type="history"
-        @click="${this._railClickHandler}"
-      >
-        <api-icon icon="history"></api-icon>
-      </anypoint-icon-button>
-
-      <anypoint-icon-button
         title="Select projects"
         ?anypoint="${anypoint}"
         class=${classMap({'menu-item': true, selected: rail === 'projects'})}
@@ -600,6 +701,16 @@ export default class HttpClientNavigationElement extends AppNavigation {
         @click="${this._railClickHandler}"
       >
         <api-icon icon="collectionsBookmark"></api-icon>
+      </anypoint-icon-button>
+
+      <anypoint-icon-button
+        title="Select history"
+        ?anypoint="${anypoint}"
+        class=${classMap({'menu-item': true, selected: rail === 'history'})}
+        data-type="history"
+        @click="${this._railClickHandler}"
+      >
+        <api-icon icon="history"></api-icon>
       </anypoint-icon-button>
 
       <anypoint-icon-button
@@ -764,46 +875,61 @@ export default class HttpClientNavigationElement extends AppNavigation {
   }
 
   protected _projectItemTemplate(project: AppProject): TemplateResult {
-    const content = this._renderParentChildrenTemplate(project);
-    const name = project.info.name || 'Unnamed project';
     const { kind, key } = project;
+    const content = this._renderParentChildrenTemplate(project, key);
+    const name = project.info.name || 'Unnamed project';
     return this._parentListItemTemplate(key, kind, name, content, {
       parentIcon: 'cloudFilled',
     });
   }
 
-  protected _renderParentChildrenTemplate(parent: AppProject | AppProjectFolder): TemplateResult | string {
+  protected _renderParentChildrenTemplate(parent: AppProject | AppProjectFolder, root: string): TemplateResult | string {
     const { key } = parent;
     const folders = parent.listFolders();
     const requests = parent.listRequests();
     const isProject = parent.getProject() === undefined;
-    const isEmpty = !folders.length && !requests.length;
+    const environments = parent.listEnvironments();
+    const isEmpty = !folders.length && !environments.length && !requests.length;
     if (isEmpty) {
       return html`<p class="list-item-content empty" aria-disabled="true">Empty folder</p>`;
     }
     return html`
-    ${folders.map(f => this.renderFolder(f, isProject ? undefined : key))}
-    ${requests.map(r => this.renderRequest(r, isProject ? undefined : key))}
+    ${folders.map(f => this.renderFolder(f, root, isProject ? undefined : key))}
+    ${environments.map(r => this.renderEnvironment(r, root, isProject ? undefined : key))}
+    ${requests.map(r => this.renderRequest(r, root, isProject ? undefined : key))}
     `;
   }
 
-  protected renderFolder(folder: AppProjectFolder, parentKey?: string): TemplateResult | string {
-    const content = this._renderParentChildrenTemplate(folder);
+  protected renderFolder(folder: AppProjectFolder, root: string, parentKey?: string): TemplateResult | string {
+    const content = this._renderParentChildrenTemplate(folder, root);
     const name = folder.info.name || 'Unnamed folder';
     const { kind, key } = folder;
     return this._parentListItemTemplate(key, kind, name, content, {
       parent: parentKey,
       parentIcon: 'folderFilled',
+      root,
     });
   }
 
-  protected renderRequest(request: AppProjectRequest, parentKey?: string): TemplateResult | string {
+  protected renderRequest(request: AppProjectRequest, root: string, parentKey?: string): TemplateResult | string {
     const name = request.info.name || 'Unnamed request';
     const { key, kind } = request;
     const content = this._itemContentTemplate('request', name);
     return this._listItemTemplate(key, kind, name, content, {
       parent: parentKey,
       draggable: true,
+      root,
+    });
+  }
+
+  protected renderEnvironment(environment: Environment, root: string, parentKey?: string): TemplateResult | string {
+    const name = environment.info.name || 'Unnamed environment';
+    const { key, kind } = environment;
+    const content = this._itemContentTemplate('environment', name);
+    return this._listItemTemplate(key, kind, name, content, {
+      parent: parentKey,
+      draggable: true,
+      root,
     });
   }
 

@@ -9,6 +9,14 @@ import {
 import { EventTypes } from '../../EventTypes.js';
 
 export class ProjectEvents {
+  static create(item: IAppProject, target: EventTarget = window): Promise<ContextChangeRecord<IAppProject> | undefined> {
+    const e = new ContextUpdateEvent<IAppProject>(EventTypes.HttpClient.Model.Project.create, {
+      item,
+    });
+    target.dispatchEvent(e);
+    return e.detail.result as Promise<ContextChangeRecord<IAppProject> | undefined>;
+  }
+
   static read(id: string, target: EventTarget = window): Promise<IAppProject | undefined> {
     const e = new ContextReadEvent<IAppProject>(EventTypes.HttpClient.Model.Project.read, id);
     target.dispatchEvent(e);

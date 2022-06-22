@@ -81,29 +81,25 @@ export default class SchemaNamespaceSelectorElement extends AppNavigation {
     `;
   }
 
-  protected _namespaceTreeTemplate(root: DataNamespace, indent = 0): TemplateResult {
+  protected _namespaceTreeTemplate(root: DataNamespace): TemplateResult {
     const children = root.listNamespaces();
-    const contents = children.map(item => this._nsItemTemplate(item, indent));
+    const contents = children.map(item => this._nsItemTemplate(item));
     return this._outerListTemplate(contents);
   }
 
-  protected _nsChildrenTemplate(item: DataNamespace, indent: number): TemplateResult {
+  protected _nsChildrenTemplate(item: DataNamespace): TemplateResult {
     const children = item.listNamespaces();
-    const contents = children.map(current => this._nsItemTemplate(current, indent));
-    return this._parentListItemTemplate(item.key, item.kind, item.info.name || 'Unnamed namespace', contents, {
-      indent,
-    });
+    const contents = children.map(current => this._nsItemTemplate(current));
+    return this._parentListItemTemplate(item.key, item.kind, item.info.name || 'Unnamed namespace', contents);
   }
 
-  protected _nsItemTemplate(item: DataNamespace, indent: number): TemplateResult {
+  protected _nsItemTemplate(item: DataNamespace): TemplateResult {
     const hasChildren = item.items.some(i => i.kind === DataNamespaceKind);
     if (hasChildren) {
-      return this._nsChildrenTemplate(item, indent + 1);
+      return this._nsChildrenTemplate(item);
     }
     const label = item.info.name || 'Unnamed namespace';
     const content = this._itemContentTemplate('schemaNamespace', label);
-    return this._listItemTemplate(item.key, item.kind, label, content, {
-      indent,
-    });
+    return this._listItemTemplate(item.key, item.kind, label, content);
   }
 }
