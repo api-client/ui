@@ -1,4 +1,8 @@
-import { IHttpRequest, HttpRequest, IRequestAuthorization, IRequestBaseConfig, IRequestLog, HttpProject, IProjectRunnerOptions, IProjectExecutionLog, Headers, IApplication } from "@api-client/core/build/browser.js";
+import { 
+  IHttpRequest, HttpRequest, IRequestLog, IProjectExecutionLog, Headers, IApplication, 
+  IRequestProxyInit, IProxyResult, IAppProjectProxyInit, IHttpProjectProxyInit, 
+  IApiError, ApiError 
+} from "@api-client/core/build/browser.js";
 import { Events } from "../../events/Events.js";
 import { HttpBindings } from "../base/HttpBindings.js";
 
@@ -19,35 +23,38 @@ export class WebHttpBindings extends HttpBindings {
     super(app);
   }
 
-  async coreSend(request: IHttpRequest, authorization?: IRequestAuthorization[], config?: IRequestBaseConfig): Promise<IRequestLog> {
-    const initBody: any = {
-      request,
-      kind: 'Core#Request',
-    };
-    if (Array.isArray(authorization)) {
-      initBody.authorization = authorization;
+  protected async _proxy(body: IRequestProxyInit | IHttpProjectProxyInit | IAppProjectProxyInit): Promise<IProxyResult> {
+    const env = await Events.Store.Global.getEnv();
+    if (!env || !env.token) {
+      throw new Error(`You are not authorized in the store to make a proxy request.`);
     }
-    if (config) {
-      initBody.config = config;
-    }
-    // step 1: initialize a session on the proxy server.
-    const location = await this._initProxySession(JSON.stringify(initBody), config && config.signal);
-    // step 2: send the request with the method and the body (if any).
     const init: RequestInit = {
-      method: request.method || 'GET',
-    }
-    if (!['get', 'head'].includes(init.method!.toLowerCase())) {
-      if (request.payload) {
-        const r = new HttpRequest(request);
-        const payload = await r.readPayload();
-        init.body = payload;
-      }
-    }
-    const response = await fetch(location, init);
+      body: JSON.stringify(body),
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'authorization': `Bearer ${env.token}, ${env.location}`,
+      },
+      cache: 'no-cache',
+    };
+    const response = await fetch(this.proxyUrl, init);
     if (response.status !== 200) {
-      throw new Error(`Invalid status code from the proxy response: ${response.status}`);
+      const error = await response.json() as IApiError;
+      throw new ApiError(error);
     }
-    return response.json();
+    return response.json() as Promise<IProxyResult>;
+  }
+
+  async coreRequest(init: IRequestProxyInit): Promise<IProxyResult<IRequestLog>> {
+    return this._proxy(init) as Promise<IProxyResult<IRequestLog>>;
+  }
+
+  async coreHttpProject(init: IHttpProjectProxyInit): Promise<IProxyResult<IProjectExecutionLog>> {
+    return this._proxy(init) as Promise<IProxyResult<IProjectExecutionLog>>;
+  }
+
+  async coreAppProject(init: IAppProjectProxyInit): Promise<IProxyResult<IProjectExecutionLog>> {
+    return this._proxy(init) as Promise<IProxyResult<IProjectExecutionLog>>;
   }
 
   async httpSend(request: IHttpRequest, init: RequestInit = {}): Promise<Response> {
@@ -75,65 +82,5 @@ export class WebHttpBindings extends HttpBindings {
       config.body = payload;
     }
     return fetch(request.url, config);
-  }
-
-  async projectSend(project: string | HttpProject, opts: IProjectRunnerOptions): Promise<IProjectExecutionLog> {
-    const env = await Events.Store.Global.getEnv();
-    if (!env || !env.token) {
-      throw new Error(`You are not authorized in the store to read project data.`);
-    }
-    let pid: string;
-    if (typeof project === 'string') {
-      pid = project
-    } else {
-      pid = project.key;
-    }
-    const initBody: any = {
-      pid,
-      opts,
-      kind: 'Core#Project',
-      token: env.token,
-      baseUri: env.location,
-    };
-    // step 1: initialize a session on the proxy server.
-    const location = await this._initProxySession(JSON.stringify(initBody), opts.signal);
-    // step 2: request the result. The proxy uses GET for project requests.
-    const response = await fetch(location);
-    if (response.status !== 200) {
-      throw new Error(`Invalid status code from the proxy response: ${response.status}`);
-    }
-    return response.json();
-  }
-
-  /**
-   * Initializes the proxy session on the proxy server.
-   * 
-   * @param body The body to send with the request details.
-   * @param signal Optional abort signal.
-   * @returns The location of the proxy endpoint where to send the actual request data.
-   */
-  protected async _initProxySession(body: string, signal?: AbortSignal): Promise<string> {
-    const init: RequestInit = {
-      body,
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-      cache: 'no-cache',
-    };
-    if (signal) {
-      init.signal = signal;
-    }
-    const url = `${this.proxyUrl}/init`;
-    const response = await fetch(url, init);
-    if (response.status !== 204) {
-      throw new Error(`Invalid status code from the proxy server when initializing a proxy session: ${response.status}`);
-    }
-    const loc = response.headers.get('location');
-    if (!loc) {
-      throw new Error(`The proxy server did not return the location after session initialization.`);
-    }
-    const targetUrl = new URL(loc, this.proxyUrl);
-    return targetUrl.toString();
   }
 }

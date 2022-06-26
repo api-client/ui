@@ -1,14 +1,12 @@
 /* eslint-disable no-param-reassign */
 import { html, TemplateResult, CSSResult } from 'lit';
 import { 
-  AppProject, AppProjectFolderKind, AppProjectKind, AppProjectRequestKind, EnvironmentKind, IEnvironment,
-  IAppProjectParent,
-  IAppProjectRequest,
+  AppProjectFolderKind, AppProjectKind, AppProjectRequestKind, EnvironmentKind, IEnvironment,
+  IAppProjectParent, IAppProjectRequest,
 } from '@api-client/core/build/browser.js';
 // import { Patch, JsonPatch, ApplyResult } from '@api-client/json';
 import { ApplicationScreen } from '../ApplicationScreen.js';
 import { Events } from '../../events/Events.js';
-// import { EventTypes } from '../../events/EventTypes.js';
 import styles from './HttpClientStyles.js';
 import globalStyles from '../styles/global-styles.js';
 import mainLayout from '../styles/grid-hnmf.js';
@@ -19,17 +17,14 @@ import { IRoute } from '../../mixins/RouteMixin.js';
 import { HttpWorkspace, IWorkspaceItem } from '../../http-client/models/HttpWorkspace.js';
 import { CertificateModel } from '../../http-client/idb/CertificateModel.js';
 import { HistoryModel } from '../../http-client/idb/HistoryModel.js';
-import { ProjectModel } from '../../http-client/idb/ProjectModel.js';
-// import { randomString } from '../../lib/Random.js';
-// import { navigate } from '../../lib/route.js';
-// import AppInfo from './AppInfo.js';
 import { ResizeEventDetail } from '../../lib/ResizableElements.js';
+import { query } from '../../lib/decorators.js';
+import HttpClientNavigationElement from '../../elements/http-client/HttpClientNavigationElement.js';
+import { ProjectsController } from './ProjectsController.js';
 import '../../define/http-client-navigation.js';
 import '../../define/environment-editor.js';
-
-interface IOpenedItems {
-  projects: AppProject[];
-}
+import '../../define/app-project-editor.js';
+import AppInfo from './AppInfo.js';
 
 export default class HttpProjectScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
@@ -63,15 +58,15 @@ export default class HttpProjectScreen extends ApplicationScreen {
 
   historyModel = new HistoryModel();
 
-  projectModel = new ProjectModel();
+  projects = new ProjectsController();
 
-  protected opened: IOpenedItems;
+  @query('http-client-navigation')
+  nav?: HttpClientNavigationElement | null;
+
+  protected _storeWorkspaceDebouncer?: number;
 
   constructor() {
     super();
-    this.opened = {
-      projects: [],
-    };
     this.workspace = new HttpWorkspace(this.layout);
     this.menu = new HttpClientContextMenu();
     this.menu.connect();
@@ -88,7 +83,6 @@ export default class HttpProjectScreen extends ApplicationScreen {
     await this.initializeStore();
     this.certificatesModel.listen(window);
     this.historyModel.listen(window);
-    this.projectModel.listen(window);
     const key = this.readWorkspaceKey();
     this.key = key;
     let workspace: HttpWorkspace;
@@ -104,7 +98,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
         return;
       }
     }
-    await this.synchronizeWorkspace(workspace);
+    await this.projects.synchronizeWorkspace(workspace);
     this.workspace = workspace;
     await this.layout.initialize();
     this.initializeRouting();
@@ -112,6 +106,8 @@ export default class HttpProjectScreen extends ApplicationScreen {
     this.layout.addEventListener('change', this._layoutChangeHandler.bind(this));
     this.layout.addEventListener('nameitem', this._nameLayoutItemHandler.bind(this));
     this.layout.addEventListener('closetab', this._tabClosed.bind(this) as EventListener);
+    this.projects.addEventListener('projectchange', this._projectMetaChange.bind(this) as EventListener);
+    this.projects.addEventListener('projectremove', this._projectDeletedHandler.bind(this) as EventListener);
   }
 
   protected resetRoute(): void {
@@ -153,53 +149,50 @@ export default class HttpProjectScreen extends ApplicationScreen {
    */
   protected _contextMenuMutationCallback(): void {
     this.render();
+    this.nav?.requestUpdate();
     // this.updateProject();
-    // const { nav } = this;
-    // if (nav) {
-    //   nav.requestUpdate();
-    // }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected _nameLayoutItemHandler(event: Event): void {
-    // const item = (event as CustomEvent).detail as ILayoutItem;
-    // if (item.kind === ProjectFolderKind) {
-    //   const folder = this.project?.findFolder(item.key);
-    //   if (folder && folder.info.name) {
-    //     item.label = folder.info.name;
-    //   } else {
-    //     item.label = 'Folder';
-    //   }
-    //   item.icon = 'folder';
-    // } else if (item.kind === ProjectRequestKind) {
-    //   const request = this.project?.findRequest(item.key);
-    //   if (request && request.info.name && request.info.name !== 'http://') {
-    //     item.label = request.info.name;
-    //   } else if (request && request.expects.url) {
-    //     item.label = request.expects.url;
-    //   } else {
-    //     item.label = 'HTTP request';
-    //   }
-    //   item.icon = 'request';
-    // } else if (item.kind === EnvironmentKind) {
-    //   const env = this.project?.getEnvironment(item.key);
-    //   if (env && env.info.name) {
-    //     item.label = env.info.name;
-    //   } else {
-    //     item.label = 'Environment';
-    //   }
-    //   item.icon = 'environment';
-    // }
+    const item = (event as CustomEvent).detail as ILayoutItem;
+    if (item.kind === AppProjectKind) {
+      const project = this.projects.projects.find(i => i.key === item.key);
+      if (!project) {
+        return;
+      }
+      item.label = project.info.renderLabel;
+    } else if (item.kind === AppProjectFolderKind) {
+      const project = this.projects.projects.find(i => i.key === item.parent);
+      if (!project) {
+        return;
+      }
+      const folder = project.findFolder(item.key);
+      if (!folder) {
+        return;
+      }
+      item.label = folder.info.renderLabel;
+    } else if (item.kind === AppProjectRequestKind) {
+      const project = this.projects.projects.find(i => i.key === item.parent);
+      if (!project) {
+        return;
+      }
+      const request = project.findRequest(item.key);
+      if (!request) {
+        return;
+      }
+      item.label = request.info.renderLabel;
+    } else if (item.kind === EnvironmentKind) {
+      const project = this.projects.projects.find(i => i.key === item.parent);
+      if (!project) {
+        return;
+      }
+      const env = project.getEnvironment(item.key);
+      if (!env) {
+        return;
+      }
+      item.label = env.info.renderLabel;
+    }
   }
-
-  // protected _requestChangeHandler(e: Event): void {
-  //   const node = e.target as HTMLElement;
-  //   const key = node.dataset.key as string;
-  //   if (!key) {
-  //     return;
-  //   }
-  //   this.layout.requestNameUpdate(key);
-  // }
 
   protected async requestWorkspace(key: string): Promise<HttpWorkspace> {
     const data = await Events.AppData.File.read(key, { type: 'workspace' }) as string | undefined;
@@ -211,91 +204,22 @@ export default class HttpProjectScreen extends ApplicationScreen {
   }
 
   protected async storeWorkspace(): Promise<void> {
+    const { _storeWorkspaceDebouncer } = this;
+    if (_storeWorkspaceDebouncer) {
+      return;
+    }
+    this._storeWorkspaceDebouncer = setTimeout(() => {
+      this._storeWorkspaceDebouncer = undefined;
+      this._storeWorkspace();
+    }, 1000) as unknown as number;
+  }
+
+  protected async _storeWorkspace(): Promise<void> {
     const { key, workspace } = this;
     if (!key || !workspace) {
       return;
     }
     await Events.AppData.File.write(key, JSON.stringify(workspace), { type: 'workspace' })
-  }
-
-  /**
-   * After opening a workspace we search for `AppProject`s and `AppRequest`s
-   * to open from the store if necessary. 
-   * 
-   * The `layout` on the workspace references data kept in the workspace's `items`.
-   * 
-   * When the workspace's `item` has the data we don't need to lookup the data in the data store.
-   * Otherwise, we read related projects and requests and set the `data` to the corresponding item
-   * (except for the "project" type).
-   * 
-   * In the view, the function rendering the data looks up for the data in the `item`'s `data` property
-   * only, unless type type is the project (project meta editor).
-   */
-  protected async synchronizeWorkspace(workspace: HttpWorkspace): Promise<void> {
-    await this._openWorkspaceProjects(workspace);
-    this._syncProjectItems(workspace);
-  }
-
-  protected async _openWorkspaceProjects(workspace: HttpWorkspace): Promise<void> {
-    // clears the cached projects.
-    this.opened.projects = [];
-    const { items } = workspace;
-    const ids: string[] = [];
-    items.forEach((item) => {
-      if (item.parent && !ids.includes(item.parent)) {
-        // folders, envs, and project requests always have a parent set.
-        ids.push(item.parent);
-      }
-    });
-    if (!ids.length) {
-      return;
-    }
-    const projects = await this.projectModel.getBulk(ids);
-    if (projects) {
-      this.opened.projects = projects.filter(p => !!p).map(p => new AppProject(p));
-    }
-  }
-
-  protected _syncProjectItems(workspace: HttpWorkspace): void {
-    const { projects } = this.opened;
-    if (!projects.length) {
-      return;
-    }
-    const { items } = workspace;
-    items.forEach((item) => {
-      if (!item.parent) {
-        // not a project item.
-        return;
-      }
-
-      if (item.data) {
-        // we don't override the data that are already set.
-        // TODO: what about a situation when we have updated project and stalled data?
-        return;
-      }
-
-      const project = projects.find(i => i.key === item.parent);
-      if (!project) {
-        // The UI will render missing project error.
-        return;
-      }
-      if (item.kind === AppProjectFolderKind) {
-        const data = project.findFolder(item.key);
-        if (data) {
-          item.data = data.toJSON();
-        }
-      } else if (item.kind === AppProjectRequestKind) {
-        const data = project.findRequest(item.key);
-        if (data) {
-          item.data = data.toJSON();
-        }
-      } else if (item.kind === EnvironmentKind) {
-        const data = project.findEnvironment(item.key);
-        if (data) {
-          item.data = data.toJSON();
-        }
-      }
-    });
   }
 
   protected _beforeResizeHandler(e: CustomEvent<ResizeEventDetail>): void {
@@ -335,21 +259,8 @@ export default class HttpProjectScreen extends ApplicationScreen {
     }
   }
 
-  protected async _ensureProject(key: string): Promise<AppProject> {
-    let project = this.opened.projects.find(i => i.key === key);
-    if (!project) {
-      const schema = await this.projectModel.get(key);
-      if (!schema) {
-        throw new Error(`The project was not found.`);
-      }
-      project = new AppProject(schema);
-      this.opened.projects.push(project);
-    }
-    return project;
-  }
-
   protected async _openProject(key: string): Promise<void> {
-    const project = await this._ensureProject(key);
+    const project = await this.projects.ensureProject(key);
     this.workspace.items.push({
       key,
       kind: AppProjectKind,
@@ -360,12 +271,12 @@ export default class HttpProjectScreen extends ApplicationScreen {
       key,
       kind: AppProjectKind,
       label: project.info.renderLabel,
-      icon: 'cloud',
+      icon: 'collectionsBookmarkOutline',
     });
   }
 
   protected async _openProjectFolder(key: string, pid: string): Promise<void> {
-    const project = await this._ensureProject(pid);
+    const project = await this.projects.ensureProject(pid);
     const folder = project.findFolder(key);
     if (!folder) {
       this.reportCriticalError(`The folder was not found in the project.`);
@@ -387,10 +298,10 @@ export default class HttpProjectScreen extends ApplicationScreen {
   }
 
   protected async _openProjectRequest(key: string, pid: string): Promise<void> {
-    const project = await this._ensureProject(pid);
+    const project = await this.projects.ensureProject(pid);
     const request = project.findRequest(key);
     if (!request) {
-      this.reportCriticalError(`The folder was not found in the project.`);
+      this.reportCriticalError(`The request was not found in the project.`);
       return;
     }
     this.workspace.items.push({
@@ -409,7 +320,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
   }
 
   protected async _openProjectEnvironment(key: string, pid: string): Promise<void> {
-    const project = await this._ensureProject(pid);
+    const project = await this.projects.ensureProject(pid);
     const environment = project.findEnvironment(key);
     if (!environment) {
       this.reportCriticalError(`The environment was not found in the project.`);
@@ -434,7 +345,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     const node = e.target as HTMLElement;
     const key = node.dataset.key as string;
     const pid = node.dataset.pid as string;
-    const project = this.opened.projects.find(i => i.key === pid);
+    const project = this.projects.projects.find(i => i.key === pid);
     if (!project) {
       return;
     }
@@ -497,7 +408,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
 
   protected async _triggerEnvironmentSave(item: IWorkspaceItem): Promise<void> {
     const { key, parent } = item;
-    const project = this.opened.projects.find(i => i.key === parent);
+    const project = this.projects.projects.find(i => i.key === parent);
     if (!project || !key) {
       return;
     }
@@ -512,7 +423,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
       return;
     }
     env.new(schema);
-    await this.projectModel.update(project);
+    await this.projects.projectModel.update(project);
     item.isDirty = false;
     const lItem = this.layout.findItem(key);
     if (lItem) {
@@ -522,6 +433,42 @@ export default class HttpProjectScreen extends ApplicationScreen {
     }
     this.render();
     this.storeWorkspace();
+  }
+
+  /**
+   * A handler for an event informing the application that the project metadata have changed
+   * in one of the components. The event is dispatched by the ProjectsController after the project change.
+   * This updates the current view, including: navigation, layout, and the main content.
+   */
+  protected _projectMetaChange(e: CustomEvent): void {
+    const key = e.detail as string;
+    if (!key) {
+      return;
+    }
+    this.render();
+    this.nav?.requestUpdate();
+    this.layout.requestNameUpdate(key);
+    this.layout.parentNameUpdate(key);
+    this.storeWorkspace();
+  }
+
+  protected _projectDeletedHandler(e: CustomEvent): void {
+    const key = e.detail;
+    let changed = false;
+    // remove any items from the workspace related to the project.
+    const { items } = this.workspace;
+    for (let i = items.length - 1; i >= 0; i--) {
+      const item = items[i];
+      if (item.key === key || item.parent === key) {
+        items.splice(i, 1);
+        this.layout.removeItem(item.key);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.storeWorkspace();
+    }
+    this.nav?.requestUpdate();
   }
 
   pageTemplate(): TemplateResult {
@@ -550,7 +497,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     const resizeDirection = 'east';
     return html`
     <nav class="project-nav" .resize="${resizeDirection}" @beforeresize="${this._beforeResizeHandler}">
-      <http-client-navigation @select="${this._projectOpenHandler}"></http-client-navigation>
+      <http-client-navigation .projects="${this.projects}" @select="${this._projectOpenHandler}"></http-client-navigation>
     </nav>
     `;
   }
@@ -610,15 +557,14 @@ export default class HttpProjectScreen extends ApplicationScreen {
 
   protected _projectTemplate(item: ILayoutItem, visible: boolean): TemplateResult {
     const { key } = item;
-    const { projects } = this.opened;
+    const { projects } = this.projects;
     const project = projects.find(i => i.key === key);
     if (!project) {
       return this._missingWorkspaceItemTemplate(item, visible, 'project');
     }
     return html`
     <div class="project-editor-content" ?hidden="${!visible}" data-key="${key}">
-      <p>Project: ${key}</p>
-      <p>Schema: ${JSON.stringify(project, null, 2)}</p>
+      <app-project-editor .project="${project}" data-key="${key}" .appId="${AppInfo.code}"></app-project-editor>
     </div>`;
   }
 

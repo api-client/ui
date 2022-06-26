@@ -8,7 +8,7 @@ import { svg, SVGTemplateResult } from 'lit';
 export const iconWrapper = (tpl: SVGTemplateResult, width = 24, height = 24): SVGTemplateResult => svg`<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" focusable="false" style="pointer-events: none; display: block; width: 100%; height: 100%;">${tpl}</svg>`;
 
 export type IconType = 
-  'add' | 'api' | 'apps' | 'arrowDropDown' | 'cancel' | 'cancelFilled' | 'check' | 'chevronRight' | 'close' | 'cloud' | 'cloudFilled' | 'collectionsBookmark' | 'deleteFile' | 'edit' | 'environment' | 'expandMore' | 
+  'add' | 'api' | 'apps' | 'arrowDropDown' | 'cancel' | 'cancelFilled' | 'check' | 'chevronRight' | 'close' | 'cloud' | 'cloudFilled' | 'collectionsBookmark' | 'collectionsBookmarkOutline' | 'deleteFile' | 'edit' | 'environment' | 'expandMore' | 
   'fileDownload' | 'folder' | 'folderFilled' | 'folderShared' | 'history' | 'info' | 'key' | 'leaderBoard' |
   'moreVert' | 'personAdd' | 'playArrow' | 'project' | 'remove' | 'rename' | 'request' | 'save' |
   'schema' | 'schemaEntity' | 'schemaModel' | 'schemaNamespace' | 'send' | 'settings' | 'space' | 'taskAlt' | 'timeline' | 'viewGrid' | 'viewList' | 'visibility' | 'visibilityOff' | 'warning';
@@ -25,6 +25,7 @@ export const close = iconWrapper(svg`<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5
 export const cloud = iconWrapper(svg`<path d="M12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6m0-2C9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96C18.67 6.59 15.64 4 12 4z"/>`);
 export const cloudFilled = iconWrapper(svg`<path d="M6.5 20Q4.225 20 2.613 18.425Q1 16.85 1 14.575Q1 12.625 2.175 11.1Q3.35 9.575 5.25 9.15Q5.875 6.85 7.75 5.425Q9.625 4 12 4Q14.925 4 16.962 6.037Q19 8.075 19 11Q20.725 11.2 21.863 12.487Q23 13.775 23 15.5Q23 17.375 21.688 18.688Q20.375 20 18.5 20Z"/>`);
 export const collectionsBookmark = iconWrapper(svg`<path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 10l-2.5-1.5L15 12V4h5v8z"></path>`);
+export const collectionsBookmarkOutline = iconWrapper(svg`<path d="M0 0h24v24H0V0z" fill="none"/><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 2v5l-1-.75L15 9V4h2zm3 12H8V4h5v9l3-2.25L19 13V4h1v12z"/>`);
 export const deleteFile = iconWrapper(svg`<path d="M0 0h24v24H0V0z" fill="none"/><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/>`);
 export const edit = iconWrapper(svg`<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path>`);
 export const environment = iconWrapper(svg`<path d="M160,32h0V160s0,0,0,0H32l0,0h0V32s0,0,0,0H160m0-12H32A12,12,0,0,0,20,32V160a12,12,0,0,0,12,12H160a12,12,0,0,0,12-12V32a12,12,0,0,0-12-12Z"/><path d="M96,68A28,28,0,1,1,68,96,28,28,0,0,1,96,68m0-12a40,40,0,1,0,40,40A40,40,0,0,0,96,56Z"/><rect width="192" height="192" style="fill:none"/>`, 192, 192);

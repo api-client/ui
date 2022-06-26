@@ -278,7 +278,7 @@ export default class HarViewerElement extends ApiElement {
   /** 
    * The HAR object to render.
    */
-  @property()
+  @property({ type: Object })
   get har(): Har | undefined {
     return this[harValue];
   }
@@ -295,7 +295,7 @@ export default class HarViewerElement extends ApiElement {
   /** 
    * When set it ignores pages matching and renders all requests in a single table.
    */
-  @property()
+  @property({ type: Boolean })
   get ignorePages(): boolean | undefined {
     return this[ignorePagesValue];
   }

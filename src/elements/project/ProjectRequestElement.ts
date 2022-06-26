@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { css, CSSResult, html, PropertyValueMap, TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents, IProjectRunnerOptions, EventUtils, IHttpHistory, HttpHistoryKind, IRequestLog, IApplication, DeserializedPayload } from '@api-client/core/build/browser.js';
+import { ProjectRequest, HttpRequest, HttpProject, RequestAuthorization, RequestUiMeta, Events as CoreEvents, IProjectRunnerOptions, EventUtils, IHttpHistory, HttpHistoryKind, IRequestLog, IApplication, DeserializedPayload, IHttpProjectProxyInit, HttpProjectKind } from '@api-client/core/build/browser.js';
 import { JsonPatchOperation } from '@api-client/json';
 import HttpRequestElement from '../http/HttpRequestElement.js';
 import { Events } from '../../events/Events.js';
@@ -287,10 +287,15 @@ export default class ProjectRequestElement extends HttpRequestElement {
       request: [key],
       recursive: true,
     };
+    const init: IHttpProjectProxyInit = {
+      kind: HttpProjectKind,
+      pid: project.key,
+      options: opts,
+    };
     this.loading = true;
     try {
-      const result = await CoreEvents.Transport.Project.send(project.key, opts, this);
-      const report = result?.iterations[0]?.executed[0];
+      const result = await CoreEvents.Transport.Core.httpProject(init, this);
+      const report = result?.result?.iterations[0]?.executed[0];
       if (report) {
         request.setLog(report);
         this.notifyRequestChanged();

@@ -270,6 +270,8 @@ export default class AppNavigation extends ApiElement {
       const node = this._nameInput;
       if (node) {
         node.focus();
+      } else {
+        this.ensureTreeVisibility(this.edited);
       }
     }
     if (cp.has('_focusedItem') && this._focusedItem) {

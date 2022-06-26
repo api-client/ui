@@ -1,7 +1,7 @@
 import { LitElement, html, TemplateResult, CSSResult, css, PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { 
-  HttpProject, ProjectFolder, IProjectRunnerOptions, Events as CoreEvents, IProjectExecutionLog, IApplication, IHttpHistoryBulkAdd, IRequestLog,
+  HttpProject, ProjectFolder, IProjectRunnerOptions, Events as CoreEvents, IProjectExecutionLog, IApplication, IHttpHistoryBulkAdd, IRequestLog, IHttpProjectProxyInit, HttpProjectKind,
 } from '@api-client/core/build/browser.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-tabs.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-tab.js';
@@ -164,21 +164,27 @@ export default class ProjectRunnerElement extends LitElement {
    */
   async execute(): Promise<void> {
     this._lastError = undefined;
-    const { _config: init = {}, folder, project } = this;
+    const { _config = {}, folder, project } = this;
     if (!project) {
       return;
     }
     if (folder) {
-      init.parent = folder;
+      _config.parent = folder;
     }
+    const init: IHttpProjectProxyInit = {
+      kind: HttpProjectKind,
+      pid: project.key,
+      options: _config,
+    };
+    
     this._running = true;
     try {
-      const result = await CoreEvents.Transport.Project.send(project.key, init, this);
+      const result = await CoreEvents.Transport.Core.httpProject(init, this);
       if (!result) {
         this._lastError = 'The project execution event was not handled.';
       } else {
-        this._lastResult = result;
-        this._createHistory(result);
+        this._lastResult = result.result;
+        this._createHistory(result.result);
       }
     } catch (e) {
       this._lastError = (e as Error).message;

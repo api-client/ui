@@ -4,6 +4,8 @@ import { property } from 'lit/decorators.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
 import '../../define/api-icon.js';
 
+export type IDialogType = 'files' | 'project';
+
 /**
  * A dialog that requests the user to confirm a delete action.
  * 
@@ -63,12 +65,17 @@ export default class ConfirmDeleteDialogElement extends AnypointDialogElement {
   /**
    * The type of the delete dialog. Renders a specialized view for the deleting type.
    */
-  @property({ type: String, reflect: true }) type?: 'files';
+  @property({ type: String, reflect: true }) type?: IDialogType;
 
   /**
    * General purpose name of the objects to list as to delete.
    */
   @property({ type: Array }) names?: string[];
+
+  /**
+   * General purpose name of the object to delete.
+   */
+  @property({ type: Array }) name?: string;
 
   render(): TemplateResult {
     return html`
@@ -86,6 +93,7 @@ export default class ConfirmDeleteDialogElement extends AnypointDialogElement {
   protected _contentTemplate(): TemplateResult {
     switch (this.type) {
       case 'files': return this._filesTemplate();
+      case 'project': return this._projectTemplate();
       default: return this._fallbackTemplate();
     }
   }
@@ -106,6 +114,14 @@ export default class ConfirmDeleteDialogElement extends AnypointDialogElement {
       ${names.map(n => html`<li>${n}</li>`)}
     </ul>
     `;
+  }
+
+  protected _projectTemplate(): TemplateResult {
+    const { name } = this;
+    if (!name) {
+      return html`<slot><p>Are you sure you want to delete this project?</p></slot>`;
+    }
+    return html`<slot><p>Are you sure you want to delete <b>${name}</b> project?</p></slot>`;
   }
 
   protected _fallbackTemplate(): TemplateResult {

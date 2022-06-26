@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { ContextMenuCommand, ExecuteOptions } from '@api-client/context-menu';
-import { AppProject, AppProjectFolderKind, AppProjectKind, AppProjectRequestKind, EnvironmentKind, HttpProject, ProjectRequestKind } from '@api-client/core/build/browser.js';
+import { AppProject, AppProjectFolderKind, AppProjectKind, AppProjectRequest, AppProjectRequestKind, EnvironmentKind, HttpProject, ProjectRequestKind } from '@api-client/core/build/browser.js';
 import { rename, close, add, folder, environment, request, deleteFile, info } from '../../elements/icons/Icons.js';
 import '../../define/rename-file-dialog.js';
 import { Events } from '../../events/Events.js';
@@ -9,6 +9,9 @@ import HttpClientNavigationElement from '../../elements/http-client/HttpClientNa
 import HttpProjectScreen from './HttpClientScreen.js';
 
 function findNavigation(element: HTMLElement): HttpClientNavigationElement {
+  if (element.localName === 'http-client-navigation') {
+    return element as HttpClientNavigationElement;
+  }
   const root = element.getRootNode() as ShadowRoot;
   return root.host as HttpClientNavigationElement;
 }
@@ -241,7 +244,8 @@ const commands: ContextMenuCommand[] = [
         return;
       }
       const project = new AppProject(schema);
-      const created = project.addRequest('http://');
+      const created = AppProjectRequest.fromName('New request', project);
+      project.addRequest(created);
       await Events.HttpClient.Model.Project.update(project.toJSON(), init.target);
       const nav = findNavigation(init.target as HTMLElement);
       nav.edited = created.key;
@@ -356,7 +360,8 @@ const commands: ContextMenuCommand[] = [
       if (!parent) {
         return;
       }
-      const created = parent.addRequest('http://');
+      const created = AppProjectRequest.fromName('New request', project);
+      parent.addRequest(created);
       await Events.HttpClient.Model.Project.update(project.toJSON(), init.target);
       const nav = findNavigation(init.target as HTMLElement);
       nav.edited = created.key;

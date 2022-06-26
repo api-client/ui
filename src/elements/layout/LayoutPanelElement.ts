@@ -78,6 +78,7 @@ export default class LayoutPanelElement extends LitElement {
     .layout-tabs {
       display: flex;
       align-items: center;
+      background: var(--layout-tabs-background, var(--secondary-background-color));
     }
 
     .layout-tab {
@@ -118,7 +119,7 @@ export default class LayoutPanelElement extends LitElement {
 
     .layout-tab.selected {
       /* z-index: 2; */
-      background: var(--layout-tab-select-background, #f6f6f6);
+      background: var(--layout-tab-select-background, var(--primary-background-color));
     }
 
     .layout-tab:not(.selected):hover {

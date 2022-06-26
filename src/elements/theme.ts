@@ -9,12 +9,25 @@ import { css } from "lit";
 export default css`
 .section-title {
   margin: 8px 20px;
-  text-transform: uppercase;
-  font-size: 0.873rem;
+  text-transform: var(--section-title-font-transform, uppercase);
+  font-size: var(--section-title-font-size, 0.873rem);
+  font-weight: var(--section-title-font-weight, 500);
+}
+
+.section-divider {
+  height: 1px;
+  background-color: var(--divider-color);
+  margin: 20px 0;
+}
+
+.section-description {
+  font-size: var(--secondary-text-size, .875rem);
+  color: var(--secondary-text-color);
+  max-width: 800px;
 }
 
 .secondary {
-  font-size: .875rem;
+  font-size: var(--secondary-text-size, .875rem);
   color: var(--secondary-text-color);
   display: flex;
   align-items: center;
@@ -35,8 +48,12 @@ export default css`
   user-select: text;
 }
 
-/* For autocomplete */
+.destructive-button {
+  background: var(--destructive-color);
+}
+
 .highlight {
+  /* For autocomplete */
   background-color: rgba(0, 0, 0, 0.12);
 }
 `;

@@ -4,7 +4,7 @@ import { classMap } from "lit/directives/class-map.js";
 import { property, state, eventOptions } from "lit/decorators.js";
 import { 
   ContextListOptions, IAppRequest, AppProject, Events as CoreEvents, ErrorResponse, IResponse, AppProjectFolder, 
-  AppProjectRequest, ContextStateUpdateEvent, ContextStateDeleteEvent, IAppProject, AppProjectFolderKind, AppProjectKind, AppProjectRequestKind, EnvironmentKind, Environment 
+  AppProjectRequest, ContextStateUpdateEvent, ContextStateDeleteEvent, AppProjectFolderKind, AppProjectKind, AppProjectRequestKind, EnvironmentKind, Environment 
 } from "@api-client/core/build/browser.js";
 import '@anypoint-web-components/awc/dist/define/anypoint-icon-button.js';
 import '@github/time-elements/dist/relative-time-element.js'
@@ -16,6 +16,7 @@ import { relativeDay } from "../../lib/time/Conversion.js";
 import '../../define/api-icon.js';
 import { statusIndicator, StatusStyles } from "../http/HttpStatus.js";
 import { ModelStateDeleteEvent } from "../../events/http-client/models/BaseEvents.js";
+import { ProjectsController } from "../../pages/http-client/ProjectsController.js";
 
 interface IPageState {
   /**
@@ -272,11 +273,11 @@ export default class HttpClientNavigationElement extends AppNavigation {
 
   protected _history?: IAppRequest[];
 
-  @state() protected projects: AppProject[] = [];
-
   @state() protected loading?: boolean;
 
-  protected _pageInfo = new Map<'history' | 'projects', IPageState>();
+  protected _pageInfo = new Map<'history', IPageState>();
+
+  @property({ type: Object }) projects?: ProjectsController;
 
   constructor() {
     super();
@@ -284,8 +285,6 @@ export default class HttpClientNavigationElement extends AppNavigation {
     this._modelDestroyedHandler = this._modelDestroyedHandler.bind(this);
     this._historyUpdatedHandler = this._historyUpdatedHandler.bind(this);
     this._historyDeletedHandler = this._historyDeletedHandler.bind(this);
-    this._projectUpdatedHandler = this._projectUpdatedHandler.bind(this);
-    this._projectDeletedHandler = this._projectDeletedHandler.bind(this);
   }
 
   connectedCallback(): void {
@@ -293,8 +292,6 @@ export default class HttpClientNavigationElement extends AppNavigation {
     window.addEventListener(EventTypes.HttpClient.Model.destroyed, this._modelDestroyedHandler as EventListener);
     window.addEventListener(EventTypes.HttpClient.Model.History.State.update, this._historyUpdatedHandler as EventListener);
     window.addEventListener(EventTypes.HttpClient.Model.History.State.delete, this._historyDeletedHandler as EventListener);
-    window.addEventListener(EventTypes.HttpClient.Model.Project.State.update, this._projectUpdatedHandler as EventListener);
-    window.addEventListener(EventTypes.HttpClient.Model.Project.State.delete, this._projectDeletedHandler as EventListener);
   }
 
   disconnectedCallback(): void {
@@ -302,8 +299,6 @@ export default class HttpClientNavigationElement extends AppNavigation {
     window.removeEventListener(EventTypes.HttpClient.Model.destroyed, this._modelDestroyedHandler as EventListener);
     window.removeEventListener(EventTypes.HttpClient.Model.History.State.update, this._historyUpdatedHandler as EventListener);
     window.removeEventListener(EventTypes.HttpClient.Model.History.State.delete, this._historyDeletedHandler as EventListener);
-    window.removeEventListener(EventTypes.HttpClient.Model.Project.State.update, this._projectUpdatedHandler as EventListener);
-    window.removeEventListener(EventTypes.HttpClient.Model.Project.State.delete, this._projectDeletedHandler as EventListener);
   }
 
   protected updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
@@ -320,8 +315,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
       this._sortedHistory = undefined;
       this._pageInfo.delete('history');
     } else if (store === 'Projects') {
-      this.projects = [];
-      this._pageInfo.delete('projects');
+      this.requestUpdate();
     }
   }
 
@@ -368,31 +362,6 @@ export default class HttpClientNavigationElement extends AppNavigation {
     }
   }
 
-  protected _projectUpdatedHandler(e: ContextStateUpdateEvent<IAppProject>): void {
-    const { key, item } = e.detail;
-    if (!item) {
-      return;
-    }
-    const current = this.projects;
-    const index = current.findIndex(i => i.key === key);
-    if (index >= 0) {
-      current[index] = new AppProject(item);
-    } else {
-      current.push(new AppProject(item));
-    }
-    this.requestUpdate();
-  }
-
-  protected _projectDeletedHandler(e: ContextStateDeleteEvent): void {
-    const { key } = e.detail;
-    const current = this.projects;
-    const index = current.findIndex(i => i.key === key);
-    if (index >= 0) {
-      current.splice(index, 1);
-      this.requestUpdate();
-    }
-  }
-
   protected async _requestData(): Promise<void> {
     const { rail } = this;
     if (!['history', 'projects'].includes(rail)) {
@@ -400,7 +369,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
     }
     if (rail === 'history' && !this._sortedHistory) {
       await this.getHistoryPage();
-    } else if (rail === 'projects' && !this.projects.length) {
+    } else if (rail === 'projects' && this.projects && !this.projects.projects.length) {
       await this.getProjectsPage();
     }
   }
@@ -450,36 +419,10 @@ export default class HttpClientNavigationElement extends AppNavigation {
   }
 
   protected async getProjectsPage(): Promise<void> {
-    const info = this._pageInfo.get('projects');
-    if (info && info.ended) {
-      return;
-    }
     this.loading = true;
-    const opts: ContextListOptions = {};
-    if (info && info.cursor) {
-      opts.nextPageToken = info.cursor;
-    } else {
-      opts.limit = 100;
-    }
-    try {
-      const data = await Events.HttpClient.Model.Project.list(opts, this);
-      if (data) {
-        if (data.nextPageToken) {
-          this._pageInfo.set('projects', { cursor: data.nextPageToken });
-        }
-        if (data.items.length) {
-          const instances = data.items.map(i => new AppProject(i));
-          this.projects = this.projects.concat(instances);
-        } else {
-          this._pageInfo.set('projects', { ended: true });
-        }
-      }
-    } catch (e) {
-      const err = e as Error;
-      CoreEvents.Telemetry.exception(err.message, false, this);
-    } finally {
-      this.loading = false;
-    }
+    await this.projects?.getProjectsPage();
+    this.loading = false;
+    this.requestUpdate();
   }
 
   protected _addHistoryList(list: IAppRequest[]): void {
@@ -609,73 +552,76 @@ export default class HttpClientNavigationElement extends AppNavigation {
   }
 
   protected async _commitFolderName(key: string, name: string): Promise<void> {
+    const { projects } = this;
     const node = this.shadowRoot?.querySelector(`li[data-key="${key}"]`) as HTMLLIElement | null;
     const pid = node?.dataset?.root;
-    if (!pid) {
+    if (!pid || !projects) {
       return;
     }
-    const schema = await Events.HttpClient.Model.Project.read(pid, this);
-    if (!schema) {
+    const project = projects.projects.find(p => p.key === pid);
+    if (!project) {
       return;
     }
-    const project = new AppProject(schema);
     const folder = project.findFolder(key);
     if (!folder) {
       return;
     }
     folder.info.name = name;
-    await Events.HttpClient.Model.Project.update(project.toJSON(), this);
+    await projects.projectModel.update(project);
     this.edited = undefined;
   }
 
   protected async _commitRequestName(key: string, name: string): Promise<void> {
+    const { projects } = this;
     const node = this.shadowRoot?.querySelector(`li[data-key="${key}"]`) as HTMLLIElement | null;
     const pid = node?.dataset?.root;
-    if (!pid) {
+    if (!pid || !projects) {
       return;
     }
-    const schema = await Events.HttpClient.Model.Project.read(pid, this);
-    if (!schema) {
+    const project = projects.projects.find(p => p.key === pid);
+    if (!project) {
       return;
     }
-    const project = new AppProject(schema);
     const request = project.findRequest(key);
     if (!request) {
       return;
     }
     request.info.name = name;
-    await Events.HttpClient.Model.Project.update(project.toJSON(), this);
+    await projects.projectModel.update(project);
     this.edited = undefined;
   }
 
   protected async _commitProjectEnvironmentName(key: string, name: string): Promise<void> {
+    const { projects } = this;
     const node = this.shadowRoot?.querySelector(`li[data-key="${key}"]`) as HTMLLIElement | null;
     const pid = node?.dataset?.root;
-    if (!pid) {
+    if (!pid || !projects) {
       return;
     }
-    const schema = await Events.HttpClient.Model.Project.read(pid, this);
-    if (!schema) {
+    const project = projects.projects.find(p => p.key === pid);
+    if (!project) {
       return;
     }
-    const project = new AppProject(schema);
     const env = project.findEnvironment(key);
     if (!env) {
       return;
     }
     env.info.name = name;
-    await Events.HttpClient.Model.Project.update(project.toJSON(), this);
+    await projects.projectModel.update(project);
     this.edited = undefined;
   }
 
   protected async _commitProjectName(key: string, name: string): Promise<void> {
-    const schema = await Events.HttpClient.Model.Project.read(key, this);
-    if (!schema) {
+    const { projects } = this;
+    if (!projects) {
       return;
     }
-    const project = new AppProject(schema);
+    const project = projects.projects.find(p => p.key === key);
+    if (!project) {
+      return;
+    }
     project.info.name = name;
-    await Events.HttpClient.Model.Project.update(project.toJSON(), this);
+    await projects.projectModel.update(project);
     this.edited = undefined;
   }
 
@@ -848,12 +794,17 @@ export default class HttpClientNavigationElement extends AppNavigation {
       return nothing;
     }
     const { projects } = this;
-    const hasProjects = !!projects && !!projects.length;
+    if (!projects) {
+      return html`
+      <p>Invalid initialization. Projects controller is not set.</p>
+      `;
+    }
+    const hasProjects = !!projects.projects && !!projects.projects.length;
     return html`
     <div class="menu-title">
       <span class="menu-title-label">Projects</span>
     </div>
-    ${hasProjects ? this._projectsList(projects) : this._emptyProjects()}
+    ${hasProjects ? this._projectsList(projects.projects) : this._emptyProjects()}
     `;
   }
 
@@ -879,7 +830,7 @@ export default class HttpClientNavigationElement extends AppNavigation {
     const content = this._renderParentChildrenTemplate(project, key);
     const name = project.info.name || 'Unnamed project';
     return this._parentListItemTemplate(key, kind, name, content, {
-      parentIcon: 'cloudFilled',
+      parentIcon: 'collectionsBookmark',
     });
   }
 

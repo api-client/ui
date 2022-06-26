@@ -1,4 +1,4 @@
-import { EventTypes as CoreEventTypes, HttpProject, ContextEvent, IRequestLog, IHttpRequest, IRequestAuthorization, IRequestBaseConfig, ICoreRequestDetail, IHttpRequestDetail, IProjectRequestDetail, IProjectRunnerOptions, IProjectExecutionLog } from '@api-client/core/build/browser.js';
+import { EventTypes as CoreEventTypes, ContextEvent, IRequestLog, IHttpRequest, IHttpRequestDetail, IProjectExecutionLog, IRequestProxyInit, IProxyResult, IHttpProjectProxyInit, IAppProjectProxyInit } from '@api-client/core/build/browser.js';
 import { PlatformBindings } from './PlatformBindings.js';
 
 /**
@@ -8,14 +8,22 @@ import { PlatformBindings } from './PlatformBindings.js';
  */
 export abstract class HttpBindings extends PlatformBindings {
   async initialize(): Promise<void> {
-    window.addEventListener(CoreEventTypes.Transport.Core.send, this._coreSendHandler.bind(this) as EventListener);
+    window.addEventListener(CoreEventTypes.Transport.Core.request, this._coreRequestHandler.bind(this) as EventListener);
+    window.addEventListener(CoreEventTypes.Transport.Core.httpProject, this._coreHttpProjectHandler.bind(this) as EventListener);
+    window.addEventListener(CoreEventTypes.Transport.Core.appProject, this._coreAppProjectHandler.bind(this) as EventListener);
     window.addEventListener(CoreEventTypes.Transport.Http.send, this._httpSendHandler.bind(this) as EventListener);
-    window.addEventListener(CoreEventTypes.Transport.Project.send, this._projectSendHandler.bind(this) as EventListener);
   }
 
-  protected _coreSendHandler(e: ContextEvent<ICoreRequestDetail, IRequestLog>): void {
-    const { request, authorization, config } = e.detail;
-    e.detail.result = this.coreSend(request, authorization, config);
+  protected _coreRequestHandler(e: ContextEvent<IRequestProxyInit, IProxyResult<IRequestLog>>): void {
+    e.detail.result = this.coreRequest(e.detail);
+  }
+
+  protected _coreHttpProjectHandler(e: ContextEvent<IHttpProjectProxyInit, IProxyResult<IProjectExecutionLog>>): void {
+    e.detail.result = this.coreHttpProject(e.detail);
+  }
+
+  protected _coreAppProjectHandler(e: ContextEvent<IAppProjectProxyInit, IProxyResult<IProjectExecutionLog>>): void {
+    e.detail.result = this.coreAppProject(e.detail);
   }
 
   protected _httpSendHandler(e: ContextEvent<IHttpRequestDetail, Response>): void {
@@ -23,20 +31,29 @@ export abstract class HttpBindings extends PlatformBindings {
     e.detail.result = this.httpSend(request, init);
   }
 
-  protected _projectSendHandler(e: ContextEvent<IProjectRequestDetail, IProjectExecutionLog>): void {
-    const { project, opts } = e.detail;
-    e.detail.result = this.projectSend(project, opts);
-  }
-
   /**
    * Sends a single request without a context of a project.
    * 
-   * @param request The request definition
-   * @param authorization When known, a list of authorization configuration to apply to the request.
-   * @param config Optional request configuration.
-   * @returns The execution log
+   * @param init The request execution configuration
+   * @returns The execution log with the variables evaluated during the run or `undefined` when the event was not handled.
    */
-  abstract coreSend(request: IHttpRequest, authorization?: IRequestAuthorization[], config?: IRequestBaseConfig): Promise<IRequestLog>;
+  abstract coreRequest(init: IRequestProxyInit): Promise<IProxyResult<IRequestLog>>;
+
+  /**
+   * For both a request or a folder (since it's all single configuration.)
+   * 
+   * @param init The project execution configuration
+   * @returns The project execution log.
+   */
+  abstract coreHttpProject(init: IHttpProjectProxyInit): Promise<IProxyResult<IProjectExecutionLog>>;
+
+  /**
+   * Executes request from the AppProject.
+   * 
+   * @param init The project execution configuration
+   * @returns The project execution log.
+   */
+  abstract coreAppProject(init: IAppProjectProxyInit): Promise<IProxyResult<IProjectExecutionLog>>;
 
   /**
    * Sends the request outside the Core engine, most probably using Fetch API.
@@ -47,13 +64,4 @@ export abstract class HttpBindings extends PlatformBindings {
    * @returns Compatible with the Fetch API Response object.
    */
   abstract httpSend(request: IHttpRequest, init?: RequestInit): Promise<Response>;
-
-  /**
-   * For both a request or a folder (since it's all single configuration.)
-   * 
-   * @param project The instance of a project or an id of the project to execute. The current user has to be already authenticated.
-   * @param opts The project execution options.
-   * @returns The project execution log.
-   */
-  abstract projectSend(project: HttpProject | string, opts: IProjectRunnerOptions): Promise<IProjectExecutionLog>;
 }

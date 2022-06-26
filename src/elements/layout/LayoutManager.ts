@@ -745,6 +745,21 @@ export class LayoutManager extends EventTarget {
     return undefined;
   }
 
+  * findParentItem(key: string, parent?: LayoutPanel): Generator<ILayoutItem> {
+    const panels = parent ? parent.panels : this.panels;
+    for (const p of panels) {
+      const { items } = p;
+      for (const i of items) {
+        if (i.parent === key) {
+          yield i;
+        }
+      }
+      for (const result of this.findParentItem(key, p)) {
+        yield result;
+      }
+    }
+  }
+
   /**
    * Adds an item to the active panel.
    * 
@@ -867,5 +882,25 @@ export class LayoutManager extends EventTarget {
         this.forceUpdateLayout(panel.id);
       }
     }
+  }
+
+  /**
+   * Requests to dispatch the `nameitem` event so the application can update the name of a tab
+   * that has a parent.
+   * 
+   * @param parent The key of the parent.
+   */
+  parentNameUpdate(parent: string): void {
+    for (const item of this.findParentItem(parent)) {
+      const before = item.label;
+      this.nameItem(item);
+      if (before !== item.label) {
+        const panel = this.findItemPanel(item.key);
+        if (panel) {
+          this.forceUpdateLayout(panel.id);
+        }
+      }
+    }
+    
   }
 }

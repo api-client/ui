@@ -8,16 +8,22 @@ html {
 
 body {
   --error-color: #f44336;
+  --destructive-color: var(--error-color);
   --accent-color: #2196f3;
-  --primary-text-color: #000;
   --primary-color: #e91e63;
-  --secondary-text-color: #707070;
   --secondary-text-size: .873rem;
   --primary-background-color: #ffffff;
   --secondary-background-color: #f6f6f6;
   --dark-divider-opacity: 0.12;
   --divider-color: rgba(0, 0, 0, var(--dark-divider-opacity));
   --link-color: #0047b2;
+  
+  /* Fonts */
+  --primary-text-color: #000;
+  --secondary-text-color: #707070;
+  --section-title-font-size: var(--secondary-text-size);
+  --section-title-font-transform: uppercase;
+  --section-title-font-weight: 500;
 
   --anypoint-color-primary: rgba(0, 0, 0, 0.74);
 
