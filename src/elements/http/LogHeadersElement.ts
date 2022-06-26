@@ -531,7 +531,10 @@ export default class LogHeadersElement extends LitElement {
     this._activeItem = node.dataset.id as string;
     this._focusedItem = node.dataset.id as string;
     this._focusedElement = node;
-    node.scrollIntoView();
+    node.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+    });
   }
 
   /**

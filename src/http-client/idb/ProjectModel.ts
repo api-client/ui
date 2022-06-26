@@ -114,10 +114,14 @@ export class ProjectModel extends Base {
       schema = { ...value } as IAppProject;
     }
     const patch = Patch.diff(current, schema);
-    this.pendingItems.patch.push({ patch, key: value.key });
-    this._scheduleStoreUpload();
+    if (patch.length) {
+      this.pendingItems.patch.push({ patch, key: value.key });
+      this._scheduleStoreUpload();
+    }
     const result = await super.put(schema) as ContextChangeRecord<IAppProject>;
-    Events.HttpClient.Model.Project.State.update(result, this.eventsTarget);
+    if (patch.length) {
+      Events.HttpClient.Model.Project.State.update(result, this.eventsTarget);
+    }
     return result;
   }
 

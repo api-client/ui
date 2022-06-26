@@ -20,6 +20,8 @@ export default class RequestLogElement extends LitElement {
       css`
       :host {
         display: block;
+        overflow: auto;
+        height: 100%;
       }
 
       .status-row {

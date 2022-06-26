@@ -745,7 +745,7 @@ export class LayoutManager extends EventTarget {
     return undefined;
   }
 
-  * findParentItem(key: string, parent?: LayoutPanel): Generator<ILayoutItem> {
+  * parentItemIterator(key: string, parent?: LayoutPanel): Generator<ILayoutItem> {
     const panels = parent ? parent.panels : this.panels;
     for (const p of panels) {
       const { items } = p;
@@ -754,7 +754,7 @@ export class LayoutManager extends EventTarget {
           yield i;
         }
       }
-      for (const result of this.findParentItem(key, p)) {
+      for (const result of this.parentItemIterator(key, p)) {
         yield result;
       }
     }
@@ -891,7 +891,7 @@ export class LayoutManager extends EventTarget {
    * @param parent The key of the parent.
    */
   parentNameUpdate(parent: string): void {
-    for (const item of this.findParentItem(parent)) {
+    for (const item of this.parentItemIterator(parent)) {
       const before = item.label;
       this.nameItem(item);
       if (before !== item.label) {

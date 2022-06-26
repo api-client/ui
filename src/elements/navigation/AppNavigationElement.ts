@@ -270,9 +270,8 @@ export default class AppNavigation extends ApiElement {
       const node = this._nameInput;
       if (node) {
         node.focus();
-      } else {
-        this.ensureTreeVisibility(this.edited);
       }
+      this.ensureTreeVisibility(this.edited);
     }
     if (cp.has('_focusedItem') && this._focusedItem) {
       const old = cp.get('_focusedItem') as HTMLElement | undefined;
@@ -329,12 +328,17 @@ export default class AppNavigation extends ApiElement {
     }
     const { _opened } = this;
     let parent = this._findParentListItem(node);
+    let changed = false;
     while (parent) {
       const id = parent.dataset.key as string;
       if (!_opened.includes(id)) {
         _opened.push(id);
+        changed = true;
       }
       parent = this._findParentListItem(parent);
+    }
+    if (changed) {
+      this.requestUpdate();
     }
   }
 

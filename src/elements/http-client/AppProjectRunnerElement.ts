@@ -1,49 +1,37 @@
-import { LitElement, html, TemplateResult, CSSResult, css, PropertyValueMap } from 'lit';
+import { AppProject, IProjectExecutionLog, IProjectRunnerOptions, Events as CoreEvents, IAppProjectProxyInit, AppProjectKind, AppProjectFolder, IRequestLog, IHttpHistoryBulkAdd } from '@api-client/core/build/browser.js';
+import { html, CSSResult, css, TemplateResult, PropertyValueMap } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { 
-  HttpProject, ProjectFolder, IProjectRunnerOptions, Events as CoreEvents, IProjectExecutionLog, IApplication, IHttpHistoryBulkAdd, IRequestLog, IHttpProjectProxyInit, HttpProjectKind,
-} from '@api-client/core/build/browser.js';
-import '@anypoint-web-components/awc/dist/define/anypoint-tabs.js';
-import '@anypoint-web-components/awc/dist/define/anypoint-tab.js';
-import '@anypoint-web-components/awc/dist/define/anypoint-checkbox.js';
+import { AnypointCheckboxElement, AnypointInputElement } from '@anypoint-web-components/awc';
 import '@anypoint-web-components/awc/dist/define/anypoint-input.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-button.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-checkbox.js';
 import '@anypoint-web-components/awc/dist/define/anypoint-progress.js';
-import { AnypointCheckboxElement, AnypointInputElement, AnypointTabsElement } from '@anypoint-web-components/awc';
+import '@anypoint-web-components/awc/dist/define/anypoint-dropdown-menu.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-listbox.js';
+import '@anypoint-web-components/awc/dist/define/anypoint-item.js';
+import ApiElement from "../ApiElement.js";
+import Theme from '../theme.js';
 import { Events } from '../../events/Events.js';
 import '../../define/project-run-report.js';
 
-export default class ProjectRunnerElement extends LitElement {
+/**
+ * An element that renders UI for the AppProject run configuration.
+ */
+export default class AppProjectRunnerElement extends ApiElement {
   static get styles(): CSSResult[] {
     return [
+      Theme,
       css`
       :host {
         display: block;
       }
 
-      .header {
-        margin: 20px;
-      }
-
-      .parent-label {
-        font-size: 1.5rem;
-      }
-
-      anypoint-tabs {
-        border-bottom: 1px var(--divider-color) solid;
-      }
-
       anypoint-input {
-        margin: 0px 0px 12px 0px;
+        margin: 0;
       }
 
-      .run-config {
-        margin: 20px;
-      }
-
-      .form-help {
-        color: var(--secondary-text-color);
-        margin: 0px 0px 0px 12px;
+      anypoint-dropdown-menu {
+        margin: 0;
       }
 
       .form-row {
@@ -55,10 +43,15 @@ export default class ProjectRunnerElement extends LitElement {
         margin: 20px 0;
       }
 
-      .section-title {
-        font-size: 1.4rem;
-        font-weight: 300;
-        margin: 20px 0;
+      .form-help {
+        color: var(--secondary-text-color);
+        font-size: var(--secondary-text-size);
+        margin: 0px 0px 0px 12px;
+        max-width: 800px;
+      }
+
+      .form-help.checkbox {
+        margin: 0px 0px 0px 44px;
       }
 
       .report {
@@ -72,20 +65,11 @@ export default class ProjectRunnerElement extends LitElement {
         border: 4px var(--error-color) solid;
         padding: 20px;
       }
-      `,
-    ];
+      `
+    ]
   }
 
-  /**
-   * The instance of the current project.
-   */
-  @property({ type: Object }) project?: HttpProject;
-
-  /**
-   * This property is required for the API access to work.
-   * Set it to the current application information.
-   */
-  @property({ type: Object }) appInfo?: IApplication;
+  @property({ type: Object }) project?: AppProject;
 
   /**
    * The key of the folder to render the runner for.
@@ -94,25 +78,22 @@ export default class ProjectRunnerElement extends LitElement {
   @property({ type: String, reflect: true }) folder?: string;
 
   /**
-   * The object we operate on.
+   * The application id required when communication with the store to update the project data.
    */
-  @state() protected _root?: HttpProject | ProjectFolder;
+  @property({ type: String, reflect: true }) appId?: string;
 
-  /**
-   * The currently rendered panel.
-   */
-  @state() protected selected = 'config';
+  protected _config?: IProjectRunnerOptions;
+
+  @state() protected _root?: AppProjectFolder | AppProject;
+
+  @state() protected _lastError?: string;
+
+  @state() protected _lastResult?: IProjectExecutionLog;
 
   /**
    * Whether the element is currently running the project execution.
    */
   @state() protected _running?: boolean;
-
-  protected _config?: IProjectRunnerOptions;
-
-  @state() protected _lastError?: string;
-
-  @state() protected _lastResult?: IProjectExecutionLog;
 
   updated(cp: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(cp);
@@ -132,11 +113,6 @@ export default class ProjectRunnerElement extends LitElement {
     } else {
       this._root = project.findFolder(folder);
     }
-  }
-
-  protected _tabChangeHandler(e: Event): void {
-    const tabs = e.target as AnypointTabsElement;
-    this.selected = String(tabs.selected);
   }
 
   protected _checkboxHandler(e: Event): void {
@@ -164,27 +140,27 @@ export default class ProjectRunnerElement extends LitElement {
    */
   async execute(): Promise<void> {
     this._lastError = undefined;
-    const { _config = {}, folder, project } = this;
-    if (!project) {
+    const { _config = {}, folder, project, appId } = this;
+    if (!project || !appId) {
       return;
     }
     if (folder) {
       _config.parent = folder;
     }
-    const init: IHttpProjectProxyInit = {
-      kind: HttpProjectKind,
+    const init: IAppProjectProxyInit = {
+      kind: AppProjectKind,
       pid: project.key,
       options: _config,
+      appId,
     };
-    
     this._running = true;
     try {
-      const result = await CoreEvents.Transport.Core.httpProject(init, this);
+      const result = await CoreEvents.Transport.Core.appProject(init, this);
       if (!result) {
         this._lastError = 'The project execution event was not handled.';
       } else {
         this._lastResult = result.result;
-        this._createHistory(result.result);
+        // this._createHistory(result.result);
       }
     } catch (e) {
       this._lastError = (e as Error).message;
@@ -193,9 +169,9 @@ export default class ProjectRunnerElement extends LitElement {
   }
 
   protected async _createHistory(result: IProjectExecutionLog): Promise<void> {
-    const { appInfo, project } = this;
-    if (!appInfo) {
-      throw new Error(`The appInfo is not set on ${this.localName}`);
+    const { appId, project } = this;
+    if (!appId) {
+      throw new Error(`The appId is not set on ${this.localName}`);
     }
     if (!project) {
       return;
@@ -208,68 +184,33 @@ export default class ProjectRunnerElement extends LitElement {
       return;
     }
     const info: IHttpHistoryBulkAdd = {
-      app: appInfo.code,
+      app: appId,
       project: project.key,
+
       log,
     };
     await Events.Store.History.createBulk(info);
   }
 
-  protected render(): TemplateResult {
+  protected render(): unknown {
     const { _root } = this;
     if (!_root) {
-      return html``;
+      return '';
     }
     return html`
-    ${this._headerTemplate(_root)}
-    ${this._tabsTemplate()}
-    ${this._contentTemplate()}
-    `;
-  }
-
-  protected _headerTemplate(root: HttpProject | ProjectFolder): TemplateResult {
-    const label = root.info.name || '(unnamed)';
-    return html`
-    <div class="header">
-      <div class="parent-label">${label}</div>
-    </div>
-    `;
-  }
-
-  protected _tabsTemplate(): TemplateResult {
-    const { selected } = this;
-    return html`
-    <anypoint-tabs
-      .selected="${selected}"
-      @selected="${this._tabChangeHandler}"
-      class="editor-tabs"
-      attrForSelected="data-tab"
-      fallbackSelection="config"
-    >
-      <anypoint-tab data-tab="config">Config</anypoint-tab>
-      <anypoint-tab data-tab="history">History</anypoint-tab>
-    </anypoint-tabs>
-    `;
-  }
-
-  protected _contentTemplate(): TemplateResult {
-    if (this.selected === 'history') {
-      return this._historyTemplate();
-    }
-    return this._configTemplate();
-  }
-
-  protected _configTemplate(): TemplateResult {
-    return html`
-    <form name="run-config" class="run-config">
-      ${this._recursiveOptionTemplate()}
-      ${this._parallelOptionTemplate()}
-      ${this._iterationsOptionTemplate()}
-      ${this._iterationDelayOptionTemplate()}
-      ${this._submitConfigTemplate()}
-    </form>
-    ${this._lastErrorTemplate()}
+    <details open>
+      <summary>Configuration</summary>
+      <form name="run-config" class="run-config">
+        ${this._recursiveOptionTemplate()}
+        ${this._parallelOptionTemplate()}
+        ${this._iterationsOptionTemplate()}
+        ${this._iterationDelayOptionTemplate()}
+        ${this._environmentSelectorTemplate(_root)}
+      </form>
+    </details>
     ${this._loaderTemplate()}
+    ${this._submitConfigTemplate()}
+    ${this._lastErrorTemplate()}
     ${this._lastRunTemplate()}
     `;
   }
@@ -280,7 +221,7 @@ export default class ProjectRunnerElement extends LitElement {
     return html`
     <div class="form-row">
       <anypoint-checkbox name="recursive" aria-labelledby="recursiveDescription" .checked="${value}" @change="${this._checkboxHandler}">Recursive</anypoint-checkbox>
-      <p class="form-help" id="recursiveDescription">Runs all request from the current folder and its sub-folders</p>
+      <p class="form-help checkbox" id="recursiveDescription">Runs all request from the current folder and its sub-folders</p>
     </div>
     `;
   }
@@ -291,7 +232,7 @@ export default class ProjectRunnerElement extends LitElement {
     return html`
     <div class="form-row">
       <anypoint-checkbox name="parallel" aria-labelledby="parallelDescription" .checked="${value}" @change="${this._checkboxHandler}">Parallel</anypoint-checkbox>
-      <p class="form-help" id="parallelDescription">Runs each iteration in parallel. The number of actual execution depends on the number of cores on your device. This is ignored when number of iterations is 1.</p>
+      <p class="form-help checkbox" id="parallelDescription">Runs each iteration in parallel. The number of actual execution depends on the number of cores on your device. This is ignored when number of iterations is 1.</p>
     </div>
     `;
   }
@@ -318,6 +259,26 @@ export default class ProjectRunnerElement extends LitElement {
       </anypoint-input>
       <p class="form-help" id="iterationDelayDescription">The number of milliseconds to wait between each iteration.</p>
     </div>
+    `;
+  }
+
+  protected _environmentSelectorTemplate(root: AppProject | AppProjectFolder): TemplateResult | string {
+    const envs = root.listEnvironments();
+    if (!envs.length) {
+      return '';
+    }
+    return html`
+    <anypoint-dropdown-menu
+      aria-label="Select the execution environment"
+      class="role-selector"
+      fitPositionTarget
+    >
+      <label slot="label">Execution environment</label>
+      <anypoint-listbox slot="dropdown-content" attrForSelected="data-key">
+        <anypoint-item data-key="">Not selected</anypoint-item>
+        ${envs.map(e => html`<anypoint-item data-key="${e.key}">${e.info.renderLabel}</anypoint-item>`)}
+      </anypoint-listbox>
+    </anypoint-dropdown-menu>
     `;
   }
 
@@ -357,9 +318,5 @@ export default class ProjectRunnerElement extends LitElement {
       <project-run-report .report="${report}"></project-run-report>
     </section>
     `;
-  }
-
-  protected _historyTemplate(): TemplateResult {
-    return html`<p>History is not yet supported.</p>`;
   }
 }

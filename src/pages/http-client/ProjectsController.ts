@@ -46,6 +46,19 @@ export class ProjectsController extends EventTarget {
     this.projectModel.listen(window);
   }
 
+  /**
+   * Persists one of the opened projects.
+   * @param key The key of the project to persist.
+   */
+  async persist(key: string): Promise<void> {
+    const current = this.projects;
+    const project = current.find(i => i.key === key);
+    if (!project) {
+      return;
+    }
+    this.projectModel.update(project);
+  }
+
   protected _modelDestroyedHandler(e: ModelStateDeleteEvent): void {
     const { store } = e;
     if (store === 'Projects') {
@@ -62,7 +75,9 @@ export class ProjectsController extends EventTarget {
     const current = this.projects;
     const index = current.findIndex(i => i.key === key);
     if (index >= 0) {
-      current[index] = new AppProject(item);
+      if (JSON.stringify(current[index]) !== JSON.stringify(item)) {
+        current[index].new(item);
+      }
     } else {
       current.push(new AppProject(item));
     }

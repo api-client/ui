@@ -21,10 +21,11 @@ import { ResizeEventDetail } from '../../lib/ResizableElements.js';
 import { query } from '../../lib/decorators.js';
 import HttpClientNavigationElement from '../../elements/http-client/HttpClientNavigationElement.js';
 import { ProjectsController } from './ProjectsController.js';
+import AppInfo from './AppInfo.js';
 import '../../define/http-client-navigation.js';
 import '../../define/environment-editor.js';
 import '../../define/app-project-editor.js';
-import AppInfo from './AppInfo.js';
+import '../../define/app-project-request.js';
 
 export default class HttpProjectScreen extends ApplicationScreen {
   static get styles(): CSSResult[] {
@@ -377,6 +378,17 @@ export default class HttpProjectScreen extends ApplicationScreen {
     this.render();
   }
 
+  protected _requestChangeHandler(e: Event): void {
+    const node = e.target as HTMLElement;
+    const key = node.dataset.key as string;
+    if (!key) {
+      return;
+    }
+    const pid = node.dataset.pid as string;
+    this.layout.requestNameUpdate(key);
+    this.projects.persist(pid);
+  }
+
   protected _tabClosed(e: CustomEvent): void {
     const key = e.detail as string;
     const index = this.workspace.items.findIndex(i => i.key === key);
@@ -449,6 +461,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     this.nav?.requestUpdate();
     this.layout.requestNameUpdate(key);
     this.layout.parentNameUpdate(key);
+    this._syncWorkspaceProjectItems(key);
     this.storeWorkspace();
   }
 
@@ -469,6 +482,33 @@ export default class HttpProjectScreen extends ApplicationScreen {
       this.storeWorkspace();
     }
     this.nav?.requestUpdate();
+  }
+
+  protected _syncWorkspaceProjectItems(projectKey: string): void {
+    const { layout, projects } = this;
+    const project = projects.projects.find(p => p.key === projectKey);
+    const toRemove: string[] = [];
+    for (const item of layout.parentItemIterator(projectKey)) {
+      if (!project) {
+        toRemove.push(item.key);
+      } else if (item.kind === AppProjectFolderKind) {
+        const folder = project.findFolder(item.key);
+        if (!folder) {
+          toRemove.push(item.key);
+        }
+      } else if (item.kind === AppProjectRequestKind) {
+        const request = project.findRequest(item.key);
+        if (!request) {
+          toRemove.push(item.key);
+        }
+      } else if (item.kind === EnvironmentKind) {
+        const env = project.findEnvironment(item.key);
+        if (!env) {
+          toRemove.push(item.key);
+        }
+      }
+    }
+    toRemove.forEach(id => layout.removeItem(id));
   }
 
   pageTemplate(): TemplateResult {
@@ -581,11 +621,14 @@ export default class HttpProjectScreen extends ApplicationScreen {
       <p ?hidden="${!visible}" data-key="${key}" class="missing-data">The folder is no longer in the project.</p>
       `;
     }
+    const { projects } = this.projects;
+    const project = projects.find(i => i.key === parent);
+    if (!project) {
+      return this._missingWorkspaceItemTemplate(item, visible, 'project');
+    }
     return html`
     <div class="folder-editor-content" ?hidden="${!visible}" data-key="${key}">
-      <p>Folder: ${item.key}</p>
-      <p>Project: ${parent}</p>
-      <p>Schema: ${JSON.stringify(schema, null, 2)}</p>
+      <app-project-editor .project="${project}" .folder="${item.key}" data-key="${key}" .appId="${AppInfo.code}"></app-project-editor>
     </div>
     `;
   }
@@ -603,12 +646,23 @@ export default class HttpProjectScreen extends ApplicationScreen {
       <p ?hidden="${!visible}" data-key="${key}" class="missing-data">The request is no longer in the project.</p>
       `;
     }
+    const { projects } = this.projects;
+    const project = projects.find(i => i.key === parent);
+    if (!project) {
+      return this._missingWorkspaceItemTemplate(item, visible, 'project');
+    }
     return html`
-    <div class="request-editor-content" ?hidden="${!visible}" data-key="${key}">
-      <p>Request: ${item.key}</p>
-      <p>Project: ${parent}</p>
-      <p>Schema: ${JSON.stringify(schema, null, 2)}</p>
-    </div>
+    <app-project-request 
+      ?hidden="${!visible}"
+      class="request-editor-content"
+      data-key="${key}" 
+      data-pid="${parent as string}" 
+      key="${key}" 
+      .project="${project}" 
+      .appInfo="${AppInfo}" 
+      renderSend 
+      @change="${this._requestChangeHandler}">
+    </app-project-request>
     `;
   }
 
@@ -627,7 +681,7 @@ export default class HttpProjectScreen extends ApplicationScreen {
     }
     return html`
     <div class="environment-editor-content" ?hidden="${!visible}" data-key="${key}">
-      <environment-editor .environment="${schema}"  data-key="${key}" data-pid="${parent as string}" @change="${this._environmentChangeHandler}"></environment-editor>
+      <environment-editor .environment="${schema}" data-key="${key}" data-pid="${parent as string}" @change="${this._environmentChangeHandler}"></environment-editor>
     </div>
     `;
   }
